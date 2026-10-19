@@ -1,0 +1,34 @@
+# CI runs automatically on every push and pull request. It installs the
+# dependencies and runs the tests on a clean checkout of your repo, so a
+# red X on GitHub usually means something is broken for your teammates even
+# if it works on your machine -- most often a file you forgot to commit, or
+# a library you installed locally but never added to requirements.txt.
+#
+# You should not normally need to edit this file. New libraries go in
+# requirements.txt.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+  # workflow_dispatch lets you also start a run by hand from the Actions
+  # tab on GitHub.
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test
+        run: pytest -v
