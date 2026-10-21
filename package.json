@@ -1,0 +1,16 @@
+{
+  "name": "dreamimin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A goals-based financial planner.",
+  "scripts": {
+    "test": "jest --verbose"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": ["<rootDir>/tests"]
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

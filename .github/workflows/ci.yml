@@ -2,10 +2,11 @@
 # dependencies and runs the tests on a clean checkout of your repo, so a
 # red X on GitHub usually means something is broken for your teammates even
 # if it works on your machine -- most often a file you forgot to commit, or
-# a library you installed locally but never added to requirements.txt.
+# a package you installed locally but never added to package.json.
 #
-# You should not normally need to edit this file. New libraries go in
-# requirements.txt.
+# You should not normally need to edit this file. New packages go in
+# package.json (use `npm install --save-dev <name>`, then commit both
+# package.json and package-lock.json).
 
 name: CI
 
@@ -22,13 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
+          node-version: "22"
+          cache: npm
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: npm ci
 
       - name: Test
-        run: pytest -v
+        run: npm test
