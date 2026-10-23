@@ -1,7 +1,8 @@
 # Dreamimin
 
-A goals-based financial planner. Enter your financial picture and a goal,
-and it estimates your probability of reaching that goal.
+A goals-based financial planner. Enter your financial picture and one
+savings goal to see how much to save each month and whether your current
+surplus is enough to reach it by the target date.
 
 Written in JavaScript: the app runs in the browser (HTML/CSS/JS), and
 tests run on Node.js with [Jest](https://jestjs.io/).
@@ -29,9 +30,10 @@ npm test
 ## Project layout
 
 ```
-index.html, styles.css, app.js, engine.js   the app (open index.html in a browser)
-src/        model code (planner logic) to be unit tested
+index.html, styles.css, app.js   the M1 app (open index.html in a browser)
+src/        domain classes (FinancialProfile, FinancialGoal); unit tested
 tests/      unit tests; every tests/*.test.js file runs automatically
+prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
 

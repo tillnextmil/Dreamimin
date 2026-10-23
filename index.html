@@ -1,606 +1,189 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Cognifi: Goals-Based Wealth Planner</title>
-<meta name="description" content="Tell it your money and the goals you want in life. It finds the best plan to reach them, gives you the odds for each, and checks the plan against what you believe." />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=EB+Garamond:ital,wght@0,400..600;1,400..500&display=swap" rel="stylesheet" />
-<link rel="icon" type="image/png" href="logo.png" />
-<link rel="stylesheet" href="styles.css?v=8" />
-<script>
-  /* set the theme before paint, so there is no flash */
-  (function () {
-    var t = null;
-    try { t = localStorage.getItem("atco-theme"); } catch (e) {}
-    if (t !== "light" && t !== "dark") t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", t);
-  })();
-</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dreamimin</title>
+  <meta name="description" content="Enter your monthly money and one goal, and see whether you can reach it in time." />
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="grain" aria-hidden="true"></div>
-  <a class="skip" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">Skip to content</a>
 
-  <!-- ─────────────── MASTHEAD ─────────────── -->
-  <header class="masthead">
-    <a class="wordmark" href="#picture">
-      <img class="wordmark__mark" src="logo.png" alt="" width="45" height="45" />
-      <span class="wordmark__text">
-        <strong>Cognifi</strong>
-        <em>Goals&#8209;Based Wealth, Privately Kept</em>
-      </span>
-    </a>
-    <div class="masthead__right">
-      <span class="pill" id="status-pill">Planning…</span>
-      <button id="theme-toggle" class="toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
-        <svg class="toggle__sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><g stroke-linecap="round"><line x1="12" y1="2.4" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.6"/><line x1="2.4" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.6" y2="12"/><line x1="5.2" y1="5.2" x2="7" y2="7"/><line x1="17" y1="17" x2="18.8" y2="18.8"/><line x1="18.8" y1="5.2" x2="17" y2="7"/><line x1="7" y1="17" x2="5.2" y2="18.8"/></g></svg>
-        <svg class="toggle__moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a0.6 0.6 0 0 0-.8-.8A9 9 0 1 0 20.8 15.3a0.6 0.6 0 0 0-.8-.8Z"/></svg>
-      </button>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <img class="topbar__logo" src="logo.png" alt="" width="36" height="36" />
+      <span class="topbar__name">Dreamimin</span>
     </div>
   </header>
 
-  <!-- ─────────────── CONTENTS ─────────────── -->
-  <nav class="toc" aria-label="Sections">
-    <ol>
-      <li><a href="#picture"    data-nav="picture"><span class="toc__num">I</span><span>The Picture</span></a></li>
-      <li><a href="#goals"      data-nav="goals"><span class="toc__num">II</span><span>The Goals</span></a></li>
-      <li><a href="#beliefs"    data-nav="beliefs"><span class="toc__num">III</span><span>Beliefs</span></a></li>
-      <li><a href="#plan"       data-nav="plan"><span class="toc__num">IV</span><span>The Plan</span></a></li>
-      <li><a href="#odds"       data-nav="odds"><span class="toc__num">V</span><span>The Odds</span></a></li>
-      <li><a href="#retirement" data-nav="retirement"><span class="toc__num">VI</span><span>Retirement</span></a></li>
-      <li><a href="#ledger"     data-nav="ledger"><span class="toc__num">VII</span><span>The Ledger</span></a></li>
-    </ol>
-  </nav>
+  <main id="main" class="page">
+    <div class="intro">
+      <h1>Can you reach your goal?</h1>
+      <p>Tell us what comes in, what goes out, and what you're saving for. We'll show how much to set aside each month and whether you're on track.</p>
+    </div>
 
-  <main id="main" tabindex="-1">
+    <div class="layout">
+      <form id="plan-form" class="inputs" novalidate>
+        <section class="card" aria-labelledby="money-title">
+          <h2 id="money-title">Your money</h2>
 
-    <!-- ═════════════ I. THE PICTURE ═════════════ -->
-    <section class="view" data-view="picture" aria-labelledby="hero-title">
-      <div class="hero">
-        <p class="eyebrow reveal" style="--d:0">A Private Wealth Instrument</p>
-        <h1 class="hero__title" id="hero-title">
-          <span class="reveal" style="--d:1">Will you</span>
-          <span class="reveal hero__title-em" style="--d:2">reach it?</span>
-        </h1>
-        <p class="hero__lede reveal" style="--d:3">
-          Enter your money and your goals. We test thousands of futures and give you
-          the best plan, with honest odds for each goal.
-        </p>
-      </div>
-
-      <div class="planner">
-        <form class="ledger reveal" style="--d:5" id="picture-form" autocomplete="off" novalidate>
-          <div class="ledger__head">
-            <span class="folio">Step I · You tell us</span>
-            <h2 class="section-title">Your Financial Picture</h2>
-            <p class="section-note">Use after-tax (net) numbers. Kept in this browser only.</p>
-            <div class="period">
-            <span class="field-legend" aria-hidden="true">Show amounts</span>
-            <fieldset class="segmented segmented--period" data-period>
-              <legend class="visually-hidden">Show amounts</legend>
-              <label><input type="radio" name="period-picture" value="year" /><span>Yearly</span></label>
-              <label><input type="radio" name="period-picture" value="month" /><span>Monthly</span></label>
-              <label><input type="radio" name="period-picture" value="biweek" /><span>Bi-weekly</span></label>
-            </fieldset>
-          </div>
+          <div class="field">
+            <label for="income">Monthly income</label>
+            <div class="control control--money">
+              <span aria-hidden="true">$</span>
+              <input id="income" name="income" type="text" inputmode="decimal" autocomplete="off"
+                     placeholder="0" aria-describedby="income-help income-error" />
+            </div>
+            <p class="help" id="income-help">Take-home pay after tax.</p>
+            <p class="error" id="income-error" role="alert"></p>
           </div>
 
           <div class="field">
-            <label for="networth">Net worth</label>
-            <div class="field__input"><span class="affix">$</span><input id="networth" data-money data-bind="picture.networth" type="text" inputmode="numeric" aria-describedby="networth-hint" /></div>
-            <p id="networth-hint" class="field__hint">What you own, less what you owe.</p>
+            <label for="expenses">Monthly spending</label>
+            <div class="control control--money">
+              <span aria-hidden="true">$</span>
+              <input id="expenses" name="expenses" type="text" inputmode="decimal" autocomplete="off"
+                     placeholder="0" aria-describedby="expenses-help expenses-error" />
+            </div>
+            <p class="help" id="expenses-help">Rent, food, bills, subscriptions: everything you spend.</p>
+            <p class="error" id="expenses-error" role="alert"></p>
+          </div>
+
+          <div class="field">
+            <label for="netWorth">Net worth <span class="optional">(optional)</span></label>
+            <div class="control control--money">
+              <span aria-hidden="true">$</span>
+              <input id="netWorth" name="netWorth" type="text" inputmode="decimal" autocomplete="off"
+                     placeholder="0" aria-describedby="netWorth-help netWorth-error" />
+            </div>
+            <p class="help" id="netWorth-help">What you own minus what you owe. Can be negative.</p>
+            <p class="error" id="netWorth-error" role="alert"></p>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="goal-title">
+          <h2 id="goal-title">Your goal</h2>
+
+          <div class="field">
+            <label for="goalName">Goal name</label>
+            <div class="control">
+              <input id="goalName" name="goalName" type="text" autocomplete="off" maxlength="60"
+                     placeholder="e.g. Emergency fund" aria-describedby="goalName-error" />
+            </div>
+            <p class="error" id="goalName-error" role="alert"></p>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label for="income">Income, after tax <span class="per" data-per></span></label>
-              <div class="field__input"><span class="affix">$</span><input id="income" data-money data-bind="picture.income" data-flow="yr" type="text" inputmode="numeric" aria-describedby="income-hint" /></div>
-              <p id="income-hint" class="field__hint">Your take-home pay. Add back anything your paycheck sends to a 401(k).</p>
+              <label for="goalAmount">Amount</label>
+              <div class="control control--money">
+                <span aria-hidden="true">$</span>
+                <input id="goalAmount" name="goalAmount" type="text" inputmode="decimal" autocomplete="off"
+                       placeholder="0" aria-describedby="goalAmount-error" />
+              </div>
+              <p class="error" id="goalAmount-error" role="alert"></p>
             </div>
+
             <div class="field">
-              <label for="expenses">Expenses <span class="per" data-per></span></label>
-              <div class="field__input"><span class="affix">$</span><input id="expenses" data-money data-bind="picture.expenses" data-flow="yr" type="text" inputmode="numeric" aria-describedby="expenses-hint" /></div>
-              <p id="expenses-hint" class="field__hint">Everything you spend: rent, food, bills, fun. Leave out savings.</p>
+              <label for="goalDate">Reach it by</label>
+              <div class="control">
+                <input id="goalDate" name="goalDate" type="date" aria-describedby="goalDate-error" />
+              </div>
+              <p class="error" id="goalDate-error" role="alert"></p>
             </div>
           </div>
+        </section>
 
-          <div class="field-row">
-            <div class="field">
-              <label for="invest">Willing to invest <span class="per" data-per></span></label>
-              <div class="field__input"><span class="affix">$</span><input id="invest" data-money data-bind="picture.invest" data-flow="mo" type="text" inputmode="numeric" aria-describedby="invest-hint" /></div>
-              <p id="invest-hint" class="field__hint">What you'll put toward your goals. The plan uses this, not everything left over.</p>
-            </div>
-            <div class="field">
-              <label for="age">Your age</label>
-              <div class="field__input"><input id="age" data-int data-bind="picture.age" type="text" inputmode="numeric" maxlength="3" /></div>
-            </div>
-          </div>
-        </form>
-
-        <aside class="insight insight--tall reveal" style="--d:6" aria-labelledby="see-title" aria-live="polite">
-          <p class="insight__tag">What we see</p>
-          <h2 class="visually-hidden" id="see-title">What we see</h2>
-
-          <div class="see">
-            <p class="see__big"><span id="savings-figure">—</span><span class="see__unit" id="savings-unit"> invested a year</span></p>
-            <p class="see__sub">That's <strong id="savings-rate">—</strong> of your take-home pay.</p>
-            <div class="meter" aria-hidden="true">
-              <span class="meter__fill" id="savings-meter"></span>
-              <span class="meter__tick" style="left:37.5%"><i>15%</i></span>
-            </div>
-            <p class="see__note" id="savings-note"></p>
-          </div>
-
-          <div class="see">
-            <p class="see__big"><span id="cushion-figure">—</span></p>
-            <p class="see__sub">of expenses your net worth could cover.</p>
-            <p class="see__note" id="cushion-note"></p>
-          </div>
-
-          <a class="btn btn--primary insight__cta" href="#goals">Next: list your goals →</a>
-        </aside>
-      </div>
-    </section>
-
-    <!-- ═════════════ II. THE GOALS ═════════════ -->
-    <section class="view" data-view="goals" aria-labelledby="goals-title" hidden>
-      <header class="view-head reveal" style="--d:0">
-        <span class="folio">No. II · You tell us</span>
-        <h2 class="view-title" id="goals-title">The Goals</h2>
-        <p class="view-lede">List what you want, what it costs, when you need it and how much it matters. You'll see your odds for each one in The Plan, after you set your beliefs.</p>
-        <button type="button" class="btn btn--primary" id="add-goal">Add a goal</button>
-      </header>
-
-      <form class="panel goal-form" id="goal-form" hidden autocomplete="off" novalidate aria-labelledby="goal-form-title">
-        <h3 class="panel-title" id="goal-form-title">A new goal</h3>
-        <div class="goal-form__grid">
-          <div class="field goal-form__name">
-            <label for="g-name">What is it</label>
-            <div class="field__input"><input id="g-name" type="text" maxlength="48" required /></div>
-          </div>
-          <div class="field">
-            <label for="g-cost">Its cost</label>
-            <div class="field__input"><span class="affix">$</span><input id="g-cost" data-money type="text" inputmode="numeric" required /></div>
-          </div>
-          <div class="field">
-            <label for="g-month">Due</label>
-            <div class="field-pair">
-              <div class="field__input"><select id="g-month" aria-label="Month"></select></div>
-              <div class="field__input"><input id="g-year" data-int type="text" inputmode="numeric" maxlength="4" aria-label="Year" /></div>
-            </div>
-          </div>
-          <div class="field">
-            <label for="g-partial">Would accept, at least</label>
-            <div class="field__input"><span class="affix">$</span><input id="g-partial" data-money type="text" inputmode="numeric" aria-describedby="g-partial-hint" /></div>
-            <p class="field__hint" id="g-partial-hint">A smaller version you could live with. Leave it blank for all or nothing.</p>
-          </div>
-          <div class="field">
-            <label for="g-importance">Importance <output id="g-importance-out" for="g-importance">7</output><span class="per"> / 10</span></label>
-            <input class="range" id="g-importance" type="range" min="1" max="10" step="1" value="7" />
-          </div>
-        </div>
-        <p class="form-error" id="goal-form-error" role="alert"></p>
-        <div class="form-actions">
-          <button type="submit" class="btn btn--primary" id="goal-save">Add goal</button>
-          <button type="button" class="btn btn--ghost" id="goal-cancel">Cancel</button>
-        </div>
+        <button type="reset" class="btn-secondary">Clear everything</button>
       </form>
 
-      <div class="cards cards--input" id="goal-list"></div>
+      <div class="outputs" aria-live="polite">
+        <section class="card goal-card" aria-labelledby="goal-result-title">
+          <h2 id="goal-result-title">Goal check</h2>
 
-      <div class="panel reveal" style="--d:3">
-        <h3 class="panel-title">Your goals by year</h3>
-        <div class="chart" id="timeline" role="img" aria-label="Timeline of goals"></div>
-      </div>
-    </section>
-
-    <!-- ═════════════ III. BELIEFS ═════════════ -->
-    <section class="view" data-view="beliefs" aria-labelledby="beliefs-title" hidden>
-      <header class="view-head reveal" style="--d:0">
-        <span class="folio">No. III · You tell us</span>
-        <h2 class="view-title" id="beliefs-title">Beliefs</h2>
-        <p class="view-lede">How much risk you'll take, what comes first, and where your money may go. The plan stays inside these limits.</p>
-      </header>
-
-      <div class="grid-2">
-        <div class="panel reveal" style="--d:1">
-          <h3 class="panel-title"><label for="tolerance">How much risk you'll take</label></h3>
-          <output class="tol-out" id="tol-out" for="tolerance">Balanced</output>
-          <input class="range range--steps" id="tolerance" type="range" min="0" max="4" step="1" aria-describedby="tol-desc" />
-          <div class="range-ticks" aria-hidden="true"><span>Cautious</span><span>Aggressive</span></div>
-          <p class="section-note" id="tol-desc"></p>
-
-          <h3 class="panel-title panel-title--spaced">By your age</h3>
-          <div class="field field--narrow">
-            <label for="age-b">Your age</label>
-            <div class="field__input"><input id="age-b" data-int data-bind="picture.age" type="text" inputmode="numeric" maxlength="3" /></div>
+          <div id="goal-empty" class="empty">
+            <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <circle cx="12" cy="12" r="5" />
+              <circle cx="12" cy="12" r="1" />
+            </svg>
+            <p id="goal-empty-text">Add your goal's name, amount and date to see if you can reach it.</p>
           </div>
-          <div id="age-rule" aria-live="polite"></div>
 
-          <h3 class="panel-title panel-title--spaced">Your values</h3>
-          <label class="switch">
-            <input type="checkbox" id="esg" />
-            <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
-            <span class="switch__label">Use only ESG-screened funds <em>(environmental, social, governance)</em></span>
-          </label>
-          <p class="section-note" id="esg-note"></p>
-        </div>
+          <div id="goal-result" hidden>
+            <div class="goal-head">
+              <div>
+                <p id="goal-name" class="goal-head__name"></p>
+                <p id="goal-target" class="goal-head__target"></p>
+              </div>
+              <span id="goal-status" class="status"></span>
+            </div>
 
-        <div class="insight reveal" style="--d:2" aria-live="polite">
-          <p class="insight__tag">Our suggestion</p>
-          <h3 class="panel-title">The risk level that suits your goals</h3>
-          <div id="suggest"></div>
-        </div>
-      </div>
-
-      <div class="panel reveal" style="--d:3">
-        <h3 class="panel-title">What matters most</h3>
-        <p class="section-note">Most important at the top. Moving a goal changes its weight.</p>
-        <ol class="rank" id="rank-list"></ol>
-      </div>
-    </section>
-
-    <!-- ═════════════ IV. THE PLAN ═════════════ -->
-    <section class="view" data-view="plan" aria-labelledby="plan-title" hidden>
-      <header class="view-head reveal" style="--d:0">
-        <span class="folio">No. IV · What we found</span>
-        <h2 class="view-title" id="plan-title">The Plan</h2>
-        <p class="view-lede">Built from your picture, your goals and your beliefs: what to fund, how to invest, and your odds of reaching each goal.</p>
-        <button type="button" class="btn btn--ghost btn--small" id="plan-csv">Download my plan (CSV)</button>
-      </header>
-
-      <div class="plan-summary reveal" style="--d:1" id="plan-summary"></div>
-
-      <div class="planner planner--plan">
-        <div class="cards cards--plan" id="goal-cards" aria-live="polite"></div>
-
-        <aside class="verdict reveal" style="--d:2" aria-label="Your odds">
-          <div class="verdict__inner">
-            <p class="eyebrow eyebrow--center">Your Odds</p>
-            <label class="focus-select">
-              <span class="visually-hidden">Show the odds for</span>
-              <select id="focus-goal"></select>
-            </label>
-
-            <div class="seal">
-              <svg class="seal__ring" viewBox="0 0 260 260" aria-hidden="true">
-                <circle class="seal__track" cx="130" cy="130" r="118" />
-                <circle class="seal__fill" cx="130" cy="130" r="118" />
-              </svg>
-              <div class="seal__center">
-                <span class="seal__pct" id="prob-value">—</span>
-                <span class="seal__label">chance</span>
+            <div class="compare">
+              <div>
+                <p class="compare__label">Needed each month</p>
+                <p id="goal-needed" class="compare__value"></p>
+              </div>
+              <div>
+                <p class="compare__label">Left each month</p>
+                <p id="goal-have" class="compare__value"></p>
               </div>
             </div>
 
-            <div aria-live="polite">
-              <p class="verdict__chip" id="verdict-chip" data-band="">Working it out</p>
-              <p class="verdict__read" id="verdict-read">One moment while the futures are drawn.</p>
+            <div class="meter" role="img" id="goal-meter">
+              <div class="meter__fill" id="goal-fill"></div>
             </div>
+            <p id="goal-coverage" class="meter__caption"></p>
 
-            <div class="dist" aria-hidden="true">
-              <div class="dist__head">Money on hand in <span id="dist-year">—</span></div>
-              <div class="dist__track">
-                <div class="dist__band" id="dist-band"></div>
-                <div class="dist__median" id="dist-median"><span></span></div>
-                <div class="dist__goal" id="dist-goal"><span class="dist__goal-label" id="dist-goal-label">goal</span></div>
-              </div>
-              <div class="dist__scale"><span>$0</span><span id="dist-max">—</span></div>
-            </div>
+            <p id="goal-advice" class="callout"></p>
+            <p class="footnote">Assumes everything left over each month goes to this goal. Savings you already have and investment growth aren't counted yet.</p>
+          </div>
+        </section>
 
-            <ul class="mini" id="mini-goals" aria-label="All goals"></ul>
+        <section class="card" aria-labelledby="money-result-title">
+          <h2 id="money-result-title">Your monthly money</h2>
 
-            <p class="verdict__fine">
-              Worked out over <strong id="sim-count">4,000</strong> simulated futures, in today's dollars.
-              See how the odds change at every risk level under <a href="#odds">No. V, The Odds</a>.
+          <div id="money-empty" class="empty">
+            <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="6" width="18" height="13" rx="2" />
+              <path d="M3 10h18M7 15h3" />
+            </svg>
+            <p>Add your monthly income and spending to see what's left.</p>
+          </div>
+
+          <div id="money-result" hidden>
+            <p class="cashflow">
+              <span id="cashflow-value" class="cashflow__value"></span>
+              <span id="cashflow-label" class="cashflow__label"></span>
             </p>
-          </div>
-        </aside>
-      </div>
 
-      <div class="panel reveal" style="--d:3">
-        <h3 class="panel-title">What to fund, and when</h3>
-        <div id="gantt" class="gantt"></div>
-      </div>
-
-      <div class="panel reveal" style="--d:3">
-        <h3 class="panel-title">How your money is invested, year by year</h3>
-        <p class="section-note">All your goals share one portfolio, so money that isn't needed for one goal can help another. Each year the plan checks how far along you are and picks the mix again: more stocks when you're behind, fewer once you're ahead or a goal is close.</p>
-        <div id="glide" class="gantt glide"></div>
-      </div>
-
-      <div class="grid-2">
-        <div class="insight reveal" style="--d:4">
-          <p class="insight__tag">How we invest it</p>
-          <h3 class="panel-title">Your money, inside your limit</h3>
-          <div id="strategy"></div>
-        </div>
-        <div class="insight reveal" style="--d:5">
-          <p class="insight__tag">Checked for you</p>
-          <h3 class="panel-title">Does the plan match your beliefs?</h3>
-          <ul class="align" id="alignment"></ul>
-        </div>
-      </div>
-
-      <div class="trybar reveal" style="--d:6">
-        <h3 class="section-title">Try a change</h3>
-        <p class="section-note">Test an idea and see what it does to your odds before you keep it.</p>
-      </div>
-
-      <div class="saver panel reveal" style="--d:6">
-        <div class="saver__text">
-          <label for="extra" class="panel-title">What if you set aside a little more?</label>
-          <p class="section-note">Move the slider. Each goal card above shows how much its odds change.</p>
-        </div>
-        <div class="saver__control">
-          <output id="extra-out" for="extra">+$0 a month</output>
-          <input class="range" id="extra" type="range" min="0" max="2000" step="25" value="0" />
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <form class="panel reveal" style="--d:7" id="cash-form" autocomplete="off" novalidate aria-labelledby="cash-title">
-          <h3 class="panel-title" id="cash-title">Money in, money out</h3>
-          <p class="section-note">Add a bonus or an inheritance, or take money out. Check what it does before you save it.</p>
-          <fieldset class="segmented">
-            <legend class="visually-hidden">Direction</legend>
-            <label><input type="radio" name="cash-dir" value="in" checked /><span>Add money</span></label>
-            <label><input type="radio" name="cash-dir" value="out" /><span>Take money out</span></label>
-          </fieldset>
-          <div class="field-row">
-            <div class="field">
-              <label for="cash-amt">Amount</label>
-              <div class="field__input"><span class="affix">$</span><input id="cash-amt" data-money type="text" inputmode="numeric" /></div>
+            <div class="rate__row">
+              <span>Savings rate</span>
+              <strong id="rate-value"></strong>
             </div>
-            <div class="field">
-              <label for="cash-year">In the year</label>
-              <div class="field__input"><input id="cash-year" data-int type="text" inputmode="numeric" maxlength="4" /></div>
+            <div class="meter" role="img" id="rate-meter">
+              <div class="meter__fill" id="rate-fill"></div>
             </div>
+
+            <p id="summary" class="callout"></p>
+
+            <dl class="stats">
+              <div><dt>Coming in</dt><dd id="stat-income"></dd></div>
+              <div><dt>Going out</dt><dd id="stat-expenses"></dd></div>
+              <div><dt>Net worth</dt><dd id="stat-networth"></dd></div>
+            </dl>
           </div>
-          <button type="submit" class="btn btn--primary">Check this change</button>
-          <ul class="cash-list" id="cash-list"></ul>
-        </form>
-
-        <form class="panel reveal" style="--d:8" id="windfall-form" autocomplete="off" novalidate aria-labelledby="windfall-title">
-          <h3 class="panel-title" id="windfall-title">Extra money today</h3>
-          <p class="section-note">Spend it on a better version of one goal, or use it to take less risk. See both before you choose.</p>
-          <div class="field-row">
-            <div class="field">
-              <label for="wf-amt">Amount</label>
-              <div class="field__input"><span class="affix">$</span><input id="wf-amt" data-money type="text" inputmode="numeric" /></div>
-            </div>
-            <div class="field">
-              <label for="wf-goal">Goal to upgrade</label>
-              <div class="field__input"><select id="wf-goal"></select></div>
-            </div>
-          </div>
-          <button type="submit" class="btn btn--primary">Compare both</button>
-          <div class="wf-options" id="wf-options" aria-live="polite"></div>
-        </form>
-      </div>
-
-      <div class="panel review" id="review" hidden tabindex="-1" aria-labelledby="review-title">
-        <div class="review__head">
-          <div>
-            <span class="eyebrow">Before you confirm</span>
-            <h3 class="panel-title" id="review-title">—</h3>
-          </div>
-          <div class="review__actions">
-            <button type="button" class="btn btn--primary" id="review-confirm">Confirm</button>
-            <button type="button" class="btn btn--ghost" id="review-discard">Discard</button>
-          </div>
-        </div>
-        <div id="review-body"></div>
-      </div>
-    </section>
-
-    <!-- ═════════════ V. THE ODDS ═════════════ -->
-    <section class="view" data-view="odds" aria-labelledby="odds-title" hidden>
-      <header class="view-head reveal" style="--d:0">
-        <span class="folio">No. V · What we found</span>
-        <h2 class="view-title" id="odds-title">The Odds</h2>
-        <p class="view-lede">The same plan with risk capped at each of the five levels: the chance of reaching each goal, and where your money could end up.</p>
-      </header>
-
-      <div class="panel reveal" style="--d:1">
-        <h3 class="panel-title">Chance of each goal, by risk level</h3>
-        <div class="table-wrap"><table class="matrix" id="odds-matrix"></table></div>
-        <p class="section-note matrix-key"><span class="key key--plan"></span> the plan's cap <span class="key key--limit"></span> past your limit</p>
-      </div>
-
-      <div class="panel reveal" style="--d:2">
-        <div class="panel-head">
-          <h3 class="panel-title">Where your money could go</h3>
-          <div class="segmented segmented--small" id="fan-levels" role="group" aria-label="Risk level to show"></div>
-        </div>
-        <div class="chart" id="fan" role="img" aria-label="Range of projected wealth over time"></div>
-        <div class="outcomes" id="outcomes"></div>
-      </div>
-
-      <section class="colophon reveal" style="--d:3" aria-labelledby="colophon-title">
-        <div class="colophon__rule" aria-hidden="true"></div>
-        <div class="colophon__grid">
-          <h2 class="colophon__lead" id="colophon-title">How we get the number</h2>
-          <p class="colophon__body">
-            All your money sits in one portfolio. A dynamic program works backward from your last goal
-            and, for every year and every possible balance, decides two things: which goals due that year
-            to pay for (in full, the smaller version, or not at all), and which risk level, up to your limit,
-            to hold for the year ahead. It picks whatever reaches the most of what you care about from then on,
-            so whether a goal gets paid depends on how much money is actually there when it comes due.
-            In each simulated future, the portfolio grows or shrinks by a random year in the market,
-            using <code>W&#8339;&#8330;&#8321; = W&#8339; · exp[(µ − ½σ²) + σZ]</code>, at the level the plan
-            chose for that balance. Your probability is the share of futures in which the goal gets paid. Each
-            point of importance counts about 1.4 times as much as the one below it, so your top goals come first.
-            The method follows Das, Ostrov, Radhakrishnan and Srivastav, <em>Dynamic Optimization for
-            Multi-Goals Wealth Management</em>.
-          </p>
-        </div>
-      </section>
-    </section>
-
-    <!-- ═════════════ VI. RETIREMENT ═════════════ -->
-    <section class="view" data-view="retirement" aria-labelledby="ret-title" hidden>
-      <header class="view-head reveal" style="--d:0">
-        <span class="folio">No. VI</span>
-        <h2 class="view-title" id="ret-title">Retirement</h2>
-        <p class="view-lede">When to stop working, which account to draw from first, and how much to take each year to keep taxes low.</p>
-      </header>
-
-      <div class="planner planner--ret">
-        <form class="ledger reveal" style="--d:1" id="retire-form" autocomplete="off" novalidate>
-          <label class="switch">
-            <input type="checkbox" id="ret-on" data-bind="retirement.enabled" />
-            <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
-            <span class="switch__label">Count retirement as one of my goals</span>
-          </label>
-
-          <div class="period">
-            <span class="field-legend" aria-hidden="true">Show amounts</span>
-            <fieldset class="segmented segmented--period" data-period>
-              <legend class="visually-hidden">Show amounts</legend>
-              <label><input type="radio" name="period-retire" value="year" /><span>Yearly</span></label>
-              <label><input type="radio" name="period-retire" value="month" /><span>Monthly</span></label>
-              <label><input type="radio" name="period-retire" value="biweek" /><span>Bi-weekly</span></label>
-            </fieldset>
-          </div>
-
-          <div class="field-row">
-            <div class="field">
-              <label for="ret-age">Retire at age</label>
-              <div class="field__input"><input id="ret-age" data-int data-bind="retirement.age" type="text" inputmode="numeric" maxlength="3" /></div>
-            </div>
-            <div class="field">
-              <label for="ret-life">Plan to age</label>
-              <div class="field__input"><input id="ret-life" data-int data-bind="retirement.lifeExp" type="text" inputmode="numeric" maxlength="3" /></div>
-            </div>
-          </div>
-          <div class="field">
-            <label for="ret-spend">Spending in retirement <span class="per" data-per></span></label>
-            <div class="field__input"><span class="affix">$</span><input id="ret-spend" data-money data-bind="retirement.spending" data-flow="yr" type="text" inputmode="numeric" aria-describedby="ret-spend-hint" /></div>
-            <p class="field__hint" id="ret-spend-hint">After tax, in today's dollars. The goal saves 25 years of this spending.</p>
-          </div>
-
-          <div class="ledger__head ledger__head--spaced">
-            <h3 class="section-title section-title--sm">Accounts today</h3>
-          </div>
-          <div class="acct-grid">
-            <span></span><span class="acct-grid__h">Balance</span><span class="acct-grid__h">Added <span data-per></span></span>
-            <span class="acct-grid__name">Traditional 401(k)/IRA</span>
-            <div class="field__input"><span class="affix">$</span><input data-money data-bind="retirement.trad" type="text" inputmode="numeric" aria-label="Traditional balance" /></div>
-            <div class="field__input"><span class="affix">$</span><input data-money data-bind="retirement.cTrad" data-flow="yr" type="text" inputmode="numeric" aria-label="Traditional contribution" /></div>
-            <span class="acct-grid__name">Roth 401(k)/IRA</span>
-            <div class="field__input"><span class="affix">$</span><input data-money data-bind="retirement.roth" type="text" inputmode="numeric" aria-label="Roth balance" /></div>
-            <div class="field__input"><span class="affix">$</span><input data-money data-bind="retirement.cRoth" data-flow="yr" type="text" inputmode="numeric" aria-label="Roth contribution" /></div>
-            <span class="acct-grid__name">Taxable brokerage</span>
-            <div class="field__input"><span class="affix">$</span><input data-money data-bind="retirement.taxable" type="text" inputmode="numeric" aria-label="Taxable balance" /></div>
-            <div class="field__input"><span class="affix">$</span><input data-money data-bind="retirement.cTaxable" data-flow="yr" type="text" inputmode="numeric" aria-label="Taxable contribution" /></div>
-          </div>
-          <p class="field__hint" id="acct-note"></p>
-
-          <div class="ledger__head ledger__head--spaced">
-            <h3 class="section-title section-title--sm">Income for life</h3>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="ann-on" data-bind="retirement.annuityOn" />
-            <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
-            <span class="switch__label">Buy an annuity when I retire</span>
-          </label>
-          <div class="field field--spaced">
-            <label for="ann-amt">Amount to put in</label>
-            <div class="field__input"><span class="affix">$</span><input id="ann-amt" data-money data-bind="retirement.annuityAmt" type="text" inputmode="numeric" aria-describedby="ann-hint" /></div>
-            <p class="field__hint" id="ann-hint"></p>
-          </div>
-
-          <fieldset class="segmented segmented--block">
-            <legend class="field-legend">Plan to</legend>
-            <label><input type="radio" name="ret-mode" value="income" /><span>Spend as much as I safely can</span></label>
-            <label><input type="radio" name="ret-mode" value="legacy" /><span>Leave as much as I can to an heir</span></label>
-          </fieldset>
-        </form>
-
-        <div class="ret-results reveal" style="--d:2">
-          <div class="panel ret-headline" id="ret-headline" aria-live="polite"></div>
-          <div class="panel">
-            <h3 class="panel-title">Order to withdraw</h3>
-            <ol class="order" id="ret-order"></ol>
-          </div>
-          <div class="panel">
-            <h3 class="panel-title">Account balances by age</h3>
-            <div class="chart" id="ret-chart" role="img" aria-label="Account balances through retirement"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="insight ret-table reveal" style="--d:3" aria-labelledby="ret-table-title">
-        <div class="panel-head">
-          <div>
-            <p class="insight__tag">Your withdrawal schedule</p>
-            <h3 class="panel-title" id="ret-table-title">How much to take out of each account, every year</h3>
-          </div>
-          <div class="ret-table__actions">
-            <button type="button" class="btn btn--ghost btn--small" id="ret-csv">Download CSV</button>
-            <button type="button" class="btn btn--ghost btn--small" id="ret-print">Print</button>
-          </div>
-        </div>
-        <p class="ret-table__explain" id="ret-table-explain"></p>
-        <div class="table-wrap table-wrap--tall" tabindex="0" aria-label="Yearly withdrawal schedule"><table class="yearly" id="ret-table"></table></div>
-        <p class="section-note ret-table__fine">In today's dollars. The CSV opens in Excel, Numbers or Google Sheets and lists the assumptions it was built on, so you can change them and work it your own way.</p>
-      </div>
-    </section>
-
-    <!-- ═════════════ VII. THE LEDGER ═════════════ -->
-    <section class="view" data-view="ledger" aria-labelledby="ledger-title" hidden>
-      <header class="view-head reveal" style="--d:0">
-        <span class="folio">No. VII</span>
-        <h2 class="view-title" id="ledger-title">The Ledger</h2>
-        <p class="view-lede">Where your money goes, what it's invested in, and what comes due each month.</p>
-        <div class="period">
-            <span class="field-legend" aria-hidden="true">Show amounts</span>
-            <fieldset class="segmented segmented--period" data-period>
-              <legend class="visually-hidden">Show amounts</legend>
-              <label><input type="radio" name="period-ledger" value="year" /><span>Yearly</span></label>
-              <label><input type="radio" name="period-ledger" value="month" /><span>Monthly</span></label>
-              <label><input type="radio" name="period-ledger" value="biweek" /><span>Bi-weekly</span></label>
-            </fieldset>
-          </div>
-      </header>
-
-      <div class="donuts">
-        <figure class="panel reveal" style="--d:1"><figcaption class="panel-title">Where your income goes</figcaption><div class="donut" id="donut-income"></div></figure>
-        <figure class="panel reveal" style="--d:2"><figcaption class="panel-title">What the plan holds</figcaption><div class="donut" id="donut-mix"></div></figure>
-        <figure class="panel reveal" style="--d:3"><figcaption class="panel-title">Accounts at retirement</figcaption><div class="donut" id="donut-accounts"></div></figure>
-      </div>
-
-      <div class="panel reveal" style="--d:4">
-        <div class="panel-head">
-          <h3 class="panel-title">Month by month</h3>
-          <div class="cal-nav">
-            <button type="button" class="btn btn--icon" id="cal-prev" aria-label="Previous year">‹</button>
-            <span class="cal-year" id="cal-year" aria-live="polite">—</span>
-            <button type="button" class="btn btn--icon" id="cal-next" aria-label="Next year">›</button>
-          </div>
-        </div>
-        <div class="calendar" id="calendar"></div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="footer__line" aria-hidden="true"></div>
-    <div class="footer__row">
-      <p class="footer__names">Autiana Wallace · Jessica Chang · Aiyan Tong · Amy Zheng</p>
-      <p class="footer__course">CSCI 187 · Software Engineering</p>
-      <div class="footer__actions">
-        <button type="button" class="btn btn--ghost btn--small" id="footer-csv">Download my plan (CSV)</button>
-        <button type="button" class="btn btn--ghost btn--small" id="reset">Go back to the example</button>
+        </section>
       </div>
     </div>
-  </footer>
+  </main>
 
-  <script src="engine.js?v=5"></script>
-  <script src="app.js?v=10"></script>
+  <script src="src/financialProfile.js"></script>
+  <script src="src/financialGoal.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

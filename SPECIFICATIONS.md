@@ -1,25 +1,58 @@
 # Specifications
 
-1. Input validation. A goal is rejected with an error message if its name
-   is empty, its cost is not greater than 0, its year is outside the range
-   from the current year to 59 years ahead, or its month has already passed
-   this year. Non-numeric characters in money fields are ignored, and an
-   empty or invalid number is treated as 0.
+1. Domain classes. The feature uses two classes from our domain model.
+   FinancialProfile (`src/financialProfile.js`) stores an id, a name,
+   monthly income, monthly expenses and net worth, provides the monthly
+   cash flow and savings rate, and can be changed with updateIncome,
+   updateExpenses and updateNetWorth. FinancialGoal (`src/financialGoal.js`)
+   stores an id, a name, a target amount and a target date, and works out
+   the months remaining, the monthly saving required, whether a monthly
+   amount is on track, and how many months a monthly amount takes. The
+   other domain classes (InvestmentPortfolio, GoalAnalysisResult,
+   GoalProbability) are added in M2 with the planning algorithm.
 
-2. Wealth model. Starting wealth is the user's net worth, and yearly savings
-   are the monthly investment times 12. Each simulated year, savings are
-   added and wealth grows by W(t+1) = W(t) * exp[(mu - sigma^2/2) + sigma*Z],
-   where Z ~ N(0,1). All amounts are in today's dollars, using after-inflation
-   returns. The portfolio is one of five risk levels, from Cautious
-   (mu = 0.015, sigma = 0.05) to Aggressive (mu = 0.057, sigma = 0.19).
+2. Input validation. Monthly income and monthly spending are required;
+   net worth is optional and is treated as 0 when empty. In money fields,
+   spaces, commas and dollar signs are ignored, so "$4,500" is read as
+   4500, and decimals are allowed; a field that still is not a number is
+   rejected. Income and spending cannot be negative; net worth can be,
+   since a person can owe more than they own. A goal needs a name of 1 to
+   60 characters, an amount greater than $0, and a real calendar date
+   after today. Both classes reject invalid values by throwing an error,
+   and a FinancialProfile update with an invalid value leaves the profile
+   unchanged. On the page, an error appears under its field once the user
+   leaves that field.
 
-3. Probability. The probability of a goal is the fraction of 4,000 simulated
-   paths in which the goal is paid in full by its target date. It is always
-   between 0 and 1. Random numbers use a fixed seed, so the same inputs
-   always give the same probability.
+3. Monthly cash flow and savings rate. Monthly cash flow is monthly income
+   minus monthly spending, and is negative when spending is greater. The
+   savings rate is the monthly cash flow divided by monthly income, for
+   example 0.2 for 20%; when income is 0 it is 0, so there is no division
+   by zero, and the page shows "–". The page shows cash flow in whole
+   dollars with a "+" or "−" sign, the rate as a whole percent with a bar
+   limited to between 0% and 100%, and, when cash flow is positive, the
+   yearly amount (12 times the monthly cash flow).
 
-4. Verdict. The probability maps to a verdict: at least 0.8 is "Comfortably
-   within reach", at least 0.6 is "A realistic goal", at least 0.4 is
-   "A stretch", at least 0.2 is "A long shot as planned", and below 0.2 is
-   "Unlikely on this plan". A goal counts as realistic when its probability
-   is at least 0.6.
+4. Monthly saving required. The user saves once a month, starting today.
+   The months remaining are the whole months from today to the target
+   date: one fewer when the target date's day of the month is earlier
+   than today's, since the last month is not complete, and never fewer
+   than 1. For example, from January 15, a goal due April 15 has 3 months
+   and a goal due April 14 has 2. The monthly saving required is the
+   target amount divided by the months remaining.
+
+5. On track. The goal is on track when the monthly cash flow is at least
+   the monthly saving required; a cash flow of 0 or less is never on
+   track. When on track, the page shows how many months the goal takes at
+   the current cash flow (the target amount divided by the cash flow,
+   rounded up) and the month it would be reached. When not on track and
+   cash flow is positive, it shows the extra amount needed each month and
+   when the goal would be reached at the current pace instead. The
+   estimate assumes all monthly cash flow goes to the goal and leaves out
+   existing savings and investment growth.
+
+6. Updating results. Results are recalculated each time the user changes
+   any field. The monthly money results are shown once income and
+   spending are valid, and the goal check once the profile and the goal
+   are both valid; otherwise each shows a message saying what to add. The
+   Clear everything button empties every field and removes any error
+   messages. Inputs are not saved between visits in M1.
