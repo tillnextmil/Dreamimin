@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cognifi Goal Planner</title>
+<meta name="description" content="Give your financial picture and one goal. A reinforcement-learning planner gives you the odds of reaching it and whether it's realistic." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=EB+Garamond:ital,wght@0,400..600;1,400..500&display=swap" rel="stylesheet" />
+<link rel="icon" type="image/png" href="../logo.png" />
+<link rel="stylesheet" href="mvp.css" />
+<script>
+  /* same theme key as the full site, set before paint */
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem("atco-theme"); } catch (e) {}
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="./">
+      <img src="../logo.png" alt="" width="40" height="40" />
+      <span><strong>Cognifi</strong><em>Goal Probability Planner</em></span>
+    </a>
+    <span class="tag">MVP</span>
+  </header>
+
+  <main class="layout">
+    <form class="inputs" id="inputs" novalidate>
+      <fieldset>
+        <legend>Your financial picture</legend>
+        <label class="field">
+          <span>Net worth</span>
+          <span class="money"><input id="netWorth" name="netWorth" type="number" inputmode="decimal" step="1000" /></span>
+          <small>What you own minus what you owe, today.</small>
+        </label>
+        <label class="field">
+          <span>Income <em>per month, after tax</em></span>
+          <span class="money"><input id="income" name="income" type="number" inputmode="decimal" min="0" step="100" /></span>
+        </label>
+        <label class="field">
+          <span>Expenses <em>per month</em></span>
+          <span class="money"><input id="expenses" name="expenses" type="number" inputmode="decimal" min="0" step="100" /></span>
+        </label>
+        <p class="savings" id="savings" aria-live="polite"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Your goal</legend>
+        <label class="field">
+          <span>What it is</span>
+          <input id="goalName" name="goalName" type="text" maxlength="40" />
+        </label>
+        <label class="field">
+          <span>What it costs <em>in today's dollars</em></span>
+          <span class="money"><input id="cost" name="cost" type="number" inputmode="decimal" min="1" step="1000" /></span>
+        </label>
+        <label class="field">
+          <span>When you want it by</span>
+          <input id="year" name="year" type="number" inputmode="numeric" step="1" />
+        </label>
+      </fieldset>
+      <p class="error" id="error" role="alert" hidden></p>
+    </form>
+
+    <section class="card" aria-labelledby="goal-title" aria-busy="true" id="card">
+      <p class="eyebrow">Your goal</p>
+      <h1 id="goal-title">—</h1>
+      <p class="goal-meta" id="goal-meta"></p>
+
+      <div class="odds">
+        <span class="odds__num" id="prob">—</span>
+        <span class="odds__label">chance of reaching it</span>
+      </div>
+
+      <p class="verdict" id="verdict" data-tone="mid">Working it out…</p>
+      <p class="reason" id="reason"></p>
+
+      <div class="training" id="training">
+        <div class="bar"><span id="bar"></span></div>
+        <p id="training-text">Training the planner…</p>
+      </div>
+
+      <dl class="facts" id="facts" hidden>
+        <div><dt>How the planner invests</dt><dd id="glide"></dd></div>
+        <div><dt>Where you'd likely land</dt><dd id="range"></dd></div>
+      </dl>
+
+      <details class="how">
+        <summary>How we got this number</summary>
+        <p>A reinforcement-learning planner (PPO) plays out thousands of possible markets, year by year, choosing among five portfolios from cautious to aggressive and, in your goal year, whether to buy the goal. It learns the moves that reach the goal most often. The percentage is how often its plan reaches the goal across 4,000 simulated markets.</p>
+        <p id="efficiency"></p>
+        <p class="fine">Today's dollars and after-inflation returns throughout. Savings are added at the start of each year. Not financial advice.</p>
+      </details>
+    </section>
+  </main>
+
+  <script src="mvp.js"></script>
+</body>
+</html>

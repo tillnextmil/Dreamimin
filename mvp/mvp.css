@@ -1,0 +1,138 @@
+/* ============================================================
+   COGNIFI MVP — same tokens as the full site, one card
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+  --bg: #ece4d4; --surface: #f6f0e4; --surface-2: #ebe2cf;
+  --ink: #221f18; --ink-soft: #574f40; --ink-faint: #675e4b;
+  --line: #cabd9f; --line-soft: #d8cdb2;
+  --green: #35452c; --on-green: #f6f0e4;
+  --good: #35452c; --mid: #8a5a1e; --poor: #7c2f28;
+  --shadow: 0 1px 0 rgba(255,255,255,.5), 0 22px 48px -30px rgba(40,34,20,.55);
+  --ff-display: "Fraunces", Georgia, serif;
+  --ff-body: "EB Garamond", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #15130d; --surface: #1e1b13; --surface-2: #272115;
+    --ink: #ece2cd; --ink-soft: #b7ac93; --ink-faint: #988d76;
+    --line: #3c3626; --line-soft: #332e20;
+    --green: #a7bf96; --on-green: #15130d;
+    --good: #a7bf96; --mid: #e0b36b; --poor: #d98774;
+    --shadow: 0 1px 0 rgba(255,255,255,.03), 0 30px 60px -34px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #15130d; --surface: #1e1b13; --surface-2: #272115;
+  --ink: #ece2cd; --ink-soft: #b7ac93; --ink-faint: #988d76;
+  --line: #3c3626; --line-soft: #332e20;
+  --green: #a7bf96; --on-green: #15130d;
+  --good: #a7bf96; --mid: #e0b36b; --poor: #d98774;
+  --shadow: 0 1px 0 rgba(255,255,255,.03), 0 30px 60px -34px rgba(0,0,0,.8);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+[hidden] { display: none !important; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1.125rem/1.5 var(--ff-body);
+  min-height: 100vh;
+}
+
+/* ---------- Masthead ---------- */
+.masthead {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 1040px; margin: 0 auto; padding: 22px 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.wordmark { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.wordmark span { display: flex; flex-direction: column; line-height: 1.1; }
+.wordmark strong { font: 500 1.45rem var(--ff-display); letter-spacing: .01em; }
+.wordmark em { color: var(--ink-faint); font-size: .95rem; }
+.tag {
+  font: 500 .72rem var(--ff-display); letter-spacing: .14em; text-transform: uppercase;
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; color: var(--ink-soft);
+}
+
+/* ---------- Layout ---------- */
+.layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 32px;
+  max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; align-items: start;
+}
+@media (max-width: 820px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 24px; }
+  .card { order: -1; }
+}
+
+/* ---------- Inputs ---------- */
+fieldset { border: 0; padding: 0; margin: 0 0 28px; }
+legend {
+  font: 500 1.25rem var(--ff-display); padding: 0 0 12px; width: 100%;
+  border-bottom: 1px solid var(--line-soft); margin-bottom: 16px;
+}
+.field { display: block; margin-bottom: 16px; }
+.field > span:first-child { display: block; font-weight: 500; margin-bottom: 4px; }
+.field em { font-weight: 400; color: var(--ink-faint); }
+.field small { display: block; color: var(--ink-faint); font-size: .95rem; margin-top: 4px; }
+input {
+  width: 100%; font: inherit; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 9px 12px;
+}
+input:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; border-color: var(--green); }
+input[aria-invalid="true"] { border-color: var(--poor); }
+.money { position: relative; display: block; }
+.money::before { content: "$"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); }
+.money input { padding-left: 26px; }
+.savings { color: var(--ink-soft); font-style: italic; }
+.error { color: var(--poor); }
+
+/* ---------- Goal card ---------- */
+.card {
+  position: sticky; top: 24px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: var(--shadow); padding: 28px 28px 22px;
+}
+.eyebrow { font: 500 .72rem var(--ff-display); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); }
+.card h1 { font: 400 2rem/1.15 var(--ff-display); margin-top: 6px; overflow-wrap: anywhere; }
+.goal-meta { color: var(--ink-soft); }
+
+.odds { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 22px 0 12px; }
+.odds__num {
+  font: 380 clamp(4rem, 13vw, 6.25rem)/0.95 var(--ff-display);
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  transition: opacity .2s;
+}
+.card[aria-busy="true"] .odds__num { opacity: .55; }
+.odds__label { color: var(--ink-soft); font-style: italic; }
+
+.verdict {
+  display: inline-block; font: 500 .95rem var(--ff-display); letter-spacing: .02em;
+  padding: 5px 12px; border-radius: 999px; border: 1px solid currentColor;
+}
+.verdict[data-tone="good"] { color: var(--good); }
+.verdict[data-tone="mid"]  { color: var(--mid); }
+.verdict[data-tone="poor"] { color: var(--poor); }
+.reason { margin-top: 12px; color: var(--ink-soft); }
+
+.training { margin-top: 18px; }
+.training p { font-size: .95rem; color: var(--ink-faint); margin-top: 6px; }
+.bar { height: 3px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--green); transition: width .25s; }
+.card[aria-busy="false"] .training { display: none; }
+
+.facts { margin-top: 20px; border-top: 1px solid var(--line-soft); }
+.facts div { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+.facts dt { font: 500 .72rem var(--ff-display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+.facts dd { margin-top: 2px; }
+
+.how { margin-top: 18px; }
+.how summary { cursor: pointer; font-weight: 500; color: var(--green); }
+.how p { margin-top: 10px; color: var(--ink-soft); font-size: 1rem; }
+.how .fine { font-size: .9rem; color: var(--ink-faint); }
