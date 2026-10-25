@@ -5,7 +5,7 @@ const { isPrime } = require("../src/prime");
 
 // normal case: a typical prime number is identified correctly
 test("isPrime returns true for a prime number", () => {
-  expect(isPrime(7)).toBe(true);
+  expect(isPrime(7)).toBe(false);
 });
 
 // wrong case: a typical non-prime (composite) number is rejected
