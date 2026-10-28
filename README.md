@@ -31,8 +31,10 @@ npm test
 
 ```
 index.html, styles.css, app.js   the M1 app (open index.html in a browser)
-src/        domain classes (FinancialProfile, FinancialGoal); unit tested
+src/        domain classes (FinancialProfile, FinancialGoal) and the PPO
+            goal planner (ppoPlanner.js, run by planner.worker.js); unit tested
 tests/      unit tests; every tests/*.test.js file runs automatically
+mvp/        standalone goal-probability page; uses the planner in src/
 prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
@@ -43,4 +45,8 @@ To make a function testable, export it from its file in `src/` with
 
 ## Running the app
 
-Open `index.html` in a browser.
+Open `index.html` in a browser. The chance of reaching your goal is worked
+out by the PPO planner in a Web Worker; browsers block workers on pages
+opened straight from disk, so there it runs on the page instead (same
+result, a little slower). To use the worker, serve the folder, for example
+with `python3 -m http.server` and open http://localhost:8000.

@@ -148,6 +148,178 @@
     $("goal-advice").textContent = advice;
   }
 
+  /* ---------- chance with investing (PpoPlanner) ---------- */
+
+  /* the planner gives the same result for the same job, so finished results are kept per job */
+  const plans = new Map();
+  let worker = null, runId = 0, debounce = null, currentKey = null;
+
+  const percent = (p) => {
+    const pct = Math.round(p * 100);
+    return (p > 0 && pct === 0 ? "<1" : p < 1 && pct === 100 ? ">99" : pct) + "%";
+  };
+
+  function verdict(p) {
+    if (p >= 0.8) return ["Realistic", "ok"];
+    if (p >= 0.5) return ["Within reach", "mid"];
+    if (p >= 0.2) return ["A stretch", "short"];
+    return ["Not realistic yet", "short"];
+  }
+
+  function reason(plan, p) {
+    const { netWorth, monthly, cost, months, date } = plan;
+    const have = Math.max(0, netWorth);
+    let text;
+    if (monthly <= 0) {
+      text = `You aren't saving anything each month, so only the ${money.format(have)} you have today can grow toward this.`;
+    } else {
+      text = `Saving ${money.format(monthly)} a month until ${monthYear(date)}, plus the ${money.format(have)} you have now, adds up to ${money.format(have + monthly * months)} before any growth, against the goal's ${money.format(cost)}.`;
+    }
+    if (p < 0.8) {
+      const need = (cost - have) / months;
+      if (need > Math.max(0, monthly)) text += ` Without growth it would take saving about ${money.format(need)} a month.`;
+      else text += ` The money is there on paper; the risk is a bad run in the markets right before ${monthYear(date)}.`;
+    }
+    return text;
+  }
+
+  /* [3, 3, 2, 1] -> "Growth until 2028, Balanced to 2029, then Conservative." */
+  function describeGlide(glide, names) {
+    const year = new Date().getFullYear();
+    const runs = [];
+    glide.forEach((j, t) => {
+      if (runs.length && runs[runs.length - 1].j === j) runs[runs.length - 1].end = t;
+      else runs.push({ j, start: t, end: t });
+    });
+    if (runs.length === 1) return `${names[runs[0].j]} the whole way.`;
+    return runs.map((r, i) =>
+      i === 0 ? `${names[r.j]} until ${year + r.end + 1}` : i === runs.length - 1 ? `then ${names[r.j]}` : `${names[r.j]} to ${year + r.end + 1}`
+    ).join(", ") + ".";
+  }
+
+  function showOddsEmpty(text) {
+    $("odds-empty").hidden = false;
+    $("odds-result").hidden = true;
+    $("odds-empty-text").textContent = text;
+  }
+
+  function showTraining(done, total, prob) {
+    $("odds-result").setAttribute("aria-busy", "true");
+    $("odds-training").hidden = false;
+    $("odds-bar").style.width = total ? Math.round((100 * done) / total) + "%" : "0%";
+    $("odds-training-text").textContent = total ? `Training the planner… round ${done} of ${total}` : "Training the planner…";
+    if (prob !== null && prob !== undefined) $("odds-prob").textContent = percent(prob);
+  }
+
+  function showPlan(plan, r) {
+    const [label, tone] = verdict(r.prob);
+    $("odds-result").setAttribute("aria-busy", "false");
+    $("odds-training").hidden = true;
+    $("odds-prob").textContent = percent(r.prob);
+    $("odds-verdict").className = "status status--" + tone;
+    $("odds-verdict").textContent = label;
+    $("odds-reason").textContent = reason(plan, r.prob);
+
+    $("odds-stats").hidden = false;
+    $("odds-rl").textContent = percent(r.prob);
+    $("odds-dp").textContent = percent(r.dp);
+    $("odds-efficiency").textContent = r.efficiency === null ? "–" : Math.round(r.efficiency * 100) + "%";
+
+    $("odds-facts").hidden = false;
+    $("odds-glide").textContent = describeGlide(r.glide, r.portfolios);
+    $("odds-range").textContent = `About ${money.format(r.p50)} by ${monthYear(plan.date)} in a typical market; ${money.format(r.p10)} in a bad one, ${money.format(r.p90)} in a good one.`;
+    $("odds-efficiency-text").textContent = r.efficiency === null
+      ? "As a check, an exact dynamic-programming solution of the same problem also can't reach this goal, so there's no RL efficiency to show."
+      : `As a check, an exact dynamic-programming solution of the same problem reaches the goal ${percent(r.dp)} of the time. The PPO planner gets ${Math.round(r.efficiency * 100)}% of that (its RL efficiency).`;
+  }
+
+  function stopPlanner() {
+    runId++;
+    clearTimeout(debounce);
+    if (worker) worker.terminate();
+    worker = null;
+  }
+
+  /* Without a worker (browsers block them on file:// pages) the planner runs here, a slice at a time. */
+  function runOnPage(job, id, onMessage) {
+    const steps = PpoPlanner.planSteps(job);
+    const slice = () => {
+      if (id !== runId) return;
+      const until = performance.now() + 30;
+      try {
+        while (performance.now() < until) {
+          const next = steps.next();
+          if (next.done) return onMessage({ type: "result", ...next.value });
+          onMessage(next.value);
+        }
+      } catch (e) {
+        $("odds-training-text").textContent = "The planner hit an error. Try changing a value.";
+        return;
+      }
+      setTimeout(slice);
+    };
+    setTimeout(slice);
+  }
+
+  function runPlanner(plan, key) {
+    const id = runId;
+    const onMessage = (m) => {
+      if (id !== runId) return;
+      if (m.type === "progress") showTraining(m.done, m.total, m.prob);
+      else if (m.type === "result") {
+        plans.set(key, m);
+        showPlan(plan, m);
+        if (worker) worker.terminate();
+        worker = null;
+      }
+    };
+    try {
+      worker = new Worker("src/planner.worker.js");
+      worker.onmessage = (ev) => onMessage(ev.data);
+      worker.onerror = (ev) => {
+        ev.preventDefault();
+        if (id !== runId) return;
+        worker.terminate();
+        worker = null;
+        runOnPage(plan.job, id, onMessage);
+      };
+      worker.postMessage({ job: plan.job });
+    } catch (e) {
+      worker = null;
+      runOnPage(plan.job, id, onMessage);
+    }
+  }
+
+  function showOdds(profile, goal) {
+    if (!profile || !goal) {
+      stopPlanner();
+      currentKey = null;
+      return showOddsEmpty("Add your money and your goal to see your chances of reaching it if you invest.");
+    }
+    const months = goal.monthsRemaining();
+    if (months > PpoPlanner.MAX_YEARS * 12) {
+      stopPlanner();
+      currentKey = null;
+      return showOddsEmpty(`The planner covers goals up to ${PpoPlanner.MAX_YEARS} years away. Pick an earlier date to see your chances.`);
+    }
+
+    const job = { netWorth: profile.netWorth, monthlySaving: profile.monthlyCashFlow, cost: goal.targetAmount, months };
+    const key = JSON.stringify(job);
+    if (key === currentKey) return;   // nothing the planner uses has changed
+    currentKey = key;
+    stopPlanner();
+
+    const plan = { job, netWorth: profile.netWorth, monthly: profile.monthlyCashFlow, cost: goal.targetAmount, months, date: FinancialGoal.parseDate(goal.targetDate) };
+    $("odds-empty").hidden = true;
+    $("odds-result").hidden = false;
+    if (plans.has(key)) return showPlan(plan, plans.get(key));
+
+    $("odds-verdict").className = "status status--mid";
+    $("odds-verdict").textContent = $("odds-stats").hidden ? "Working it out…" : "Updating…";
+    showTraining(0, 0, null);
+    debounce = setTimeout(() => runPlanner(plan, key), 450);
+  }
+
   function update() {
     const profileInput = readGroup("profile");
     const goalInput = readGroup("goal");
@@ -156,6 +328,7 @@
     const goal = goalInput.valid ? new FinancialGoal(goalInput.values) : null;
     showMoney(profile);
     showGoal(profile, goal);
+    showOdds(profile, goal);
   }
 
   /* the earliest date the picker allows is tomorrow */

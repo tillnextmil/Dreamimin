@@ -269,6 +269,35 @@ h1, h2, p { margin: 0; }
 .stats dt { color: var(--muted); font-size: 14px; }
 .stats dd { margin: 2px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 
+/* chance with investing */
+.odds-card { border-top: 4px solid var(--primary); }
+
+.odds { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.odds__num {
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+.odds__label { color: var(--muted); }
+#odds-result[aria-busy="true"] .odds__num { color: var(--muted); }
+
+.status--mid { background: var(--primary-soft); color: var(--primary); }
+#odds-verdict { padding-left: 12px; }
+
+.training { margin-top: 16px; }
+.training .meter__fill { background: var(--primary); transition: width 120ms linear; }
+
+.facts { margin: 20px 0 0; display: grid; gap: 12px; }
+.facts dt { color: var(--muted); font-size: 14px; }
+.facts dd { margin: 2px 0 0; }
+
+.how { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.how summary { cursor: pointer; font-weight: 600; color: var(--primary); min-height: 24px; }
+.how p { margin-top: 10px; color: var(--muted); font-size: 15px; }
+.how .footnote { font-size: 14px; }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }

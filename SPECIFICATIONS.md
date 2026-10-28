@@ -56,3 +56,22 @@
    are both valid; otherwise each shows a message saying what to add. The
    Clear everything button empties every field and removes any error
    messages. Inputs are not saved between visits in M1.
+
+7. Chance with investing (M2). Once the profile and the goal are both
+   valid, the page shows the probability of reaching the goal if the user
+   invests, from the PPO planner (`src/ppoPlanner.js`). Wealth starts at
+   the net worth (0 when negative) and grows year by year with one of five
+   portfolios, after-inflation returns, with the monthly cash flow added at
+   the start of each year; a goal `n` months away is ceil(n / 12) years,
+   with the yearly saving spread so the total saved is still n times the
+   monthly cash flow. Goals more than 40 years away are not planned. The
+   probability is how often the trained policy reaches the goal across
+   4,000 fixed simulated markets. A dynamic-programming solution of the
+   same problem is the benchmark, and RL efficiency is the planner's
+   probability divided by the benchmark's, capped at 100%, and not shown
+   when the benchmark is 0. The page also shows a verdict (Realistic at
+   80% or more, Within reach at 50%, A stretch at 20%, otherwise Not
+   realistic yet), the planner's portfolio each year along the typical
+   path, and the 10th, 50th and 90th percentile outcomes. Training always
+   starts from the same seed and never from an earlier run, so the same
+   inputs always give the same result.

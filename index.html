@@ -139,7 +139,53 @@
             <p id="goal-coverage" class="meter__caption"></p>
 
             <p id="goal-advice" class="callout"></p>
-            <p class="footnote">Assumes everything left over each month goes to this goal. Savings you already have and investment growth aren't counted yet.</p>
+            <p class="footnote">Assumes everything left over each month goes to this goal. Savings you already have and investment growth aren't counted here; the chance below includes both.</p>
+          </div>
+        </section>
+
+        <section class="card odds-card" aria-labelledby="odds-title">
+          <h2 id="odds-title">Chance with investing</h2>
+
+          <div id="odds-empty" class="empty">
+            <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 17l5-5 4 4 8-8" />
+              <path d="M15 8h5v5" />
+            </svg>
+            <p id="odds-empty-text">Add your money and your goal to see your chances of reaching it if you invest.</p>
+          </div>
+
+          <div id="odds-result" hidden aria-busy="true">
+            <div class="odds">
+              <span id="odds-prob" class="odds__num">–</span>
+              <span class="odds__label">chance of reaching it</span>
+            </div>
+            <p id="odds-verdict" class="status status--mid">Working it out…</p>
+
+            <div class="training" id="odds-training">
+              <div class="meter"><div class="meter__fill" id="odds-bar"></div></div>
+              <p id="odds-training-text" class="meter__caption">Training the planner…</p>
+            </div>
+
+            <p id="odds-reason" class="callout"></p>
+
+            <dl class="stats" id="odds-stats" hidden>
+              <div><dt>PPO planner</dt><dd id="odds-rl"></dd></div>
+              <div><dt>DP benchmark</dt><dd id="odds-dp"></dd></div>
+              <div><dt>RL efficiency</dt><dd id="odds-efficiency"></dd></div>
+            </dl>
+
+            <dl class="facts" id="odds-facts" hidden>
+              <div><dt>How the planner invests</dt><dd id="odds-glide"></dd></div>
+              <div><dt>Where you'd likely land</dt><dd id="odds-range"></dd></div>
+            </dl>
+
+            <details class="how">
+              <summary>How we got this number</summary>
+              <p>A reinforcement-learning planner (PPO) plays out thousands of possible markets, year by year, choosing among five portfolios from cautious to aggressive and, in your goal year, whether to buy the goal. It learns the moves that reach the goal most often. The percentage is how often its plan reaches the goal across 4,000 simulated markets.</p>
+              <p id="odds-efficiency-text"></p>
+              <p class="footnote">Today's dollars and after-inflation returns throughout. Savings are added at the start of each year. The same inputs always give the same result. Not financial advice.</p>
+            </details>
           </div>
         </section>
 
@@ -184,6 +230,7 @@
 
   <script src="src/financialProfile.js"></script>
   <script src="src/financialGoal.js"></script>
+  <script src="src/ppoPlanner.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

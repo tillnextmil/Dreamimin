@@ -1,7 +1,8 @@
 /* ============================================================
    COGNIFI MVP — page logic
    Picture + one goal in, odds + verdict out. Any edit re-runs
-   the planner (in a worker, warm-started from the last policy).
+   the planner (src/ppoPlanner.js, in a worker); the same inputs
+   always give the same odds.
    ============================================================ */
 
 (function () {
@@ -16,7 +17,7 @@
   const fields = ["netWorth", "income", "expenses", "goalName", "cost", "year"];
   const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
 
-  let worker = null, warm = null, debounce = null, lastResult = null;
+  let worker = null, debounce = null, lastResult = null;
 
   /* ---------- State ---------- */
   function load() {
@@ -102,21 +103,21 @@
     $("glide").textContent = describeGlide(r.glide, r.portfolios);
     $("range").textContent = `About ${money(r.p50)} by ${s.year} in a typical market; ${money(r.p10)} in a bad one, ${money(r.p90)} in a good one.`;
     $("facts").hidden = false;
-    $("efficiency").textContent = r.dp > 0
-      ? `As a check, an exact dynamic-programming solution of the same problem reaches the goal ${Math.round(r.dp * 100)}% of the time. The PPO planner gets ${Math.round(Math.min(1, r.prob / r.dp) * 100)}% of that (its RL efficiency).`
+    $("efficiency").textContent = r.efficiency !== null
+      ? `As a check, an exact dynamic-programming solution of the same problem reaches the goal ${Math.round(r.dp * 100)}% of the time. The PPO planner gets ${Math.round(r.efficiency * 100)}% of that (its RL efficiency).`
       : "As a check, an exact dynamic-programming solution of the same problem also can't reach this goal.";
   }
 
   /* ---------- Planner ---------- */
   function run(s) {
     if (worker) worker.terminate();
-    worker = new Worker("planner.worker.js");
+    worker = new Worker("../src/planner.worker.js");
     showBusy(true);
     $("bar").style.width = "0%";
     $("training-text").textContent = "Training the planner…";
     if (lastResult) { $("verdict").textContent = "Updating…"; $("verdict").dataset.tone = "mid"; }
 
-    const job = { netWorth: s.netWorth, income: s.income, expenses: s.expenses, cost: s.cost, years: s.year - THIS_YEAR };
+    const job = { netWorth: s.netWorth, monthlySaving: s.income - s.expenses, cost: s.cost, months: 12 * (s.year - THIS_YEAR) };
     worker.onmessage = (ev) => {
       const m = ev.data;
       if (m.type === "progress") {
@@ -124,7 +125,6 @@
         $("training-text").textContent = `Training the planner… round ${m.done} of ${m.total}`;
         $("prob").textContent = Math.round(m.prob * 100) + "%";
       } else if (m.type === "result") {
-        warm = m.weights;
         lastResult = m;
         renderResult(s, m);
         showBusy(false);
@@ -134,7 +134,7 @@
     worker.onerror = () => {
       $("training-text").textContent = "The planner hit an error. Try changing a value.";
     };
-    worker.postMessage({ job, warm });
+    worker.postMessage({ job });
   }
 
   function onChange() {
