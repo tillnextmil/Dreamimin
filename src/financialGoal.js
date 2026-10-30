@@ -12,15 +12,16 @@
   class FinancialGoal {
     static MAX_NAME_LENGTH = 60;
 
-    /* targetDate is a "YYYY-MM-DD" string, as an <input type="date"> gives it */
-    constructor({ id, name = "My goal", targetAmount, targetDate }) {
-      const errors = FinancialGoal.validate({ name, targetAmount, targetDate });
+    /* targetDate is a "YYYY-MM-DD" string, as an <input type="date"> gives it; asOf is "today" */
+    constructor({ id, name = "My goal", targetAmount, targetDate, asOf = new Date() }) {
+      const errors = FinancialGoal.validate({ name, targetAmount, targetDate, asOf });
       const fields = Object.keys(errors);
       if (fields.length) throw new RangeError(errors[fields[0]]);
       this.id = id ?? "goal-" + nextId++;
       this.name = name.trim();
       this.targetAmount = targetAmount;
       this.targetDate = targetDate;
+      Object.freeze(this);   // a goal can't be changed into an invalid one after it is checked
     }
 
     /* error message per invalid field; empty when everything is valid */
@@ -29,7 +30,7 @@
       if (typeof name !== "string" || name.trim() === "") {
         errors.name = "Give your goal a name.";
       } else if (name.trim().length > FinancialGoal.MAX_NAME_LENGTH) {
-        errors.name = `Keep the name under ${FinancialGoal.MAX_NAME_LENGTH} characters.`;
+        errors.name = `Keep the name to ${FinancialGoal.MAX_NAME_LENGTH} characters or fewer.`;
       }
 
       if (typeof targetAmount !== "number" || !Number.isFinite(targetAmount)) {
@@ -72,10 +73,13 @@
       return monthlySaving >= this.monthlySavingsRequired(asOf);
     }
 
-    /* months it takes to reach the target at `monthlySaving` a month; Infinity when nothing is saved */
+    /* months it takes to reach the target at `monthlySaving` a month; Infinity when the saving is 0 or less */
     monthsToReach(monthlySaving) {
       FinancialGoal.#checkSaving(monthlySaving);
-      return monthlySaving > 0 ? Math.ceil(this.targetAmount / monthlySaving) : Infinity;
+      if (monthlySaving <= 0) return Infinity;
+      // round away floating-point noise first, so 17 / (17 / 7) is 7 months, not 8
+      const months = Math.round((this.targetAmount / monthlySaving) * 1e6) / 1e6;
+      return Math.ceil(months);
     }
 
     static #checkSaving(value) {
