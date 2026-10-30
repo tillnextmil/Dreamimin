@@ -1,36 +1,41 @@
 # Dreamimin
 
 A goals-based financial planner. Enter your financial picture and one
-savings goal to see how much to save each month and whether your current
-surplus is enough to reach it by the target date.
+savings goal to see how much to save each month, whether you are on track,
+and your chance of reaching the goal if you invest.
 
-Written in JavaScript: the app runs in the browser (HTML/CSS/JS), and
-tests run on Node.js with [Jest](https://jestjs.io/).
+## Run the app
 
-## One-time setup
+No code, installs or setup needed:
 
-1. Install [Node.js 22 LTS](https://nodejs.org/) (20 or newer works). This
-   also installs `npm`.
-2. Clone this repository and open it in VS Code.
-3. In the repository folder, install the dependencies:
+1. Download or clone this repository.
+2. Open `index.html` in a browser (double-click it).
+
+The chance of reaching your goal is worked out by the PPO planner in a Web
+Worker. Browsers block workers on pages opened straight from disk, so there
+it runs on the page instead (same result, a little slower). To use the
+worker, serve the folder and open http://localhost:8000:
+
+```
+python3 -m http.server
+```
+
+## Run the tests
+
+Install [Node.js 22 LTS](https://nodejs.org/) (20 or newer works; it
+includes `npm`). Then, in the repository folder:
 
 ```
 npm install
-```
-
-## Running the tests locally
-
-This is the same command CI runs, so if it passes locally it will pass in
-CI too:
-
-```
 npm test
 ```
+
+`npm test` is the same command CI runs, so a local pass means a CI pass.
 
 ## Project layout
 
 ```
-index.html, styles.css, app.js   the M1 app (open index.html in a browser)
+index.html, styles.css, app.js   the app (open index.html in a browser)
 src/        domain classes (FinancialProfile, FinancialGoal) and the PPO
             goal planner (ppoPlanner.js, run by planner.worker.js); unit tested
 tests/      unit tests; every tests/*.test.js file runs automatically
@@ -39,14 +44,9 @@ prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
 
-To make a function testable, export it from its file in `src/` with
-`module.exports = { ... }` and `require` it from the test, as
-`src/prime.js` and `tests/prime.test.js` show.
+## Add a test
 
-## Running the app
-
-Open `index.html` in a browser. The chance of reaching your goal is worked
-out by the PPO planner in a Web Worker; browsers block workers on pages
-opened straight from disk, so there it runs on the page instead (same
-result, a little slower). To use the worker, serve the folder, for example
-with `python3 -m http.server` and open http://localhost:8000.
+Export the class or function from its file in `src/` with
+`module.exports` and `require` it from a file in `tests/`, as
+`src/financialGoal.js` and `tests/goalMonths.test.js` show. Tests are
+written in JavaScript with [Jest](https://jestjs.io/).
