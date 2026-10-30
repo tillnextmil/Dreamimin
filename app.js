@@ -1,6 +1,7 @@
 /* ============================================================
    Page logic: reads the form, builds a FinancialProfile and a
-   FinancialGoal from it, and shows what they work out.
+   FinancialGoal from it, and shows what they work out, including
+   the planner's chance of reaching the goal (a GoalAnalysisResult).
    ============================================================ */
 
 (function () {
@@ -154,19 +155,7 @@
   const plans = new Map();
   let worker = null, runId = 0, debounce = null, currentKey = null;
 
-  const percent = (p) => {
-    const pct = Math.round(p * 100);
-    return (p > 0 && pct === 0 ? "<1" : p < 1 && pct === 100 ? ">99" : pct) + "%";
-  };
-
-  function verdict(p) {
-    if (p >= 0.8) return ["Realistic", "ok"];
-    if (p >= 0.5) return ["Within reach", "mid"];
-    if (p >= 0.2) return ["A stretch", "short"];
-    return ["Not realistic yet", "short"];
-  }
-
-  function reason(plan, p) {
+  function reason(plan, probability) {
     const { netWorth, monthly, cost, months, date } = plan;
     const have = Math.max(0, netWorth);
     let text;
@@ -175,26 +164,12 @@
     } else {
       text = `Saving ${money.format(monthly)} a month until ${monthYear(date)}, plus the ${money.format(have)} you have now, adds up to ${money.format(have + monthly * months)} before any growth, against the goal's ${money.format(cost)}.`;
     }
-    if (p < 0.8) {
+    if (!probability.isRealistic) {
       const need = (cost - have) / months;
       if (need > Math.max(0, monthly)) text += ` Without growth it would take saving about ${money.format(need)} a month.`;
       else text += ` The money is there on paper; the risk is a bad run in the markets right before ${monthYear(date)}.`;
     }
     return text;
-  }
-
-  /* [3, 3, 2, 1] -> "Growth until 2028, Balanced to 2029, then Conservative." */
-  function describeGlide(glide, names) {
-    const year = new Date().getFullYear();
-    const runs = [];
-    glide.forEach((j, t) => {
-      if (runs.length && runs[runs.length - 1].j === j) runs[runs.length - 1].end = t;
-      else runs.push({ j, start: t, end: t });
-    });
-    if (runs.length === 1) return `${names[runs[0].j]} the whole way.`;
-    return runs.map((r, i) =>
-      i === 0 ? `${names[r.j]} until ${year + r.end + 1}` : i === runs.length - 1 ? `then ${names[r.j]}` : `${names[r.j]} to ${year + r.end + 1}`
-    ).join(", ") + ".";
   }
 
   function showOddsEmpty(text) {
@@ -208,29 +183,30 @@
     $("odds-training").hidden = false;
     $("odds-bar").style.width = total ? Math.round((100 * done) / total) + "%" : "0%";
     $("odds-training-text").textContent = total ? `Training the planner… round ${done} of ${total}` : "Training the planner…";
-    if (prob !== null && prob !== undefined) $("odds-prob").textContent = percent(prob);
+    if (prob !== null && prob !== undefined) $("odds-prob").textContent = new GoalProbability(prob).toPercent();
   }
 
-  function showPlan(plan, r) {
-    const [label, tone] = verdict(r.prob);
+  /* result is a GoalAnalysisResult */
+  function showPlan(plan, result) {
+    const { probability, benchmark, outcomes } = result;
     $("odds-result").setAttribute("aria-busy", "false");
     $("odds-training").hidden = true;
-    $("odds-prob").textContent = percent(r.prob);
-    $("odds-verdict").className = "status status--" + tone;
-    $("odds-verdict").textContent = label;
-    $("odds-reason").textContent = reason(plan, r.prob);
+    $("odds-prob").textContent = probability.toPercent();
+    $("odds-verdict").className = "status status--" + probability.tone;
+    $("odds-verdict").textContent = probability.verdict;
+    $("odds-reason").textContent = reason(plan, probability);
 
     $("odds-stats").hidden = false;
-    $("odds-rl").textContent = percent(r.prob);
-    $("odds-dp").textContent = percent(r.dp);
-    $("odds-efficiency").textContent = r.efficiency === null ? "–" : Math.round(r.efficiency * 100) + "%";
+    $("odds-rl").textContent = probability.toPercent();
+    $("odds-dp").textContent = benchmark.toPercent();
+    $("odds-efficiency").textContent = result.efficiencyText();
 
     $("odds-facts").hidden = false;
-    $("odds-glide").textContent = describeGlide(r.glide, r.portfolios);
-    $("odds-range").textContent = `About ${money.format(r.p50)} by ${monthYear(plan.date)} in a typical market; ${money.format(r.p10)} in a bad one, ${money.format(r.p90)} in a good one.`;
-    $("odds-efficiency-text").textContent = r.efficiency === null
+    $("odds-glide").textContent = result.describeGlide(new Date().getFullYear());
+    $("odds-range").textContent = `About ${money.format(outcomes.typical)} by ${monthYear(plan.date)} in a typical market; ${money.format(outcomes.bad)} in a bad one, ${money.format(outcomes.good)} in a good one.`;
+    $("odds-efficiency-text").textContent = result.efficiency === null
       ? "As a check, an exact dynamic-programming solution of the same problem also can't reach this goal, so there's no RL efficiency to show."
-      : `As a check, an exact dynamic-programming solution of the same problem reaches the goal ${percent(r.dp)} of the time. The PPO planner gets ${Math.round(r.efficiency * 100)}% of that (its RL efficiency).`;
+      : `As a check, an exact dynamic-programming solution of the same problem reaches the goal ${benchmark.toPercent()} of the time. The PPO planner gets ${result.efficiencyText()} of that (its RL efficiency).`;
   }
 
   function stopPlanner() {
@@ -267,8 +243,9 @@
       if (id !== runId) return;
       if (m.type === "progress") showTraining(m.done, m.total, m.prob);
       else if (m.type === "result") {
-        plans.set(key, m);
-        showPlan(plan, m);
+        const result = new GoalAnalysisResult(m);
+        plans.set(key, result);
+        showPlan(plan, result);
         if (worker) worker.terminate();
         worker = null;
       }

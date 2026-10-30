@@ -116,9 +116,9 @@ input[aria-invalid="true"] { border-color: var(--poor); }
   display: inline-block; font: 500 .95rem var(--ff-display); letter-spacing: .02em;
   padding: 5px 12px; border-radius: 999px; border: 1px solid currentColor;
 }
-.verdict[data-tone="good"] { color: var(--good); }
+.verdict[data-tone="ok"]   { color: var(--good); }
 .verdict[data-tone="mid"]  { color: var(--mid); }
-.verdict[data-tone="poor"] { color: var(--poor); }
+.verdict[data-tone="short"] { color: var(--poor); }
 .reason { margin-top: 12px; color: var(--ink-soft); }
 
 .training { margin-top: 18px; }
