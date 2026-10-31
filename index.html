@@ -6,6 +6,9 @@
   <title>Dreamimin</title>
   <meta name="description" content="Enter your monthly money and one goal, and see whether you can reach it in time." />
   <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -13,138 +16,230 @@
 
   <header class="topbar">
     <div class="topbar__inner">
-      <img class="topbar__logo" src="logo.png" alt="" width="36" height="36" />
+      <img class="topbar__logo" src="logo.png" alt="" width="32" height="32" />
       <span class="topbar__name">Dreamimin</span>
+      <button type="reset" form="plan-form" class="link-btn">Start over</button>
     </div>
   </header>
 
-  <main id="main" class="page">
-    <div class="intro">
-      <h1>Can you reach your goal?</h1>
-      <p>Tell us what comes in, what goes out, and what you're saving for. We'll show how much to set aside each month and whether you're on track.</p>
+  <nav class="steps" aria-label="Steps">
+    <div class="steps__track">
+      <span class="steps__indicator" aria-hidden="true"></span>
+      <ol class="steps__list">
+        <li>
+          <a class="step" href="#money" data-step="money">
+            <span class="step__num" aria-hidden="true"><span>1</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9" /></svg></span>
+            <span class="step__text"><span class="step__title"><span class="step__your">Your </span>money</span><span class="step__meta" id="step-money-meta"></span></span>
+          </a>
+        </li>
+        <li>
+          <a class="step" href="#goal" data-step="goal">
+            <span class="step__num" aria-hidden="true"><span>2</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9" /></svg></span>
+            <span class="step__text"><span class="step__title"><span class="step__your">Your </span>goal</span><span class="step__meta" id="step-goal-meta"></span></span>
+          </a>
+        </li>
+        <li>
+          <a class="step" href="#chances" data-step="chances">
+            <span class="step__num" aria-hidden="true"><span>3</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9" /></svg></span>
+            <span class="step__text"><span class="step__title"><span class="step__your">Your </span>chances</span><span class="step__meta" id="step-chances-meta"></span></span>
+          </a>
+        </li>
+      </ol>
     </div>
+  </nav>
 
-    <div class="layout">
-      <form id="plan-form" class="inputs" novalidate>
-        <section class="card" aria-labelledby="money-title">
-          <h2 id="money-title">Your money</h2>
+  <main id="main" class="page">
+    <h1 class="sr-only">Dreamimin goal planner</h1>
 
-          <div class="field">
-            <label for="income">Monthly income</label>
-            <div class="control control--money">
-              <span aria-hidden="true">$</span>
-              <input id="income" name="income" type="text" inputmode="decimal" autocomplete="off"
-                     placeholder="0" aria-describedby="income-help income-error" />
-            </div>
-            <p class="help" id="income-help">Take-home pay after tax.</p>
-            <p class="error" id="income-error" role="alert"></p>
-          </div>
+    <form id="plan-form" novalidate>
 
-          <div class="field">
-            <label for="expenses">Monthly spending</label>
-            <div class="control control--money">
-              <span aria-hidden="true">$</span>
-              <input id="expenses" name="expenses" type="text" inputmode="decimal" autocomplete="off"
-                     placeholder="0" aria-describedby="expenses-help expenses-error" />
-            </div>
-            <p class="help" id="expenses-help">Rent, food, bills, subscriptions: everything you spend.</p>
-            <p class="error" id="expenses-error" role="alert"></p>
-          </div>
+      <!-- step 1: your money -->
+      <section class="panel" id="panel-money" data-step="money" aria-labelledby="money-title">
+        <div class="panel__grid">
+          <div class="card">
+            <h2 id="money-title" tabindex="-1">Your money</h2>
 
-          <div class="field">
-            <label for="netWorth">Net worth <span class="optional">(optional)</span></label>
-            <div class="control control--money">
-              <span aria-hidden="true">$</span>
-              <input id="netWorth" name="netWorth" type="text" inputmode="decimal" autocomplete="off"
-                     placeholder="0" aria-describedby="netWorth-help netWorth-error" />
-            </div>
-            <p class="help" id="netWorth-help">What you own minus what you owe. Can be negative.</p>
-            <p class="error" id="netWorth-error" role="alert"></p>
-          </div>
-        </section>
-
-        <section class="card" aria-labelledby="goal-title">
-          <h2 id="goal-title">Your goal</h2>
-
-          <div class="field">
-            <label for="goalName">Goal name</label>
-            <div class="control">
-              <input id="goalName" name="goalName" type="text" autocomplete="off" maxlength="60"
-                     placeholder="e.g. Emergency fund" aria-describedby="goalName-error" />
-            </div>
-            <p class="error" id="goalName-error" role="alert"></p>
-          </div>
-
-          <div class="field-row">
             <div class="field">
-              <label for="goalAmount">Amount</label>
+              <label for="income">Monthly income</label>
               <div class="control control--money">
                 <span aria-hidden="true">$</span>
-                <input id="goalAmount" name="goalAmount" type="text" inputmode="decimal" autocomplete="off"
-                       placeholder="0" aria-describedby="goalAmount-error" />
+                <input id="income" name="income" type="text" inputmode="decimal" autocomplete="off"
+                       placeholder="0" aria-describedby="income-help income-error" />
               </div>
-              <p class="error" id="goalAmount-error" role="alert"></p>
+              <p class="help" id="income-help">Take-home pay after tax.</p>
+              <p class="error" id="income-error" role="alert"></p>
             </div>
 
             <div class="field">
-              <label for="goalDate">Reach it by</label>
+              <label for="expenses">Monthly spending</label>
+              <div class="control control--money">
+                <span aria-hidden="true">$</span>
+                <input id="expenses" name="expenses" type="text" inputmode="decimal" autocomplete="off"
+                       placeholder="0" aria-describedby="expenses-help expenses-error" />
+              </div>
+              <p class="help" id="expenses-help">Rent, food, bills, subscriptions: everything you spend.</p>
+              <p class="error" id="expenses-error" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label for="netWorth">Net worth <span class="optional">(optional)</span></label>
+              <div class="control control--money">
+                <span aria-hidden="true">$</span>
+                <input id="netWorth" name="netWorth" type="text" inputmode="decimal" autocomplete="off"
+                       placeholder="0" aria-describedby="netWorth-help netWorth-error" />
+              </div>
+              <p class="help" id="netWorth-help">What you own minus what you owe. Can be negative.</p>
+              <p class="error" id="netWorth-error" role="alert"></p>
+            </div>
+          </div>
+
+          <section class="card card--result" aria-labelledby="money-result-title" aria-live="polite">
+            <h2 id="money-result-title">Your monthly money</h2>
+
+            <div id="money-empty" class="empty">
+              <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="6" width="18" height="13" rx="2" />
+                <path d="M3 10h18M7 15h3" />
+              </svg>
+              <p>Add your monthly income and spending to see what's left.</p>
+            </div>
+
+            <div id="money-result" hidden>
+              <p class="cashflow">
+                <span id="cashflow-value" class="cashflow__value"></span>
+                <span id="cashflow-label" class="cashflow__label"></span>
+              </p>
+
+              <div class="rate__row">
+                <span>Savings rate</span>
+                <strong id="rate-value"></strong>
+              </div>
+              <div class="meter" role="img" id="rate-meter">
+                <div class="meter__fill" id="rate-fill"></div>
+              </div>
+
+              <p id="summary" class="callout"></p>
+
+              <dl class="stats">
+                <div><dt>Coming in</dt><dd id="stat-income"></dd></div>
+                <div><dt>Going out</dt><dd id="stat-expenses"></dd></div>
+                <div><dt>Net worth</dt><dd id="stat-networth"></dd></div>
+              </dl>
+            </div>
+          </section>
+        </div>
+
+        <div class="panel__nav">
+          <a class="btn btn--primary" href="#goal">Next: your goal
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- step 2: your goal -->
+      <section class="panel" id="panel-goal" data-step="goal" aria-labelledby="goal-title" hidden>
+        <div class="panel__grid">
+          <div class="card">
+            <h2 id="goal-title" tabindex="-1">Your goal</h2>
+
+            <div class="field">
+              <label for="goalName">Goal name</label>
               <div class="control">
-                <input id="goalDate" name="goalDate" type="date" aria-describedby="goalDate-error" />
+                <input id="goalName" name="goalName" type="text" autocomplete="off" maxlength="60"
+                       placeholder="e.g. Emergency fund" aria-describedby="goalName-error" />
               </div>
-              <p class="error" id="goalDate-error" role="alert"></p>
+              <p class="error" id="goalName-error" role="alert"></p>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="goalAmount">Amount</label>
+                <div class="control control--money">
+                  <span aria-hidden="true">$</span>
+                  <input id="goalAmount" name="goalAmount" type="text" inputmode="decimal" autocomplete="off"
+                         placeholder="0" aria-describedby="goalAmount-error" />
+                </div>
+                <p class="error" id="goalAmount-error" role="alert"></p>
+              </div>
+
+              <div class="field">
+                <label for="goalDate">Reach it by</label>
+                <div class="control">
+                  <input id="goalDate" name="goalDate" type="date" aria-describedby="goalDate-error" />
+                </div>
+                <p class="error" id="goalDate-error" role="alert"></p>
+              </div>
             </div>
           </div>
-        </section>
 
-        <button type="reset" class="btn-secondary">Clear everything</button>
-      </form>
+          <section class="card card--result goal-card" aria-labelledby="goal-result-title" aria-live="polite">
+            <h2 id="goal-result-title">Goal check</h2>
 
-      <div class="outputs" aria-live="polite">
-        <section class="card goal-card" aria-labelledby="goal-result-title">
-          <h2 id="goal-result-title">Goal check</h2>
+            <div id="goal-empty" class="empty">
+              <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="5" />
+                <circle cx="12" cy="12" r="1" />
+              </svg>
+              <p id="goal-empty-text">Add your goal's name, amount and date to see if you can reach it.</p>
+            </div>
 
-          <div id="goal-empty" class="empty">
-            <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
-                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9" />
-              <circle cx="12" cy="12" r="5" />
-              <circle cx="12" cy="12" r="1" />
-            </svg>
-            <p id="goal-empty-text">Add your goal's name, amount and date to see if you can reach it.</p>
+            <div id="goal-result" hidden>
+              <div class="goal-head">
+                <div>
+                  <p id="goal-name" class="goal-head__name"></p>
+                  <p id="goal-target" class="goal-head__target"></p>
+                </div>
+                <span id="goal-status" class="status"></span>
+              </div>
+
+              <div class="compare">
+                <div>
+                  <p class="compare__label">Needed each month</p>
+                  <p id="goal-needed" class="compare__value"></p>
+                </div>
+                <div>
+                  <p class="compare__label">Left each month</p>
+                  <p id="goal-have" class="compare__value"></p>
+                </div>
+              </div>
+
+              <div class="meter" role="img" id="goal-meter">
+                <div class="meter__fill" id="goal-fill"></div>
+              </div>
+              <p id="goal-coverage" class="meter__caption"></p>
+
+              <p id="goal-advice" class="callout"></p>
+              <p class="footnote">Assumes everything left over each month goes to this goal. Savings you already have and investment growth aren't counted here; your chances in step 3 include both.</p>
+            </div>
+          </section>
+        </div>
+
+        <div class="panel__nav">
+          <a class="btn btn--ghost" href="#money">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+            Back
+          </a>
+          <a class="btn btn--primary" href="#chances">See your chances
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- step 3: your chances -->
+      <section class="panel" id="panel-chances" data-step="chances" aria-labelledby="odds-title" hidden>
+        <section class="card odds-card" aria-labelledby="odds-title" aria-live="polite">
+          <div class="card__head">
+            <h2 id="odds-title" tabindex="-1">Your chances with investing</h2>
+            <div class="summary" id="plan-summary" hidden>
+              <span class="summary__item"><span class="summary__label">In</span> <strong id="sum-income"></strong></span>
+              <span class="summary__item"><span class="summary__label">Out</span> <strong id="sum-expenses"></strong></span>
+              <span class="summary__item"><span class="summary__label">Goal</span> <strong id="sum-goal"></strong></span>
+              <a class="summary__edit" href="#goal">Edit</a>
+            </div>
           </div>
-
-          <div id="goal-result" hidden>
-            <div class="goal-head">
-              <div>
-                <p id="goal-name" class="goal-head__name"></p>
-                <p id="goal-target" class="goal-head__target"></p>
-              </div>
-              <span id="goal-status" class="status"></span>
-            </div>
-
-            <div class="compare">
-              <div>
-                <p class="compare__label">Needed each month</p>
-                <p id="goal-needed" class="compare__value"></p>
-              </div>
-              <div>
-                <p class="compare__label">Left each month</p>
-                <p id="goal-have" class="compare__value"></p>
-              </div>
-            </div>
-
-            <div class="meter" role="img" id="goal-meter">
-              <div class="meter__fill" id="goal-fill"></div>
-            </div>
-            <p id="goal-coverage" class="meter__caption"></p>
-
-            <p id="goal-advice" class="callout"></p>
-            <p class="footnote">Assumes everything left over each month goes to this goal. Savings you already have and investment growth aren't counted here; the chance below includes both.</p>
-          </div>
-        </section>
-
-        <section class="card odds-card" aria-labelledby="odds-title">
-          <h2 id="odds-title">Chance with investing</h2>
 
           <div id="odds-empty" class="empty">
             <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
@@ -153,81 +248,56 @@
               <path d="M15 8h5v5" />
             </svg>
             <p id="odds-empty-text">Add your money and your goal to see your chances of reaching it if you invest.</p>
+            <a class="btn btn--ghost" href="#money">Go to step 1</a>
           </div>
 
-          <div id="odds-result" hidden aria-busy="true">
-            <div class="odds">
-              <span id="odds-prob" class="odds__num">–</span>
-              <span class="odds__label">chance of reaching it</span>
-            </div>
-            <p id="odds-verdict" class="status status--mid">Working it out…</p>
+          <div id="odds-result" class="odds-layout" hidden aria-busy="true">
+            <div class="odds-main">
+              <div class="ring" id="odds-ring" data-tone="mid">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="ring__track" cx="60" cy="60" r="52" />
+                  <circle class="ring__arc" id="odds-arc" cx="60" cy="60" r="52" />
+                </svg>
+                <div class="ring__center">
+                  <span id="odds-prob" class="odds__num">–</span>
+                  <span class="odds__label">chance of reaching it</span>
+                </div>
+              </div>
+              <p id="odds-verdict" class="status status--mid">Working it out…</p>
 
-            <div class="training" id="odds-training">
-              <div class="meter"><div class="meter__fill" id="odds-bar"></div></div>
-              <p id="odds-training-text" class="meter__caption">Training the planner…</p>
-            </div>
-
-            <p id="odds-reason" class="callout"></p>
-
-            <dl class="stats" id="odds-stats" hidden>
-              <div><dt>PPO planner</dt><dd id="odds-rl"></dd></div>
-              <div><dt>DP benchmark</dt><dd id="odds-dp"></dd></div>
-              <div><dt>RL efficiency</dt><dd id="odds-efficiency"></dd></div>
-            </dl>
-
-            <dl class="facts" id="odds-facts" hidden>
-              <div><dt>How the planner invests</dt><dd id="odds-glide"></dd></div>
-              <div><dt>Where you'd likely land</dt><dd id="odds-range"></dd></div>
-            </dl>
-
-            <details class="how">
-              <summary>How we got this number</summary>
-              <p>A reinforcement-learning planner (PPO) plays out thousands of possible markets, year by year, choosing among five portfolios from cautious to aggressive and, in your goal year, whether to buy the goal. It learns the moves that reach the goal most often. The percentage is how often its plan reaches the goal across 4,000 simulated markets.</p>
-              <p>The five portfolios it chooses from, from lowest to highest risk:</p>
-              <ul id="portfolio-list"></ul>
-              <p id="odds-efficiency-text"></p>
-              <p class="footnote">Today's dollars and after-inflation returns throughout. Savings are added at the start of each year. The same inputs always give the same result. Not financial advice.</p>
-            </details>
-          </div>
-        </section>
-
-        <section class="card" aria-labelledby="money-result-title">
-          <h2 id="money-result-title">Your monthly money</h2>
-
-          <div id="money-empty" class="empty">
-            <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
-                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="6" width="18" height="13" rx="2" />
-              <path d="M3 10h18M7 15h3" />
-            </svg>
-            <p>Add your monthly income and spending to see what's left.</p>
-          </div>
-
-          <div id="money-result" hidden>
-            <p class="cashflow">
-              <span id="cashflow-value" class="cashflow__value"></span>
-              <span id="cashflow-label" class="cashflow__label"></span>
-            </p>
-
-            <div class="rate__row">
-              <span>Savings rate</span>
-              <strong id="rate-value"></strong>
-            </div>
-            <div class="meter" role="img" id="rate-meter">
-              <div class="meter__fill" id="rate-fill"></div>
+              <div class="training" id="odds-training">
+                <div class="meter"><div class="meter__fill" id="odds-bar"></div></div>
+                <p id="odds-training-text" class="meter__caption">Training the planner…</p>
+              </div>
             </div>
 
-            <p id="summary" class="callout"></p>
+            <div class="odds-detail">
+              <p id="odds-reason" class="callout"></p>
 
-            <dl class="stats">
-              <div><dt>Coming in</dt><dd id="stat-income"></dd></div>
-              <div><dt>Going out</dt><dd id="stat-expenses"></dd></div>
-              <div><dt>Net worth</dt><dd id="stat-networth"></dd></div>
-            </dl>
+              <dl class="stats" id="odds-stats" hidden>
+                <div><dt>PPO planner</dt><dd id="odds-rl"></dd></div>
+                <div><dt>DP benchmark</dt><dd id="odds-dp"></dd></div>
+                <div><dt>RL efficiency</dt><dd id="odds-efficiency"></dd></div>
+              </dl>
+
+              <dl class="facts" id="odds-facts" hidden>
+                <div><dt>How the planner invests</dt><dd id="odds-glide"></dd></div>
+                <div><dt>Where you'd likely land</dt><dd id="odds-range"></dd></div>
+              </dl>
+
+              <details class="how">
+                <summary>How we got this number</summary>
+                <p>A reinforcement-learning planner (PPO) plays out thousands of possible markets, year by year, choosing among five portfolios from cautious to aggressive and, in your goal year, whether to buy the goal. It learns the moves that reach the goal most often. The percentage is how often its plan reaches the goal across 4,000 simulated markets.</p>
+                <p>The five portfolios it chooses from, from lowest to highest risk:</p>
+                <ul id="portfolio-list"></ul>
+                <p id="odds-efficiency-text"></p>
+                <p class="footnote">Today's dollars and after-inflation returns throughout. Savings are added at the start of each year. The same inputs always give the same result. Not financial advice.</p>
+              </details>
+            </div>
           </div>
         </section>
-      </div>
-    </div>
+      </section>
+    </form>
   </main>
 
   <script src="src/financialProfile.js"></script>
@@ -236,6 +306,7 @@
   <script src="src/goalProbability.js"></script>
   <script src="src/goalAnalysisResult.js"></script>
   <script src="src/investmentPortfolio.js"></script>
+  <script src="steps.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

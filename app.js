@@ -21,6 +21,8 @@
   const form = document.getElementById("plan-form");
   const touched = new Set();
   const $ = (id) => document.getElementById(id);
+  /* tells the step navigation (steps.js) what changed, so it can update the step bar and the chance ring */
+  const notify = (name, detail = {}) => document.dispatchEvent(new CustomEvent(name, { detail }));
 
   const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
   const plain = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
@@ -176,6 +178,7 @@
     $("odds-empty").hidden = false;
     $("odds-result").hidden = true;
     $("odds-empty-text").textContent = text;
+    notify("plan:empty");
   }
 
   function showTraining(done, total, prob) {
@@ -184,6 +187,7 @@
     $("odds-bar").style.width = total ? Math.round((100 * done) / total) + "%" : "0%";
     $("odds-training-text").textContent = total ? `Training the planner… round ${done} of ${total}` : "Training the planner…";
     if (prob !== null && prob !== undefined) $("odds-prob").textContent = new GoalProbability(prob).toPercent();
+    notify("plan:progress", { prob });
   }
 
   /* result is a GoalAnalysisResult */
@@ -207,6 +211,7 @@
     $("odds-efficiency-text").textContent = result.efficiency === null
       ? "As a check, an exact dynamic-programming solution of the same problem also can't reach this goal, so there's no RL efficiency to show."
       : `As a check, an exact dynamic-programming solution of the same problem reaches the goal ${benchmark.toPercent()} of the time. The PPO planner gets ${result.efficiencyText()} of that (its RL efficiency).`;
+    notify("plan:result", { value: probability.value, text: probability.toPercent(), tone: probability.tone, verdict: probability.verdict });
   }
 
   function stopPlanner() {
@@ -306,6 +311,7 @@
     showMoney(profile);
     showGoal(profile, goal);
     showOdds(profile, goal);
+    notify("plan:update", { profile, goal });
   }
 
   /* the earliest date the picker allows is tomorrow */

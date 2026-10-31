@@ -64,7 +64,11 @@
    spending are valid, and the goal check once the profile and the goal
    are both valid; otherwise each shows a message saying what to add. The
    Clear everything button empties every field and removes any error
-   messages. Inputs are not saved between visits.
+   messages. Inputs are not saved between visits. The page shows one of
+   three steps at a time (Your money, Your goal, Your chances), chosen in
+   the step bar or with Next and Back; the step is kept in the address
+   (#money, #goal, #chances), so the browser's back button and links
+   work. A step is marked done once its inputs are valid.
 
 7. Chance with investing (M2). Once the profile and the goal are both
    valid, the page shows the probability of reaching the goal if the user
