@@ -7,8 +7,6 @@ realistic.
 
 ## Run the app
 
-No code, installs or setup needed:
-
 1. Download or clone this repository.
 2. Open `index.html` in a browser (double-click it).
 3. Fill in your monthly income and spending, then your goal's name, amount
