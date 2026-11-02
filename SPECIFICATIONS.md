@@ -15,8 +15,10 @@
    goal: the probability and the DP benchmark (both GoalProbability), RL
    efficiency, the 10th, 50th and 90th percentile outcomes, and the
    portfolio for each year (see 9). PpoPlanner (`src/ppoPlanner.js`) is
-   the planning algorithm that produces it (see 7). The five investment
-   portfolios are defined in PpoPlanner for now.
+   the planning algorithm that produces it (see 7). InvestmentPortfolio
+   (`src/investmentPortfolio.js`) is one of the five investment options
+   the plan chooses from, with its risk level, expected return and
+   volatility (see 10).
 
 2. Input validation. Monthly income and monthly spending are required;
    net worth is optional and is treated as 0 when empty. In money fields,
@@ -74,10 +76,8 @@
    valid, the page shows the probability of reaching the goal if the user
    invests, from the PPO planner (`src/ppoPlanner.js`). Wealth starts at
    the net worth (0 when negative) and grows year by year with one of five
-   portfolios, after-inflation returns (expected return and volatility per
-   year: Cautious 1.5% and 5%, Conservative 2.5% and 8%, Balanced 3.7% and
-   11.5%, Growth 4.7% and 15%, Aggressive 5.7% and 19%), with the monthly cash flow added at
-   the start of each year; a goal `n` months away is ceil(n / 12) years,
+   portfolios (see 10), after-inflation returns, with the monthly cash
+   flow added at the start of each year; a goal `n` months away is ceil(n / 12) years,
    with the yearly saving spread so the total saved is still n times the
    monthly cash flow. Goals more than 40 years away are not planned. The
    probability is how often the trained policy reaches the goal across
@@ -118,3 +118,32 @@
    monthly saving needed without growth, or that the risk is a bad market
    just before the target date when saving alone would be enough. A
    result can't be changed after it is created.
+
+10. Investment portfolios. There are five portfolios, from lowest to
+    highest risk; each has a risk level from 1 to 5, a name, an expected
+    yearly return and a volatility (how much it can rise or fall in a
+    year), both after inflation:
+
+    | Risk level | Name | Expected return | Volatility |
+    |---|---|---|---|
+    | 1 | Cautious | 1.5% | 5% |
+    | 2 | Conservative | 2.5% | 8% |
+    | 3 | Balanced | 3.7% | 11.5% |
+    | 4 | Growth | 4.7% | 15% |
+    | 5 | Aggressive | 5.7% | 19% |
+
+    Both numbers go up with each risk level, and they are the same
+    numbers the PPO planner uses. A portfolio is rejected when its risk
+    level is not a whole number from 1 to 5, its name is empty, its
+    expected return is not a number between -100% and 100%, or its
+    volatility is not a number from 0% up to 100%; asking for a risk level
+    that doesn't exist is also rejected. A portfolio can't be changed
+    after it is created. Percents are rounded to one decimal place, so
+    0.115 shows as "11.5%". The typical range for an amount after one
+    year is the amount times (1 + expected return − volatility) up to the
+    amount times (1 + expected return + volatility); the amount can't be
+    negative. Under "How we got this number" the page lists the five
+    portfolios in order, each as, for example, "Balanced: expected to grow
+    3.7% a year, can rise or fall about 11.5% in a year". The portfolios
+    can be stored in an `investment_portfolio` table (id, unique name,
+    risk level 1 to 5, expected return, volatility of 0 or more).

@@ -23,8 +23,8 @@ python3 -m http.server
 
 ## Run the tests
 
-Install [Node.js 22 LTS](https://nodejs.org/) (20 or newer works; it
-includes `npm`). Then, in the repository folder:
+Install [Node.js 22 LTS](https://nodejs.org/) (22.5 or newer; it
+includes `npm`, and the SQL tests need its built-in `node:sqlite`). Then, in the repository folder:
 
 ```
 npm install
@@ -37,6 +37,7 @@ npm test
 
 ```
 index.html, styles.css, app.js   the app (open index.html in a browser)
+steps.js    moves between the app's three steps
 src/        domain classes and the goal planner; unit tested
 tests/      unit tests; every tests/*.test.js file runs automatically
 mvp/        standalone goal-probability page; uses the classes in src/
@@ -51,6 +52,7 @@ prototype/  early prototype with the planning engine; brought in for M2
 | PpoPlanner | `src/ppoPlanner.js` | Works out the chance of reaching the goal, checked against a DP benchmark |
 | GoalAnalysisResult | `src/goalAnalysisResult.js` | The planner's result: chance, benchmark, outcomes, portfolio each year |
 | GoalProbability | `src/goalProbability.js` | A chance from 0 to 1, its verdict and its percent |
+| InvestmentPortfolio | `src/investmentPortfolio.js` | The five portfolios, low to high risk: expected return and volatility |
 
 What the app does is in [REQUIREMENTS.md](REQUIREMENTS.md); exactly how it
 behaves is in [SPECIFICATIONS.md](SPECIFICATIONS.md).
