@@ -183,6 +183,8 @@
             <details class="how">
               <summary>How we got this number</summary>
               <p>A reinforcement-learning planner (PPO) plays out thousands of possible markets, year by year, choosing among five portfolios from cautious to aggressive and, in your goal year, whether to buy the goal. It learns the moves that reach the goal most often. The percentage is how often its plan reaches the goal across 4,000 simulated markets.</p>
+              <p>The five portfolios it chooses from, from lowest to highest risk:</p>
+              <ul id="portfolio-list"></ul>
               <p id="odds-efficiency-text"></p>
               <p class="footnote">Today's dollars and after-inflation returns throughout. Savings are added at the start of each year. The same inputs always give the same result. Not financial advice.</p>
             </details>
@@ -233,6 +235,7 @@
   <script src="src/ppoPlanner.js"></script>
   <script src="src/goalProbability.js"></script>
   <script src="src/goalAnalysisResult.js"></script>
+  <script src="src/investmentPortfolio.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

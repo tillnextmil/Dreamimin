@@ -338,6 +338,17 @@
 
   form.addEventListener("submit", (event) => event.preventDefault());
 
+  /* lists the five investment portfolios, lowest risk first, in "How we got this number" */
+  function showPortfolios() {
+    const list = $("portfolio-list");
+    for (const portfolio of InvestmentPortfolio.all()) {
+      const item = document.createElement("li");
+      item.textContent = portfolio.describe();
+      list.appendChild(item);
+    }
+  }
+
   setMinDate();
+  showPortfolios();
   update();
 })();

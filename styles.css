@@ -297,6 +297,7 @@ h1, h2, p { margin: 0; }
 .how summary { cursor: pointer; font-weight: 600; color: var(--primary); min-height: 24px; }
 .how p { margin-top: 10px; color: var(--muted); font-size: 15px; }
 .how .footnote { font-size: 14px; }
+.how ul { margin-top: 6px; padding-left: 20px; color: var(--muted); font-size: 15px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
