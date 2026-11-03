@@ -18,7 +18,10 @@
    the planning algorithm that produces it (see 7). InvestmentPortfolio
    (`src/investmentPortfolio.js`) is one of the five investment options
    the plan chooses from, with its risk level, expected return and
-   volatility (see 10).
+   volatility (see 10). AvailableFunds (`src/availableFunds.js`) holds
+   the money the user has available for the goal and the spending
+   recorded against it, and Expense (`src/expense.js`) is one recorded
+   spending (see 11).
 
 2. Input validation. Monthly income and monthly spending are required;
    net worth is optional and is treated as 0 when empty. In money fields,
@@ -75,7 +78,8 @@
 7. Chance with investing (M2). Once the profile and the goal are both
    valid, the page shows the probability of reaching the goal if the user
    invests, from the PPO planner (`src/ppoPlanner.js`). Wealth starts at
-   the net worth (0 when negative) and grows year by year with one of five
+   the available funds when the user has entered them (see 11), otherwise
+   at the net worth (0 when negative), and grows year by year with one of five
    portfolios (see 10), after-inflation returns, with the monthly cash
    flow added at the start of each year; a goal `n` months away is ceil(n / 12) years,
    with the yearly saving spread so the total saved is still n times the
@@ -147,3 +151,59 @@
     3.7% a year, can rise or fall about 11.5% in a year". The portfolios
     can be stored in an `investment_portfolio` table (id, unique name,
     risk level 1 to 5, expected return, volatility of 0 or more).
+
+11. Manage funds. The user can enter the funds they have available for
+    the goal, update them, and record what they spend.
+
+    AvailableFunds (`src/availableFunds.js`):
+
+    | Member | Does |
+    |---|---|
+    | `new AvailableFunds({ id, balance })` | `balance` is a number of 0 or more; `id` is made up when left out |
+    | `AvailableFunds.validate({ balance })` | Error message per invalid field; empty when valid |
+    | `balance` | The funds left now, after recorded spending |
+    | `expenses` | The recorded Expenses, oldest first; a copy that can't be changed |
+    | `totalSpent` | The sum of the recorded Expenses' amounts |
+    | `updateBalance(amount)` | Sets the funds to a new amount |
+    | `recordSpending(expense)` | Takes an Expense, lowers the balance by its amount and keeps it; returns the new balance |
+    | `removeSpending(expenseId)` | Removes a recorded Expense and adds its amount back; returns the new balance |
+
+    Expense (`src/expense.js`):
+
+    | Member | Does |
+    |---|---|
+    | `new Expense({ id, amount, date, note = "", asOf })` | `date` is "YYYY-MM-DD"; `asOf` is today, so tests can fix the date; `id` is made up when left out |
+    | `Expense.validate({ amount, date, note, asOf })` | Error message per invalid field; empty when valid |
+    | `id`, `amount`, `date`, `note` | The stored values; the note is trimmed |
+
+    Rules. Invalid values are rejected by throwing, with these messages:
+
+    | Case | Error | Message |
+    |---|---|---|
+    | Funds not a number | RangeError | "Available funds must be a number." |
+    | Funds below 0 | RangeError | "Available funds can't be negative." |
+    | `recordSpending` given something that isn't an Expense | TypeError | "Record an Expense." |
+    | Spending more than the balance | RangeError | "That's more than your available funds." |
+    | `removeSpending` with an unknown id | RangeError | "No spending with that id." |
+    | Amount not a number | RangeError | "Spending amount must be a number." |
+    | Amount of $0 or less | RangeError | "Spending amount must be more than $0." |
+    | Date not a real calendar date | RangeError | "Choose a valid date." |
+    | Date after today | RangeError | "The date can't be in the future." |
+    | Note longer than 60 characters | RangeError | "Keep the note to 60 characters or fewer." |
+
+    A failed update, recording or removal leaves the funds as they were.
+    Exactly the balance can be spent, leaving $0. An Expense can't be
+    changed after it is created, and today is a valid date.
+
+    On the page, step 1 has an optional Available funds field and, below
+    it, a form to record spending (amount, date, note) with a list of
+    what has been recorded, each with a Remove button. Recording or
+    removing spending updates the funds left and, through them, the
+    chance of reaching the goal (see 7). When no available funds are
+    entered, the chance is worked out from the net worth as before. The
+    goal check (see 5) still uses only the monthly cash flow.
+
+    Storage. The funds and spending can be stored in an `available_funds`
+    table (funds id, balance of 0 or more) and an `expense` table (expense
+    id, funds id referencing `available_funds`, amount above 0, date, note
+    of 60 characters or fewer).
