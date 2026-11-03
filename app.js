@@ -12,14 +12,18 @@
     income: { group: "profile", key: "income", kind: "money", missing: "Enter your monthly income." },
     expenses: { group: "profile", key: "expenses", kind: "money", missing: "Enter your monthly spending." },
     netWorth: { group: "profile", key: "netWorth", kind: "money", optional: true },
+    availableFunds: { group: "funds", key: "balance", kind: "money", optional: true },
     goalName: { group: "goal", key: "name", kind: "text", missing: "Give your goal a name." },
     goalAmount: { group: "goal", key: "targetAmount", kind: "money", missing: "Enter how much you need." },
     goalDate: { group: "goal", key: "targetDate", kind: "date", missing: "Choose a target date." },
   };
-  const CLASSES = { profile: FinancialProfile, goal: FinancialGoal };
+  const CLASSES = { profile: FinancialProfile, goal: FinancialGoal, funds: AvailableFunds };
 
   const form = document.getElementById("plan-form");
   const touched = new Set();
+  /* the user's AvailableFunds while the field has a valid amount, otherwise null; kept between
+     updates so spending recorded against it isn't lost */
+  let funds = null;
   const $ = (id) => document.getElementById(id);
   /* tells the step navigation (steps.js) what changed, so it can update the step bar and the chance ring */
   const notify = (name, detail = {}) => document.dispatchEvent(new CustomEvent(name, { detail }));
@@ -272,11 +276,16 @@
     }
   }
 
-  function showOdds(profile, goal) {
+  function showOdds(profile, goal, fundsReady) {
     if (!profile || !goal) {
       stopPlanner();
       currentKey = null;
       return showOddsEmpty("Add your money and your goal to see your chances of reaching it if you invest.");
+    }
+    if (!fundsReady) {
+      stopPlanner();
+      currentKey = null;
+      return showOddsEmpty("Fix your available funds to see your chances.");
     }
     const months = goal.monthsRemaining();
     if (months > PpoPlanner.MAX_YEARS * 12) {
@@ -285,13 +294,15 @@
       return showOddsEmpty(`The planner covers goals up to ${PpoPlanner.MAX_YEARS} years away. Pick an earlier date to see your chances.`);
     }
 
-    const job = { netWorth: profile.netWorth, monthlySaving: profile.monthlyCashFlow, cost: goal.targetAmount, months };
+    /* wealth starts from the available funds when they're entered, otherwise from the net worth */
+    const startingWealth = funds ? funds.balance : profile.netWorth;
+    const job = { netWorth: startingWealth, monthlySaving: profile.monthlyCashFlow, cost: goal.targetAmount, months };
     const key = JSON.stringify(job);
     if (key === currentKey) return;   // nothing the planner uses has changed
     currentKey = key;
     stopPlanner();
 
-    const plan = { job, netWorth: profile.netWorth, monthly: profile.monthlyCashFlow, cost: goal.targetAmount, months, date: FinancialGoal.parseDate(goal.targetDate) };
+    const plan = { job, netWorth: startingWealth, monthly: profile.monthlyCashFlow, cost: goal.targetAmount, months, date: FinancialGoal.parseDate(goal.targetDate) };
     $("odds-empty").hidden = true;
     $("odds-result").hidden = false;
     if (plans.has(key)) return showPlan(plan, plans.get(key));
@@ -302,15 +313,39 @@
     debounce = setTimeout(() => runPlanner(plan, key), 450);
   }
 
+  /* keeps `funds` in step with the Available funds field. The field is what the user has before any
+     recorded spending, so the balance is the field minus what has been spent. */
+  function readFunds(fundsInput) {
+    if (!fundsInput.started) {
+      funds = null;
+      return;
+    }
+    if (!fundsInput.valid) return;
+    const entered = fundsInput.values.balance;
+    if (!funds) {
+      funds = new AvailableFunds({ balance: entered });
+      return;
+    }
+    const balance = Math.round((entered - funds.totalSpent) * 100) / 100;
+    if (balance < 0) {
+      fundsInput.errors.availableFunds = "That's less than the spending you've recorded.";
+      fundsInput.valid = false;
+    } else if (balance !== funds.balance) {
+      funds.updateBalance(balance);
+    }
+  }
+
   function update() {
     const profileInput = readGroup("profile");
     const goalInput = readGroup("goal");
-    showErrors({ ...profileInput.errors, ...goalInput.errors });
+    const fundsInput = readGroup("funds");
+    readFunds(fundsInput);
+    showErrors({ ...profileInput.errors, ...goalInput.errors, ...fundsInput.errors });
     const profile = profileInput.valid ? new FinancialProfile(profileInput.values) : null;
     const goal = goalInput.valid ? new FinancialGoal(goalInput.values) : null;
     showMoney(profile);
     showGoal(profile, goal);
-    showOdds(profile, goal);
+    showOdds(profile, goal, fundsInput.valid);
     notify("plan:update", { profile, goal });
   }
 

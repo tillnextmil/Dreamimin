@@ -91,6 +91,17 @@
               <p class="help" id="netWorth-help">What you own minus what you owe. Can be negative.</p>
               <p class="error" id="netWorth-error" role="alert"></p>
             </div>
+
+            <div class="field">
+              <label for="availableFunds">Available funds <span class="optional">(optional)</span></label>
+              <div class="control control--money">
+                <span aria-hidden="true">$</span>
+                <input id="availableFunds" name="availableFunds" type="text" inputmode="decimal" autocomplete="off"
+                       placeholder="0" aria-describedby="availableFunds-help availableFunds-error" />
+              </div>
+              <p class="help" id="availableFunds-help">Money you can put toward your goal now. Left empty, your chances start from your net worth.</p>
+              <p class="error" id="availableFunds-error" role="alert"></p>
+            </div>
           </div>
 
           <section class="card card--result" aria-labelledby="money-result-title" aria-live="polite">
@@ -306,6 +317,7 @@
   <script src="src/goalProbability.js"></script>
   <script src="src/goalAnalysisResult.js"></script>
   <script src="src/investmentPortfolio.js"></script>
+  <script src="src/availableFunds.js"></script>
   <script src="steps.js"></script>
   <script src="app.js"></script>
 </body>
