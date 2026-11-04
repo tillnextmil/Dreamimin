@@ -33,6 +33,7 @@
   const longDate = (date) => date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const monthYear = (date) => date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const signed = (n) => (n < 0 ? "−" : "") + money.format(Math.abs(n));
+  const cents = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
   const ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>';
   const ICON_SHORT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>';
@@ -335,11 +336,73 @@
     }
   }
 
+  /* ---------- recorded spending (AvailableFunds and Expense) ---------- */
+
+  /* the funds left and the list of recorded spending, each with a Remove button */
+  function showSpending(fundsReady) {
+    const list = $("spending-list");
+    list.replaceChildren();
+    $("spending-add").disabled = !funds || !fundsReady;
+    if (!funds || !fundsReady) {
+      $("spending-left").textContent = "Enter your available funds above to record spending.";
+      return;
+    }
+    $("spending-left").textContent = funds.totalSpent > 0
+      ? `Funds left: ${cents.format(funds.balance)} after ${cents.format(funds.totalSpent)} of spending.`
+      : `Funds left: ${cents.format(funds.balance)}.`;
+
+    for (const expense of funds.expenses) {
+      const item = document.createElement("li");
+      const text = document.createElement("span");
+      text.textContent = `${longDate(Expense.parseDate(expense.date))}: ${cents.format(expense.amount)}${expense.note ? ", " + expense.note : ""}`;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "link-btn";
+      remove.textContent = "Remove";
+      remove.setAttribute("aria-label", `Remove ${cents.format(expense.amount)} spending`);
+      remove.addEventListener("click", () => {
+        funds.removeSpending(expense.id);
+        update();
+      });
+      item.append(text, remove);
+      list.appendChild(item);
+    }
+  }
+
+  /* builds an Expense from the spending inputs and records it; shows the error message if it can't */
+  function recordSpending() {
+    try {
+      const expense = new Expense({
+        amount: parseAmount(form.elements.spendAmount.value),
+        date: form.elements.spendDate.value,
+        note: form.elements.spendNote.value,
+      });
+      funds.recordSpending(expense);
+    } catch (error) {
+      $("spending-error").textContent = error.message;
+      return;
+    }
+    $("spending-error").textContent = "";
+    form.elements.spendAmount.value = "";
+    form.elements.spendNote.value = "";
+    update();
+  }
+
+  /* the spending date defaults to today, and can't be later than today */
+  function setSpendingDate() {
+    const t = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const today = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+    form.elements.spendDate.max = today;
+    form.elements.spendDate.value = today;
+  }
+
   function update() {
     const profileInput = readGroup("profile");
     const goalInput = readGroup("goal");
     const fundsInput = readGroup("funds");
     readFunds(fundsInput);
+    showSpending(fundsInput.valid);
     showErrors({ ...profileInput.errors, ...goalInput.errors, ...fundsInput.errors });
     const profile = profileInput.valid ? new FinancialProfile(profileInput.values) : null;
     const goal = goalInput.valid ? new FinancialGoal(goalInput.values) : null;
@@ -374,8 +437,14 @@
 
   form.addEventListener("reset", () => {
     touched.clear();
-    setTimeout(update);   // after the browser has cleared the fields
+    $("spending-error").textContent = "";
+    setTimeout(() => {   // after the browser has cleared the fields
+      setSpendingDate();
+      update();
+    });
   });
+
+  $("spending-add").addEventListener("click", recordSpending);
 
   form.addEventListener("submit", (event) => event.preventDefault());
 
@@ -390,6 +459,7 @@
   }
 
   setMinDate();
+  setSpendingDate();
   showPortfolios();
   update();
 })();

@@ -102,6 +102,40 @@
               <p class="help" id="availableFunds-help">Money you can put toward your goal now. Left empty, your chances start from your net worth.</p>
               <p class="error" id="availableFunds-error" role="alert"></p>
             </div>
+
+            <fieldset class="spending">
+              <legend>Record spending <span class="optional">(optional)</span></legend>
+              <p class="help">Money you've spent from your available funds. It lowers what's left for your goal.</p>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="spendAmount">Amount</label>
+                  <div class="control control--money">
+                    <span aria-hidden="true">$</span>
+                    <input id="spendAmount" name="spendAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0" />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="spendDate">Date</label>
+                  <div class="control">
+                    <input id="spendDate" name="spendDate" type="date" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="spendNote">Note <span class="optional">(optional)</span></label>
+                <div class="control">
+                  <input id="spendNote" name="spendNote" type="text" autocomplete="off" maxlength="60" placeholder="e.g. Groceries" />
+                </div>
+              </div>
+
+              <button type="button" class="btn btn--ghost" id="spending-add">Record spending</button>
+              <p class="error" id="spending-error" role="alert"></p>
+              <p class="help" id="spending-left" aria-live="polite"></p>
+              <ul class="spending__list" id="spending-list"></ul>
+            </fieldset>
           </div>
 
           <section class="card card--result" aria-labelledby="money-result-title" aria-live="polite">
@@ -318,6 +352,7 @@
   <script src="src/goalAnalysisResult.js"></script>
   <script src="src/investmentPortfolio.js"></script>
   <script src="src/availableFunds.js"></script>
+  <script src="src/expense.js"></script>
   <script src="steps.js"></script>
   <script src="app.js"></script>
 </body>
