@@ -108,6 +108,9 @@
     $("stat-income").textContent = money.format(profile.income);
     $("stat-expenses").textContent = money.format(profile.expenses);
     $("stat-networth").textContent = signed(profile.netWorth);
+    // what's left of the available funds after recorded spending
+    $("stat-funds-item").hidden = !funds;
+    if (funds) $("stat-funds").textContent = money.format(funds.balance);
   }
 
   function showGoal(profile, goal) {
@@ -180,6 +183,9 @@
   }
 
   function showOddsEmpty(text) {
+    lastChance = null;
+    chanceBefore = null;
+    $("spending-impact").textContent = "";
     $("odds-empty").hidden = false;
     $("odds-result").hidden = true;
     $("odds-empty-text").textContent = text;
@@ -198,6 +204,7 @@
   /* result is a GoalAnalysisResult */
   function showPlan(plan, result) {
     const { probability, benchmark, outcomes } = result;
+    showSpendingImpact(probability);
     $("odds-result").setAttribute("aria-busy", "false");
     $("odds-training").hidden = true;
     $("odds-prob").textContent = probability.toPercent();
@@ -344,7 +351,7 @@
     list.replaceChildren();
     $("spending-add").disabled = !funds || !fundsReady;
     if (!funds || !fundsReady) {
-      $("spending-left").textContent = "Enter your available funds above to record spending.";
+      $("spending-left").textContent = "";
       return;
     }
     $("spending-left").textContent = funds.totalSpent > 0
@@ -362,11 +369,37 @@
       remove.setAttribute("aria-label", `Remove ${cents.format(expense.amount)} spending`);
       remove.addEventListener("click", () => {
         funds.removeSpending(expense.id);
+        spendingChanged();
         update();
       });
       item.append(text, remove);
       list.appendChild(item);
     }
+  }
+
+  /* After spending is recorded or removed, step 1 says how the chance changed, e.g. "39% to 8%".
+     lastChance is the chance shown most recently; chanceBefore is the chance before the change. */
+  let lastChance = null;
+  let chanceBefore = null;
+
+  function spendingChanged() {
+    chanceBefore = lastChance;
+    $("spending-impact").textContent = chanceBefore ? "Working out your new chance…" : "";
+  }
+
+  function showSpendingImpact(probability) {
+    const now = probability.toPercent();
+    lastChance = now;
+    if (!chanceBefore) {
+      $("spending-impact").textContent = "";
+      return;
+    }
+    const goalName = form.elements.goalName.value.trim();
+    const goal = goalName ? `of reaching ${goalName}` : "of reaching your goal";
+    $("spending-impact").textContent = now === chanceBefore
+      ? `Your chance ${goal} stays at ${now}.`
+      : `Your chance ${goal} went from ${chanceBefore} to ${now}.`;
+    chanceBefore = null;
   }
 
   /* builds an Expense from the spending inputs and records it; shows the error message if it can't */
@@ -383,6 +416,7 @@
       return;
     }
     $("spending-error").textContent = "";
+    spendingChanged();
     form.elements.spendAmount.value = "";
     form.elements.spendNote.value = "";
     update();

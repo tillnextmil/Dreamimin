@@ -226,13 +226,17 @@ h2[tabindex]:focus { outline: none; }
   .page { padding-top: 32px; }
   .panel__grid { grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
   .card--result { position: sticky; top: 96px; }
+  .panel__aside { position: sticky; top: 96px; }
+  .panel__aside .card--result { position: static; }
 }
 
 /* entering a step: slide in from the side you're moving toward, cards one after the other */
 .panel.is-forward .card { animation: enter-forward 420ms var(--ease-out) both; }
 .panel.is-back .card { animation: enter-back 420ms var(--ease-out) both; }
 .panel.is-forward .panel__grid > :nth-child(2),
-.panel.is-back .panel__grid > :nth-child(2) { animation-delay: 60ms; }
+.panel.is-back .panel__grid > :nth-child(2),
+.panel.is-forward .panel__aside .card,
+.panel.is-back .panel__aside .card { animation-delay: 60ms; }
 @keyframes enter-forward { from { opacity: 0; transform: translateX(24px); } }
 @keyframes enter-back { from { opacity: 0; transform: translateX(-24px); } }
 
@@ -351,8 +355,11 @@ h2[tabindex]:focus { outline: none; }
 .spending { margin: 26px 0 0; padding: 22px 0 0; border: 0; border-top: 1px solid var(--border); min-width: 0; }
 .spending legend { float: left; width: 100%; padding: 0; font-weight: 600; font-size: 16px; }
 .spending legend + .help { clear: left; margin: 0 0 16px; padding-top: 4px; }
+.spending legend + .field-row { clear: left; padding-top: 14px; }
 .spending .field-row { margin-bottom: 16px; }
 .spending .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.spending__impact { margin-top: 6px; font-size: 14px; font-weight: 550; color: var(--primary); }
+.spending__impact:empty { display: none; }
 .spending__list { list-style: none; margin: 10px 0 0; padding: 0; }
 .spending__list li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 15px; }
 .spending__list li span { overflow-wrap: anywhere; }
@@ -462,7 +469,7 @@ h2[tabindex]:focus { outline: none; }
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
   gap: 12px;
   margin: 22px 0 0;
   padding-top: 18px;
