@@ -41,6 +41,7 @@ steps.js    moves between the app's three steps
 src/        domain classes and the goal planner; unit tested
 tests/      unit tests; every tests/*.test.js file runs automatically
 mvp/        standalone goal-probability page; uses the classes in src/
+docs/       ER diagram (draw.io)
 prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
@@ -53,6 +54,17 @@ prototype/  early prototype with the planning engine; brought in for M2
 | GoalAnalysisResult | `src/goalAnalysisResult.js` | The planner's result: chance, benchmark, outcomes, portfolio each year |
 | GoalProbability | `src/goalProbability.js` | A chance from 0 to 1, its verdict and its percent |
 | InvestmentPortfolio | `src/investmentPortfolio.js` | The five portfolios, low to high risk: expected return and volatility |
+| AvailableFunds | `src/availableFunds.js` | The funds available for the goal, lowered by recorded spending |
+| Expense | `src/expense.js` | One recorded spending: amount, date and note |
+
+## Diagrams
+
+- ER diagram: [draw.io (Google Drive)](https://app.diagrams.net/#G1OxXKgpYE2-DU27M4HVcuMQFF_-8M3nhE),
+  or the same diagram in this repo,
+  [docs/er-diagram.drawio](docs/er-diagram.drawio) (open it at
+  [app.diagrams.net](https://app.diagrams.net) with File > Open from >
+  Device)
+- CRC diagram: [Figma](https://www.figma.com/design/UM2BklAjsoTZjnY2tivwa5/Financial-Planning-App-%E2%80%94-Domain-Model--UML-?node-id=0-1)
 
 What the app does is in [REQUIREMENTS.md](REQUIREMENTS.md); exactly how it
 behaves is in [SPECIFICATIONS.md](SPECIFICATIONS.md).
