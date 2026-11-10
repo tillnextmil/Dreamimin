@@ -64,9 +64,8 @@
               <div class="control control--money">
                 <span aria-hidden="true">$</span>
                 <input id="income" name="income" type="text" inputmode="decimal" autocomplete="off"
-                       placeholder="0" aria-describedby="income-help income-error" />
+                       placeholder="0" aria-describedby="income-error" />
               </div>
-              <p class="help" id="income-help">Take-home pay after tax.</p>
               <p class="error" id="income-error" role="alert"></p>
             </div>
 
@@ -75,9 +74,8 @@
               <div class="control control--money">
                 <span aria-hidden="true">$</span>
                 <input id="expenses" name="expenses" type="text" inputmode="decimal" autocomplete="off"
-                       placeholder="0" aria-describedby="expenses-help expenses-error" />
+                       placeholder="0" aria-describedby="expenses-error" />
               </div>
-              <p class="help" id="expenses-help">Rent, food, bills, subscriptions: everything you spend.</p>
               <p class="error" id="expenses-error" role="alert"></p>
             </div>
 
@@ -86,9 +84,8 @@
               <div class="control control--money">
                 <span aria-hidden="true">$</span>
                 <input id="netWorth" name="netWorth" type="text" inputmode="decimal" autocomplete="off"
-                       placeholder="0" aria-describedby="netWorth-help netWorth-error" />
+                       placeholder="0" aria-describedby="netWorth-error" />
               </div>
-              <p class="help" id="netWorth-help">What you own minus what you owe. Can be negative.</p>
               <p class="error" id="netWorth-error" role="alert"></p>
             </div>
 
@@ -97,15 +94,13 @@
               <div class="control control--money">
                 <span aria-hidden="true">$</span>
                 <input id="availableFunds" name="availableFunds" type="text" inputmode="decimal" autocomplete="off"
-                       placeholder="0" aria-describedby="availableFunds-help availableFunds-error" />
+                       placeholder="0" aria-describedby="availableFunds-error" />
               </div>
-              <p class="help" id="availableFunds-help">Money you can put toward your goal now. Left empty, your chances start from your net worth.</p>
               <p class="error" id="availableFunds-error" role="alert"></p>
             </div>
 
             <fieldset class="spending">
               <legend>Record spending <span class="optional">(optional)</span></legend>
-              <p class="help">Money you've spent from your available funds. It lowers what's left for your goal.</p>
 
               <div class="field-row">
                 <div class="field">
@@ -134,10 +129,13 @@
               <button type="button" class="btn btn--ghost" id="spending-add">Record spending</button>
               <p class="error" id="spending-error" role="alert"></p>
               <p class="help" id="spending-left" aria-live="polite"></p>
+              <p class="spending__impact" id="spending-impact" aria-live="polite"></p>
               <ul class="spending__list" id="spending-list"></ul>
             </fieldset>
           </div>
 
+          <!-- result card and Next button scroll together on wide screens -->
+          <div class="panel__aside">
           <section class="card card--result" aria-labelledby="money-result-title" aria-live="polite">
             <h2 id="money-result-title">Your monthly money</h2>
 
@@ -170,15 +168,17 @@
                 <div><dt>Coming in</dt><dd id="stat-income"></dd></div>
                 <div><dt>Going out</dt><dd id="stat-expenses"></dd></div>
                 <div><dt>Net worth</dt><dd id="stat-networth"></dd></div>
+                <div id="stat-funds-item" hidden><dt>Funds left</dt><dd id="stat-funds"></dd></div>
               </dl>
             </div>
           </section>
-        </div>
 
-        <div class="panel__nav">
-          <a class="btn btn--primary" href="#goal">Next: your goal
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-          </a>
+          <div class="panel__nav">
+            <a class="btn btn--primary" href="#goal">Next: your goal
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </div>
+          </div>
         </div>
       </section>
 
