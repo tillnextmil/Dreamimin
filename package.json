@@ -4,13 +4,20 @@
   "private": true,
   "description": "A goals-based financial planner.",
   "scripts": {
+    "start": "node server/index.js",
     "test": "jest --verbose"
   },
   "jest": {
     "testEnvironment": "node",
-    "roots": ["<rootDir>/tests"]
+    "roots": [
+      "<rootDir>/tests"
+    ]
+  },
+  "dependencies": {
+    "express": "^5.3.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "supertest": "^7.3.2"
   }
 }
