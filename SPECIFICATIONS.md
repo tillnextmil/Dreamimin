@@ -68,8 +68,11 @@
    any field. The monthly money results are shown once income and
    spending are valid, and the goal check once the profile and the goal
    are both valid; otherwise each shows a message saying what to add. The
-   Clear everything button empties every field and removes any error
-   messages. Inputs are not saved between visits. The page shows one of
+   Start over button in the top bar empties every field and removes the
+   recorded spending and any error messages. When anything has been
+   entered it first asks "Start over?" in a dialog: Clear everything goes
+   ahead, while Keep my answers, Escape or a click outside the dialog
+   leaves everything as it was. Inputs are not saved between visits. The page shows one of
    three steps at a time (Your money, Your goal, Your chances), chosen in
    the step bar or with Next and Back; the step is kept in the address
    (#money, #goal, #chances), so the browser's back button and links
