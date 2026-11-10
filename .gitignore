@@ -6,3 +6,5 @@ coverage/
 .venv/
 __pycache__/
 .pytest_cache/
+# local settings, not part of the project
+.claude/
