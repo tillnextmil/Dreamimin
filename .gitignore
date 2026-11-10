@@ -1,5 +1,7 @@
 node_modules/
 coverage/
+# the database npm start creates
+data/
 .DS_Store
 .vscode/
 # leftovers from the old Python setup

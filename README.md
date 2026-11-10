@@ -7,24 +7,31 @@ realistic.
 
 ## Run the app
 
-1. Download or clone this repository.
-2. Open `index.html` in a browser (double-click it).
-3. Fill in your monthly income and spending, then your goal's name, amount
-   and date. Results appear as you type.
+Install [Node.js 22 LTS](https://nodejs.org/) (22.13 or newer; it
+includes `npm` and the built-in `node:sqlite` database the server uses).
+Then, in the repository folder:
+
+```
+npm install
+npm start
+```
+
+and open http://localhost:3000. Fill in your monthly income and spending,
+then your goal's name, amount and date. Results appear as you type.
+
+`npm start` serves the page and the API (routes under `/api`, described
+in SPECIFICATIONS.md, item 12) and keeps the data in `data/dreamimin.db`,
+which is not committed. Set `PORT` or `DB_FILE` to change either, for
+example `PORT=4000 npm start`. Stop it with Ctrl+C.
 
 The chance of reaching your goal is worked out by the PPO planner in a Web
-Worker. Browsers block workers on pages opened straight from disk, so there
-it runs on the page instead (same result, a little slower). To use the
-worker, serve the folder and open http://localhost:8000:
-
-```
-python3 -m http.server
-```
+Worker. The page also works opened straight from disk (double-click
+`index.html`), but browsers block workers there, so the planner runs on the
+page instead (same result, a little slower).
 
 ## Run the tests
 
-Install [Node.js 22 LTS](https://nodejs.org/) (22.5 or newer; it
-includes `npm`, and the SQL tests need its built-in `node:sqlite`). Then, in the repository folder:
+With Node.js installed as above, in the repository folder:
 
 ```
 npm install
@@ -36,15 +43,34 @@ npm test
 ## Project layout
 
 ```
-index.html, styles.css, app.js   the app (open index.html in a browser)
+index.html, styles.css, app.js   the page (served by npm start)
 steps.js    moves between the app's three steps
-src/        domain classes and the goal planner; unit tested
-tests/      unit tests; every tests/*.test.js file runs automatically
+server/     the Express server: API routes, services, repositories, SQLite schema
+src/        domain classes and the goal planner, used by the page and the server; unit tested
+tests/      unit and API tests; every tests/*.test.js file runs automatically
+data/       the database npm start creates (not committed)
 mvp/        standalone goal-probability page; uses the classes in src/
 docs/       ER diagram (draw.io)
 prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
+
+The server is split into layers. Each layer only calls the one below it,
+so each can be tested on its own:
+
+| Layer | Where | Does |
+|---|---|---|
+| Routes | `server/routes/` | HTTP in and out: reads the request, sends JSON and the status code |
+| Services | `server/services/` | What the app does: rules, validation with the domain classes, sorting and searching |
+| Repositories | `server/repositories/` | The SQL for one table each; turns rows into plain objects |
+| Domain | `src/` | The classes the page uses too, such as FinancialGoal and AvailableFunds |
+| Database | `server/db.js`, `server/schema.sql` | Opens SQLite and creates the tables of the ER diagram |
+
+`server/app.js` connects the layers and `server/index.js` starts the
+server. To add a route, follow `/api/goals`: a repository, a service, a
+router, one line in `server/app.js`, and a test like
+`tests/goalsApi.test.js`.
+
 
 | Class | File | Does |
 |---|---|---|
