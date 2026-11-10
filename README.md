@@ -59,11 +59,11 @@ prototype/  early prototype with the planning engine; brought in for M2
 
 ## Diagrams
 
-- ER diagram: [draw.io (Google Drive)](https://app.diagrams.net/#G1OxXKgpYE2-DU27M4HVcuMQFF_-8M3nhE),
-  or the same diagram in this repo,
-  [docs/er-diagram.drawio](docs/er-diagram.drawio) (open it at
+- ER diagram (final project): [docs/er-diagram.png](docs/er-diagram.png).
+  To edit it, open [docs/er-diagram.drawio](docs/er-diagram.drawio) at
   [app.diagrams.net](https://app.diagrams.net) with File > Open from >
-  Device)
+  Device, then export a new PNG over `docs/er-diagram.png`. The tables
+  and the API that fills them are in SPECIFICATIONS.md, item 12.
 - CRC diagram: [Figma](https://www.figma.com/design/UM2BklAjsoTZjnY2tivwa5/Financial-Planning-App-%E2%80%94-Domain-Model--UML-?node-id=0-1)
 
 What the app does is in [REQUIREMENTS.md](REQUIREMENTS.md); exactly how it
