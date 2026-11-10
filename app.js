@@ -472,10 +472,41 @@
   form.addEventListener("reset", () => {
     touched.clear();
     $("spending-error").textContent = "";
+    $("spending-impact").textContent = "";
+    lastChance = chanceBefore = null;
     setTimeout(() => {   // after the browser has cleared the fields
       setSpendingDate();
       update();
     });
+  });
+
+  /* ---------- Start over ---------- */
+
+  const startOverDialog = $("start-over-dialog");
+
+  /* true when something has been typed or spending recorded, so Start over would lose it;
+     the spending date is left out because it is filled in with today */
+  function hasAnswers() {
+    const typed = [...form.elements].some((el) => el.name && el.name !== "spendDate" && el.value.trim() !== "");
+    return typed || Boolean(funds && funds.expenses.length > 0);
+  }
+
+  /* Start over asks first when there is something to lose; with nothing entered it just clears */
+  $("start-over").addEventListener("click", () => {
+    if (!hasAnswers()) {
+      form.reset();
+      return;
+    }
+    startOverDialog.returnValue = "";
+    startOverDialog.showModal();
+  });
+
+  /* the dialog's buttons close it with their value; Escape and a click outside close it with "" */
+  startOverDialog.addEventListener("close", () => {
+    if (startOverDialog.returnValue === "confirm") form.reset();
+  });
+  startOverDialog.addEventListener("click", (event) => {
+    if (event.target === startOverDialog) startOverDialog.close();   // the dim area outside the box
   });
 
   $("spending-add").addEventListener("click", recordSpending);

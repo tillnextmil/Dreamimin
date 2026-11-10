@@ -58,7 +58,8 @@ out is described in SPECIFICATIONS.md.
 
 15. As a user, the results update automatically when I change my money or
     my goal, I am told what is wrong and how to fix it when I enter a value
-    the app can't use, and I can clear everything to start over.
+    the app can't use, and I can clear everything to start over, after
+    confirming so I don't lose my inputs by accident.
 16. As a user, the same inputs always give me the same probability.
 
 ## Later

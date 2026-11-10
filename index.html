@@ -18,7 +18,7 @@
     <div class="topbar__inner">
       <img class="topbar__logo" src="logo.png" alt="" width="32" height="32" />
       <span class="topbar__name">Dreamimin</span>
-      <button type="reset" form="plan-form" class="link-btn">Start over</button>
+      <button type="button" class="link-btn" id="start-over" aria-haspopup="dialog">Start over</button>
     </div>
   </header>
 
@@ -344,6 +344,18 @@
       </section>
     </form>
   </main>
+
+  <!-- asks before Start over clears everything; outside #plan-form because forms can't nest -->
+  <dialog class="confirm" id="start-over-dialog" aria-labelledby="start-over-title" aria-describedby="start-over-text">
+    <form method="dialog" class="confirm__body">
+      <h2 id="start-over-title">Start over?</h2>
+      <p id="start-over-text">This clears your money, your goal and any spending you've recorded. It can't be undone.</p>
+      <div class="confirm__actions">
+        <button class="btn btn--ghost" value="cancel" autofocus>Keep my answers</button>
+        <button class="btn btn--danger" value="confirm">Clear everything</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="src/financialProfile.js"></script>
   <script src="src/financialGoal.js"></script>
