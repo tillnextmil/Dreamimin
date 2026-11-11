@@ -210,3 +210,171 @@
     table (funds id, balance of 0 or more) and an `expense` table (expense
     id, funds id referencing `available_funds`, amount above 0, date, note
     of 60 characters or fewer).
+
+12. Server API. The final app saves its data on a small server: Node
+    with Express, storing everything in SQLite through Node's built-in
+    `node:sqlite`. `npm start` runs it and serves both the page and the
+    API from the same address. This item is the contract between the
+    page and the server: the page is built against these shapes (with
+    mock data until a route exists), and each route is tested against
+    them. Until sign-in exists there is one user, so there is one
+    profile, one set of available funds and one risk preference, and
+    no request names a user.
+
+    Conventions:
+
+    | Rule | Detail |
+    |---|---|
+    | Paths | Every route starts with `/api` |
+    | Bodies | JSON in and out (`Content-Type: application/json`) |
+    | Field names | camelCase in JSON, snake_case in SQL (`targetAmount` is `target_amount`) |
+    | Money | A number of dollars, e.g. `4500.5` |
+    | Dates | A `"YYYY-MM-DD"` string; times (`createdAt`) are ISO 8601 in UTC |
+    | Ids | Whole numbers the database assigns; an id in a path that isn't a whole number is treated as unknown (404) |
+    | Missing optional fields | Get their default; unknown fields are ignored |
+    | 200 | Read or update worked; the body is the item or list |
+    | 201 | Created; the body is the new item, with its id |
+    | 204 | Deleted; no body |
+    | 400 | Invalid input: `{ "errors": { "<field>": "<message>" } }`, one message per invalid field, the same messages as the domain classes' `validate`, so the page can show each under its field |
+    | 404 | No item with that id: `{ "error": "<message>" }` |
+    | 409 | Valid input that doesn't fit what's saved, such as spending more than the funds: `{ "error": "<message>" }` |
+
+    A request that fails changes nothing.
+
+    Routes:
+
+    | Method | Path | Does | Success |
+    |---|---|---|---|
+    | GET | `/api/profile` | The profile | 200 Profile |
+    | PUT | `/api/profile` | Saves income, spending and net worth | 200 Profile |
+    | GET | `/api/risk-preference` | The risk preference | 200 RiskPreference |
+    | PUT | `/api/risk-preference` | Saves it | 200 RiskPreference |
+    | GET | `/api/goals` | Every goal; `sort` and `search` are optional | 200 Goal[] |
+    | GET | `/api/goals/:id` | One goal | 200 Goal |
+    | POST | `/api/goals` | Creates a goal | 201 Goal |
+    | PUT | `/api/goals/:id` | Edits a goal (every field is sent) | 200 Goal |
+    | DELETE | `/api/goals/:id` | Deletes a goal and its saved results | 204 |
+    | GET | `/api/funds` | Funds left now, with totals | 200 Funds |
+    | PUT | `/api/funds` | Sets the funds left now | 200 Funds |
+    | GET | `/api/expenses` | Recorded spending; `category`, `from`, `to` and `search` are optional | 200 Expense[] |
+    | POST | `/api/expenses` | Records spending; lowers the funds | 201 Expense |
+    | PUT | `/api/expenses/:id` | Edits spending; the funds change by the difference | 200 Expense |
+    | DELETE | `/api/expenses/:id` | Removes spending; adds its amount back | 204 |
+    | GET | `/api/funds-events` | Recorded income and losses; `kind` is optional | 200 FundsEvent[] |
+    | POST | `/api/funds-events` | Records income (raises the funds) or a loss (lowers them) | 201 FundsEvent |
+    | PUT | `/api/funds-events/:id` | Edits one; the funds change by the difference | 200 FundsEvent |
+    | DELETE | `/api/funds-events/:id` | Removes one and undoes its change to the funds | 204 |
+    | GET | `/api/portfolios` | The five portfolios, lowest risk first (see 10) | 200 Portfolio[] |
+    | POST | `/api/plans` | Saves a plan the planner worked out | 201 Plan |
+    | GET | `/api/plans/latest` | The plan saved most recently | 200 Plan |
+
+    Profile: `{ "id": 1, "name": "My profile", "income": 5000,
+    "expenses": 3200, "netWorth": 12000 }`. `PUT` takes `income`,
+    `expenses` and `netWorth` (optional, default 0) and checks them with
+    `FinancialProfile.validate` (see 2). Before the first `PUT`,
+    `income` and `expenses` are `null` and `netWorth` is 0.
+
+    RiskPreference: `{ "maxRiskLevel": 3 }`. The plan only uses
+    portfolios with a risk level up to `maxRiskLevel`, a whole number
+    from 1 to 5 ("Choose a risk level from 1 to 5."); it starts at 5, so
+    every portfolio can be used, as in the MVP. To preview a level before
+    choosing it, the page runs the planner with that level and only
+    sends the `PUT` once the user confirms.
+
+    Goal: `{ "id": 3, "name": "Car", "targetAmount": 12000,
+    "targetDate": "2028-06-01", "priority": 4, "minAcceptableAmount":
+    8000, "createdAt": "2026-11-09T22:15:00.000Z" }`.
+
+    | Field | Rule | Message |
+    |---|---|---|
+    | `name`, `targetAmount`, `targetDate` | As FinancialGoal (see 2); the date must be after today whenever the goal is saved | FinancialGoal's messages |
+    | `priority` | Whole number from 1 (least important) to 5 (most); default 3 | "Choose a priority from 1 to 5." |
+    | `minAcceptableAmount` | The smallest amount the user would accept if the full amount can't be reached; 0 or more and less than `targetAmount`; default 0, meaning only the full amount counts | "The smallest amount you'd accept must be $0 or more and less than the goal amount." |
+
+    There can be at most 20 goals, the most the planner takes; creating
+    a 21st is a 409 ("You can have up to 20 goals."). A goal's timeline
+    is extended by a `PUT` with a later `targetDate`, which keeps its id,
+    so nothing linked to it is lost. `GET /api/goals` lists soonest
+    target date first; `sort` can be `date`, `priority` (most important
+    first, then soonest), `amount` (largest first) or `name` (A to Z),
+    and anything else is a 400 ("Sort by date, priority, amount or
+    name."). `search` keeps the goals whose name contains it, ignoring
+    case. An unknown id is a 404 ("No goal with that id.").
+
+    Funds: `{ "balance": 1534.5, "totalSpent": 465.5, "totalIncome":
+    800, "totalLoss": 0 }`. `balance` is the funds left now, as in
+    AvailableFunds (see 11), and is `null` until the first `PUT`; the
+    totals add up the recorded spending, income and losses. `PUT` takes
+    `balance` and checks it with `AvailableFunds.validate`. Spending,
+    income and losses can only be recorded once the funds have been set
+    (409, "Enter your available funds first."), and no request can leave
+    the funds below $0: recording or editing spending or a loss that is
+    more than the funds is a 409 ("That's more than your available
+    funds."), and so is removing or lowering income that has already
+    been spent ("That would leave your available funds below $0.").
+
+    Expense: `{ "id": 7, "amount": 45.5, "date": "2026-10-12", "note":
+    "Gas", "category": "transport" }`. `amount`, `date` and `note` follow
+    `Expense.validate` (see 11). `category` is one of `housing`, `food`,
+    `transport`, `bills`, `health`, `fun`, `shopping` or `other`
+    (default `other`; anything else is "Choose a category from the
+    list."). The list is oldest first, as AvailableFunds keeps it;
+    `category` keeps one category, `from` and `to` keep the dates between
+    them (both included), and `search` keeps the spending whose note
+    contains it, ignoring case. An unknown id is a 404 ("No spending
+    with that id.").
+
+    FundsEvent: `{ "id": 2, "kind": "income", "amount": 800, "date":
+    "2026-11-01", "note": "Bonus" }`. Money that comes in or goes out
+    outside everyday spending: `kind` is `income` (a raise, a bonus, a
+    gift) or `loss` (an emergency, a market drop); anything else is
+    "Choose income or loss.". `amount`, `date` and `note` follow the same
+    rules and messages as an Expense. `kind` in `GET` keeps one kind. An
+    unknown id is a 404 ("No income or loss with that id.").
+
+    Portfolio: `{ "id": 3, "riskLevel": 3, "name": "Balanced",
+    "expectedReturn": 0.037, "volatility": 0.115 }`, read only.
+
+    Plan: the planner runs on the page (in a Web Worker, see 7), and the
+    page saves each finished plan so it can be shown again without
+    retraining. `POST` takes:
+
+    ```json
+    {
+      "maxRiskLevel": 3,
+      "utility": 6.1,
+      "dpUtility": 6.5,
+      "rlEfficiency": 0.94,
+      "riskLevelByYear": [3, 3, 2, 1],
+      "goals": [
+        { "goalId": 3, "pFull": 0.62, "pPartial": 0.21 },
+        { "goalId": 5, "pFull": 0.9, "pPartial": 0 }
+      ]
+    }
+    ```
+
+    `utility` and `dpUtility` are the planner's and the DP benchmark's
+    expected utility (0 or more); `rlEfficiency` is from 0 to 1, or
+    `null` when there is no benchmark (see 7); `riskLevelByYear` has the
+    risk level (1 to 5, no higher than `maxRiskLevel`) of the portfolio
+    for each year, 1 to 40 years; `goals` has one entry per saved goal,
+    where `pFull` is the chance of reaching the full amount and
+    `pPartial` the chance of only reaching `minAcceptableAmount`, both
+    from 0 to 1 and together no more than 1. An invalid field is a 400
+    naming it; a `goalId` that doesn't exist is a 404 ("No goal with
+    that id."). The response adds `id`, `createdAt`, and for each goal
+    `pAny` (`pFull + pPartial`) and the `verdict` GoalProbability gives
+    `pAny` (see 8). `GET /api/plans/latest` returns the same shape, or a
+    404 ("No plan has been saved yet.") before the first. A saved plan
+    is a record of what was worked out: editing a goal afterwards
+    doesn't change it, and deleting a goal deletes that goal's results.
+
+    Storage. Each item is a row in the SQLite database, in the tables of
+    our ER diagram (`docs/er-diagram.drawio`): `profile`,
+    `risk_preference`, `goal`, `available_funds`, `expense`,
+    `funds_event`, `investment_portfolio`, `plan_result`, `goal_result`
+    (one row per goal per plan, with `p_full`, `p_partial` and
+    `verdict`) and `plan_year` (one row per year and portfolio of a
+    plan, with `allocation_percent`, the share of the money in that
+    portfolio; the planner uses one portfolio a year, so it is 1). Every table checks the same limits as
+    the API, so a bad value can't be saved even by a bug in a route.
