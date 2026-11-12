@@ -1,42 +1,38 @@
-// Unit tests for saving the five investment portfolios in an SQL table (SQLite)
-// and reading them back with SELECT queries.
+// Unit tests for the investment_portfolio table (SQLite): the five portfolios the server
+// saves, reading them back with SELECT queries, and the table rejecting invalid values.
 // Author: Autiana Wallace
 
-const { DatabaseSync } = require("node:sqlite");
+const { openDatabase } = require("../server/db");
 const InvestmentPortfolio = require("../src/investmentPortfolio");
 
-// A fresh database in memory for each test, with the investment_portfolio table
-// from our ER diagram, filled with the five portfolios.
+// A fresh database in memory for each test, made the same way the server makes it
+// (server/db.js runs server/schema.sql and saves the five portfolios), so these tests
+// check the real table the server uses.
 let db;
 beforeEach(() => {
-  db = new DatabaseSync(":memory:");
-  db.exec(`
-    CREATE TABLE investment_portfolio (
-      portfolio_id INTEGER PRIMARY KEY,
-      name TEXT NOT NULL UNIQUE,
-      risk_level INTEGER NOT NULL CHECK (risk_level BETWEEN 1 AND 5),
-      expected_return REAL NOT NULL,
-      volatility REAL NOT NULL CHECK (volatility >= 0)
-    );
-  `);
-  const insert = db.prepare(
-    "INSERT INTO investment_portfolio (name, risk_level, expected_return, volatility) VALUES (?, ?, ?, ?)"
-  );
-  for (const p of InvestmentPortfolio.all()) {
-    insert.run(p.name, p.riskLevel, p.expectedReturn, p.volatility);
-  }
+  db = openDatabase(":memory:");
 });
 
 afterEach(() => {
   db.close();
 });
 
-// normal case: all five portfolios are saved, each with its own id
+// normal case: all five portfolios are saved, each with its risk level as its id
 test("saves all five portfolios", () => {
   const row = db.prepare("SELECT COUNT(*) AS total FROM investment_portfolio").get();
   expect(row.total).toBe(5);
   const ids = db.prepare("SELECT portfolio_id FROM investment_portfolio ORDER BY portfolio_id").all();
   expect(ids.map((r) => r.portfolio_id)).toEqual([1, 2, 3, 4, 5]);
+});
+
+// normal case: every saved portfolio has the same values as the class
+test("the saved portfolios match InvestmentPortfolio", () => {
+  const rows = db.prepare("SELECT * FROM investment_portfolio ORDER BY risk_level").all();
+  expect(rows.map((r) => ({
+    riskLevel: r.risk_level, name: r.name, expectedReturn: r.expected_return, volatility: r.volatility,
+  }))).toEqual(InvestmentPortfolio.all().map((p) => ({
+    riskLevel: p.riskLevel, name: p.name, expectedReturn: p.expectedReturn, volatility: p.volatility,
+  })));
 });
 
 // normal case: a portfolio read back from the table has the same values that were saved
@@ -75,14 +71,23 @@ test("finds nothing for a risk level that doesn't exist", () => {
   expect(row).toBeUndefined();
 });
 
-// wrong case: the table rejects a risk level outside 1 to 5, a negative volatility and a duplicate name
-test("rejects invalid rows", () => {
+// wrong case: a sixth portfolio with a risk level outside 1 to 5 is rejected
+test("rejects a portfolio with a risk level outside 1 to 5", () => {
   const insert = db.prepare(
     "INSERT INTO investment_portfolio (name, risk_level, expected_return, volatility) VALUES (?, ?, ?, ?)"
   );
   expect(() => insert.run("Too risky", 6, 0.07, 0.25)).toThrow();
-  expect(() => insert.run("Impossible", 3, 0.03, -0.1)).toThrow();
-  expect(() => insert.run("Balanced", 3, 0.037, 0.115)).toThrow();
-  const row = db.prepare("SELECT COUNT(*) AS total FROM investment_portfolio").get();
-  expect(row.total).toBe(5);
+  expect(() => insert.run("Too safe", 0, 0.01, 0.01)).toThrow();
+  expect(db.prepare("SELECT COUNT(*) AS total FROM investment_portfolio").get().total).toBe(5);
+});
+
+// wrong case: the table rejects a negative volatility, a name that's already used and a
+// risk level that's already used, and leaves the portfolios as they were
+test("rejects invalid changes to a portfolio", () => {
+  const update = (sql) => () => db.prepare(sql).run();
+  expect(update("UPDATE investment_portfolio SET volatility = -0.1 WHERE name = 'Balanced'")).toThrow();
+  expect(update("UPDATE investment_portfolio SET name = 'Balanced' WHERE name = 'Growth'")).toThrow();
+  expect(update("UPDATE investment_portfolio SET risk_level = 3 WHERE name = 'Growth'")).toThrow();
+  expect(db.prepare("SELECT volatility FROM investment_portfolio WHERE name = 'Balanced'").get().volatility).toBe(0.115);
+  expect(db.prepare("SELECT risk_level FROM investment_portfolio WHERE name = 'Growth'").get().risk_level).toBe(4);
 });
