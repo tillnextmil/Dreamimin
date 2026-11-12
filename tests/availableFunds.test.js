@@ -149,3 +149,55 @@ test("spending can only be removed once", () => {
   expect(() => funds.removeSpending("e1")).toThrow("No spending with that id.");
   expect(funds.balance).toBe(1000);
 });
+
+// ---------- Setting the funds from what the user entered ----------
+
+// normal case: the balance is the entered amount minus the spending already recorded
+test("the balance is the entered amount minus recorded spending", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  funds.recordSpending(spending("e1", 300));
+  expect(funds.setEnteredAmount(2000)).toBe(1700);
+  expect(funds.balance).toBe(1700);
+  expect(funds.totalSpent).toBe(300);
+});
+
+// normal case: with no spending recorded, the balance is the entered amount
+test("with no spending, the balance is the entered amount", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  expect(funds.setEnteredAmount(500)).toBe(500);
+});
+
+// edge case: entering exactly what has been spent leaves $0
+test("entering exactly what has been spent leaves $0", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  funds.recordSpending(spending("e1", 300));
+  expect(funds.setEnteredAmount(300)).toBe(0);
+});
+
+// edge case: cents add up exactly (0.3 - 0.1 is 0.19999999999999998 in plain JavaScript)
+test("entered amounts with cents don't pick up floating-point error", () => {
+  const funds = new AvailableFunds({ balance: 1 });
+  funds.recordSpending(spending("e1", 0.1));
+  expect(funds.setEnteredAmount(0.3)).toBe(0.2);
+});
+
+// wrong case: entering less than has been spent is rejected and changes nothing
+test("rejects an amount less than the spending recorded", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  funds.recordSpending(spending("e1", 300));
+  expect(() => funds.setEnteredAmount(299.99)).toThrow(RangeError);
+  expect(() => funds.setEnteredAmount(299.99)).toThrow("That's less than the spending you've recorded.");
+  expect(funds.balance).toBe(700);
+});
+
+// wrong case: an amount that isn't a number, or is negative, is rejected and changes nothing
+test.each([
+  ["2,000", "Available funds must be a number."],
+  [NaN, "Available funds must be a number."],
+  [null, "Available funds must be a number."],
+  [-5, "Available funds can't be negative."],
+])("rejects %p as the entered amount", (entered, message) => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  expect(() => funds.setEnteredAmount(entered)).toThrow(message);
+  expect(funds.balance).toBe(1000);
+});
