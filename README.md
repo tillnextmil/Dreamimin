@@ -92,8 +92,9 @@ router, one line in `server/app.js`, and a test like
   [app.diagrams.net](https://app.diagrams.net) with File > Open from >
   Device, then export a new PNG over `docs/er-diagram.png`. The tables
   and the API that fills them are in SPECIFICATIONS.md, item 12.
-- CRC diagram (final project): [docs/crc-diagram.drawio](docs/crc-diagram.drawio),
-  opened the same way. Its cards are grouped by MVC layer: views,
+- CRC diagram (final project): [docs/crc-diagram.png](docs/crc-diagram.png).
+  To edit it, open [docs/crc-diagram.drawio](docs/crc-diagram.drawio)
+  the same way and export a new PNG over `docs/crc-diagram.png`. Its cards are grouped by MVC layer: views,
   controllers (browser controllers and API routes), model (services,
   repositories, domain classes and the planners) and the database. Cards
   with a dashed border are planned and name their owner. The MVP's
