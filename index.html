@@ -84,8 +84,9 @@
               <div class="control control--money">
                 <span aria-hidden="true">$</span>
                 <input id="netWorth" name="netWorth" type="text" inputmode="decimal" autocomplete="off"
-                       placeholder="0" aria-describedby="netWorth-error" />
+                       placeholder="0" aria-describedby="netWorth-help netWorth-error" />
               </div>
+              <p class="help" id="netWorth-help">Everything you own (savings, investments, a home) minus everything you owe. Your goals start from this if you leave Available funds empty.</p>
               <p class="error" id="netWorth-error" role="alert"></p>
             </div>
 
@@ -94,8 +95,9 @@
               <div class="control control--money">
                 <span aria-hidden="true">$</span>
                 <input id="availableFunds" name="availableFunds" type="text" inputmode="decimal" autocomplete="off"
-                       placeholder="0" aria-describedby="availableFunds-error" />
+                       placeholder="0" aria-describedby="availableFunds-help availableFunds-error" />
               </div>
+              <p class="help" id="availableFunds-help">Cash you could put toward your goals today. Leave out money you need for bills or emergencies. Spending you record below comes out of this.</p>
               <p class="error" id="availableFunds-error" role="alert"></p>
             </div>
 
@@ -155,7 +157,7 @@
               </p>
 
               <div class="rate__row">
-                <span>Savings rate</span>
+                <span>Savings rate <span class="optional">(share of income you keep)</span></span>
                 <strong id="rate-value"></strong>
               </div>
               <div class="meter" role="img" id="rate-meter">
@@ -325,7 +327,7 @@
               <p id="goal-coverage" class="meter__caption"></p>
 
               <p id="goal-advice" class="callout"></p>
-              <p class="footnote">Assumes everything left over each month goes to this goal. Savings you already have and investment growth aren't counted here; your chances in step 3 include both. Choose a goal in the list to check it.</p>
+              <p class="footnote">Counts the money you have now (your available funds, or your net worth if you left those empty) and everything left over each month, as if all of it goes to this goal. Investment growth isn't counted here; your chances in step 3 add it. Choose a goal in the list to check it.</p>
             </div>
           </section>
         </div>
@@ -388,9 +390,9 @@
               <p id="odds-reason" class="callout"></p>
 
               <dl class="stats" id="odds-stats" hidden>
-                <div><dt>PPO planner</dt><dd id="odds-rl"></dd></div>
-                <div><dt>DP benchmark</dt><dd id="odds-dp"></dd></div>
-                <div><dt>RL efficiency</dt><dd id="odds-efficiency"></dd></div>
+                <div><dt>Our planner's chance <span class="term">(PPO)</span></dt><dd id="odds-rl"></dd></div>
+                <div><dt>Best possible chance <span class="term">(DP)</span></dt><dd id="odds-dp"></dd></div>
+                <div><dt>How close it gets <span class="term">(RL efficiency)</span></dt><dd id="odds-efficiency"></dd></div>
               </dl>
 
               <dl class="facts" id="odds-facts" hidden>

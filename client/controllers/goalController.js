@@ -39,6 +39,7 @@
     let editingId = null;       // the goal in the form, or null when the form adds a new one
     let total = 0;              // how many goals there are, ignoring the search
     let sort = GoalList.DEFAULT_SORT, search = "", searchTimer = null, profile = null;
+    let savings = 0;            // the money the user has now, counted toward each goal (0 or more)
     const touched = new Set();
 
     /* the form's values and an error message per invalid field */
@@ -118,7 +119,7 @@
       view.showFormError("");
       view.fillForm(goal);
       view.showFormMode("edit", goal.name);
-      refresh(profile);
+      refresh(profile, savings);
       view.focusForm();
     }
 
@@ -130,7 +131,7 @@
       showFormErrors({});
       view.showFormError("");
       view.showFormMode("add");
-      refresh(profile);
+      refresh(profile, savings);
     }
 
     async function remove(id) {
@@ -152,27 +153,30 @@
     }
 
     /* One row per listed goal for the view. With a profile, each row says whether the goal is on
-       track at the current monthly cash flow; a goal whose date has passed says so instead. */
+       track with the money the user has now and the current monthly cash flow; a goal whose date
+       has passed says so instead. */
     function rows() {
       return goals.map((saved) => {
         const goal = toGoal(saved);
         let status = null;
         if (!goal) status = { tone: "short", text: "Date has passed" };
-        else if (profile) status = goal.isOnTrack(profile.monthlyCashFlow)
+        else if (profile) status = goal.isOnTrack(profile.monthlyCashFlow, new Date(), savings)
           ? { tone: "ok", text: "On track" } : { tone: "short", text: "Not on track yet" };
         return {
           ...saved,
           date: FinancialGoal.parseDate(saved.targetDate),
-          monthlyNeeded: goal ? Math.ceil(goal.monthlySavingsRequired()) : null,
+          monthlyNeeded: goal ? Math.ceil(goal.monthlySavingsRequired(new Date(), savings)) : null,
           status,
         };
       });
     }
 
     /* shows the list, the form state and the goal check for `currentProfile` (a FinancialProfile
-       or null); returns the selected goal as a FinancialGoal, or null */
-    function refresh(currentProfile) {
+       or null) and `currentSaved`, the money the user has now (the same starting money as the
+       chances in step 3); returns the selected goal as a FinancialGoal, or null */
+    function refresh(currentProfile, currentSaved = 0) {
       profile = currentProfile;
+      savings = Math.max(0, currentSaved);   // a negative net worth counts as 0, as in step 3
       const goal = selected ? toGoal(selected) : null;
       const emptyText = search ? `No goals match "${search}".` : "No goals yet. Add your first one below.";
       view.showList(rows(), { selectedId: selected && selected.id, emptyText });
@@ -183,7 +187,7 @@
       let checkText = "Add a goal to see if you can reach it.";
       if (selected && !goal) checkText = `${selected.name}'s date has passed. Edit it to pick a later date.`;
       else if (goal && !profile) checkText = "Now add your monthly income and spending to check this goal.";
-      view.showGoalCheck(profile, goal, checkText);
+      view.showGoalCheck(goal, profile && goal ? goal.check(profile.monthlyCashFlow, { saved: savings }) : null, checkText);
       return goal;
     }
 

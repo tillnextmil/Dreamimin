@@ -31,9 +31,10 @@
 
   function update() {
     const { profile, funds, fundsReady } = money.refresh();
-    const goal = goals.refresh(profile);
-    /* wealth starts from the available funds when they're entered, otherwise from the net worth */
+    /* wealth starts from the available funds when they're entered, otherwise from the net worth;
+       the goal check (step 2) and the chances (step 3) both start from it, so they agree */
     const wealth = funds ? funds.balance : profile ? profile.netWorth : 0;
+    const goal = goals.refresh(profile, wealth);
     odds.show({ profile, goal, fundsReady, wealth });
     notify("plan:update", { profile, goal, goalCount: goals.count() });
   }

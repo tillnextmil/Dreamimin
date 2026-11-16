@@ -624,6 +624,7 @@ h2[tabindex]:focus { outline: none; }
 }
 .stats dt { color: var(--muted); font-size: 13px; }
 .stats dd { margin: 2px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stats .term { display: block; }   /* the technical name, on its own line under the plain one */
 
 /* step 3: heading with a summary of what the chance is based on */
 .card__head {
