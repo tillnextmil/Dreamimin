@@ -2,9 +2,10 @@
 
 1. Domain classes. The app uses these classes from our domain model.
    FinancialProfile (`src/financialProfile.js`) stores an id, a name,
-   monthly income, monthly expenses and net worth, provides the monthly
-   cash flow and savings rate, and can be changed with updateIncome,
-   updateExpenses and updateNetWorth. FinancialGoal (`src/financialGoal.js`)
+   monthly income, monthly expenses, net worth and the emergency fund the
+   user keeps, provides the monthly cash flow, the savings rate and the
+   money for goals (see 5), and can be changed with updateIncome,
+   updateExpenses, updateNetWorth and updateEmergencyFund. FinancialGoal (`src/financialGoal.js`)
    stores an id, a name, a target amount, a target date, a priority and
    the smallest amount the user would accept, and works out
    the months remaining, the monthly saving required, whether a monthly
@@ -31,7 +32,18 @@
    spaces, commas and dollar signs are ignored, so "$4,500" is read as
    4500, and decimals are allowed; a field that still is not a number is
    rejected. Income and spending cannot be negative; net worth can be,
-   since a person can owe more than they own. A goal needs a name of 1 to
+   since a person can owe more than they own. The emergency fund to keep
+   is optional, $0 when empty, and must be a number of $0 or more
+   ("Emergency fund must be a number." / "Emergency fund can't be
+   negative."). Under each of the three optional fields, a line says what
+   it means: net worth is everything the user owns minus everything they
+   owe, and the goals start from it when Available funds is empty;
+   available funds are the cash the user could put toward goals today,
+   leaving out money for bills or emergencies, and recorded spending comes
+   out of them; the emergency fund is money the user won't touch for
+   goals (3 to 6 months of spending is a common rule of thumb), and the
+   goals start from what's left after it. With an emergency fund, step
+   1's results also show it and the money left for goals. A goal needs a name of 1 to
    60 characters, an amount greater than $0, and a real calendar date
    after today. Its priority is a whole number from 1 (least important)
    to 5 (most), 3 when left out ("Choose a priority from 1 to 5."), and
@@ -59,19 +71,35 @@
    date: one fewer when the target date's day of the month is earlier
    than today's, since the last month is not complete, and never fewer
    than 1. For example, from January 15, a goal due April 15 has 3 months
-   and a goal due April 14 has 2. The monthly saving required is the
-   target amount divided by the months remaining.
+   and a goal due April 14 has 2. The monthly saving required is what is
+   still needed after the money the user has now (see 5) divided by the
+   months remaining, and $0 when that money already covers the target:
+   $1,200 due in 3 months with $600 saved needs $200 a month.
 
-5. On track. The goal is on track when the monthly cash flow is at least
-   the monthly saving required; a cash flow of 0 or less is never on
-   track. When on track, the page shows how many months the goal takes at
-   the current cash flow (the target amount divided by the cash flow,
-   rounded up, after rounding to 6 decimal places so floating-point error
-   never adds a month: $17 at $17/7 a month takes 7 months) and the month it would be reached. When not on track and
-   cash flow is positive, it shows the extra amount needed each month and
-   when the goal would be reached at the current pace instead. The
-   estimate assumes all monthly cash flow goes to the goal and leaves out
-   existing savings and investment growth.
+5. On track. The money for goals is the same starting money the chance
+   in 7 uses: the available funds left when they are entered, otherwise
+   the net worth, minus the emergency fund, and 0 when that is negative
+   (FinancialProfile.moneyForGoals): $15,000 of funds with a $6,000
+   emergency fund leaves $9,000 for goals, so being able to afford a goal
+   never means spending the emergency fund on it. The goal is on
+   track when that money plus the monthly cash flow for the months
+   remaining adds up to the target amount, so step 2 and step 3 never
+   disagree because one of them ignores savings. With no savings, a cash
+   flow of 0 or less is never on track; when the savings already cover
+   the target, a cash flow of 0 is on track, and a negative one is on
+   track only while what it takes out by the target date still leaves
+   the target amount ($1,300 saved for $1,200 in 3 months stays on track
+   at -$30 a month but not at -$50). When on track, the page shows how
+   many months the goal takes (what is still needed divided by the cash
+   flow, rounded up, after rounding to 6 decimal places so
+   floating-point error never adds a month: $17 at $17/7 a month takes 7
+   months) and the month it would be reached, or says the savings
+   already cover it. When not on track and cash flow is positive, it
+   shows the extra amount needed each month and when the goal would be
+   reached at the current pace instead. The estimate assumes the savings
+   and all monthly cash flow go to this goal and leaves out investment
+   growth, which the chance in 7 adds. FinancialGoal works these numbers
+   out (`check`); the goal view only shows them.
 
 6. Updating results. Results are recalculated each time the user changes
    a field on step 1 or a goal is added, edited, deleted or chosen. The
@@ -95,8 +123,9 @@
 7. Chance with investing (M2). Once the profile and the chosen goal (see
    13) are both valid, the page shows the probability of reaching it if the user
    invests, from the PPO planner (`src/ppoPlanner.js`). Wealth starts at
-   the available funds when the user has entered them (see 11), otherwise
-   at the net worth (0 when negative), and grows year by year with one of five
+   the money for goals (see 5): the available funds when the user has
+   entered them (see 11), otherwise the net worth, minus the emergency
+   fund (0 when negative), and grows year by year with one of five
    portfolios (see 10), after-inflation returns, with the monthly cash
    flow added at the start of each year; a goal `n` months away is ceil(n / 12) years,
    with the yearly saving spread so the total saved is still n times the
@@ -105,7 +134,9 @@
    4,000 fixed simulated markets. A dynamic-programming solution of the
    same problem is the benchmark, and RL efficiency is the planner's
    probability divided by the benchmark's, capped at 100%, and not shown
-   when the benchmark is 0. Training always starts from the same seed and
+   when the benchmark is 0. The page labels the three in plain words with
+   the technical name under each: "Our planner's chance (PPO)", "Best
+   possible chance (DP)" and "How close it gets (RL efficiency)". Training always starts from the same seed and
    never from an earlier run, so the same inputs always give the same
    result. While training, the page shows a progress bar and the
    probability so far; the planner runs in a Web Worker, or on the page in
@@ -221,7 +252,8 @@
     removing spending updates the funds left and, through them, the
     chance of reaching the goal (see 7). When no available funds are
     entered, the chance is worked out from the net worth as before. The
-    goal check (see 5) still uses only the monthly cash flow.
+    goal check (see 5) starts from the same money, so recording spending
+    updates it too.
 
     Storage. The funds and spending can be stored in an `available_funds`
     table (funds id, balance of 0 or more) and an `expense` table (expense
@@ -263,7 +295,7 @@
     | Method | Path | Does | Success |
     |---|---|---|---|
     | GET | `/api/profile` | The profile | 200 Profile |
-    | PUT | `/api/profile` | Saves income, spending and net worth | 200 Profile |
+    | PUT | `/api/profile` | Saves income, spending, net worth and emergency fund | 200 Profile |
     | GET | `/api/risk-preference` | The risk preference | 200 RiskPreference |
     | PUT | `/api/risk-preference` | Saves it | 200 RiskPreference |
     | GET | `/api/goals` | Every goal; `sort` and `search` are optional | 200 Goal[] |
@@ -286,10 +318,11 @@
     | GET | `/api/plans/latest` | The plan saved most recently | 200 Plan |
 
     Profile: `{ "id": 1, "name": "My profile", "income": 5000,
-    "expenses": 3200, "netWorth": 12000 }`. `PUT` takes `income`,
-    `expenses` and `netWorth` (optional, default 0) and checks them with
-    `FinancialProfile.validate` (see 2). Before the first `PUT`,
-    `income` and `expenses` are `null` and `netWorth` is 0.
+    "expenses": 3200, "netWorth": 12000, "emergencyFund": 6000 }`. `PUT`
+    takes `income`, `expenses`, `netWorth` and `emergencyFund` (both
+    optional, default 0) and checks them with `FinancialProfile.validate`
+    (see 2). Before the first `PUT`, `income` and `expenses` are `null`
+    and `netWorth` and `emergencyFund` are 0.
 
     RiskPreference: `{ "maxRiskLevel": 3 }`. The plan only uses
     portfolios with a risk level up to `maxRiskLevel`, a whole number

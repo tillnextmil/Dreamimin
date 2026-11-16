@@ -43,6 +43,14 @@
     // what's left of the available funds after recorded spending
     $("stat-funds-item").hidden = !funds;
     if (funds) $("stat-funds").textContent = format.money(funds.balance);
+    // with an emergency fund, what it keeps aside and what's left for the goals
+    const keeps = profile.emergencyFund > 0;
+    $("stat-kept-item").hidden = !keeps;
+    $("stat-goals-item").hidden = !keeps;
+    if (keeps) {
+      $("stat-kept").textContent = format.money(profile.emergencyFund);
+      $("stat-goals").textContent = format.money(profile.moneyForGoals(funds ? funds.balance : null));
+    }
   }
 
   /* The funds left and the recorded spending, each with a Remove button carrying the spending's
