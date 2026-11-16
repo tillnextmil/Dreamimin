@@ -20,6 +20,10 @@
 (function (global) {
   "use strict";
 
+  /* Local names for the built-ins the inner loops use. Looking them up as globals each time is
+     slow where the file runs in a sandbox, as the tests do; in a browser it makes no difference. */
+  const { Math, Float64Array, Uint8Array } = globalThis;
+
   /* Five portfolios along one efficient frontier (real returns). */
   const PORTFOLIOS = [
     { name: "Cautious",     mu: 0.015, sigma: 0.05  },
@@ -59,8 +63,8 @@
   }
 
   /* ---------- Tiny MLP (2 tanh layers) with manual backprop and Adam ---------- */
-  function makeMLP(nIn, nOut, rnd, outScale) {
-    const sizes = [nIn, HIDDEN, HIDDEN, nOut];
+  function makeMLP(nIn, nOut, rnd, outScale, hidden = HIDDEN) {
+    const sizes = [nIn, hidden, hidden, nOut];
     const layers = [];
     for (let l = 0; l < 3; l++) {
       const a = sizes[l], b = sizes[l + 1];
@@ -167,23 +171,25 @@
     return Math.max(0, W + env.s) * Math.exp(p.mu - 0.5 * p.sigma * p.sigma + p.sigma * z);
   }
 
+  /* These three work for any number of actions (the length of the mask), so MultiGoalPlanner shares them. */
   function maskedSoftmax(logits, mask) {
+    const n = mask.length;
     let mx = -Infinity;
-    for (let k = 0; k < N_ACT; k++) if (mask[k] && logits[k] > mx) mx = logits[k];
-    const p = new Float64Array(N_ACT);
+    for (let k = 0; k < n; k++) if (mask[k] && logits[k] > mx) mx = logits[k];
+    const p = new Float64Array(n);
     let sum = 0;
-    for (let k = 0; k < N_ACT; k++) if (mask[k]) { p[k] = Math.exp(logits[k] - mx); sum += p[k]; }
-    for (let k = 0; k < N_ACT; k++) p[k] /= sum;
+    for (let k = 0; k < n; k++) if (mask[k]) { p[k] = Math.exp(logits[k] - mx); sum += p[k]; }
+    for (let k = 0; k < n; k++) p[k] /= sum;
     return p;
   }
   function sample(p, rnd) {
     let u = rnd(), last = 0;
-    for (let k = 0; k < N_ACT; k++) { if (p[k] > 0) { last = k; u -= p[k]; if (u <= 0) return k; } }
+    for (let k = 0; k < p.length; k++) { if (p[k] > 0) { last = k; u -= p[k]; if (u <= 0) return k; } }
     return last;
   }
   function argmax(p) {
     let best = -1, bv = -Infinity;
-    for (let k = 0; k < N_ACT; k++) if (p[k] > 0 && p[k] > bv) { bv = p[k]; best = k; }
+    for (let k = 0; k < p.length; k++) if (p[k] > 0 && p[k] > bv) { bv = p[k]; best = k; }
     return best;
   }
 
@@ -238,13 +244,13 @@
           const actsP = forward(pi, x.obs);
           const p = maskedSoftmax(actsP[3], x.mask);
           const ratio = Math.exp(Math.log(p[x.a]) - x.logp);
-          const A = x.nadv;
+          const A = x.nadv, nAct = p.length;
           const clipped = (A > 0 && ratio > 1 + CLIP) || (A < 0 && ratio < 1 - CLIP);
           const dLogp = clipped ? 0 : -ratio * A;
           let H = 0;
-          for (let k = 0; k < N_ACT; k++) if (p[k] > 0) H -= p[k] * Math.log(p[k]);
-          const dLogit = new Float64Array(N_ACT);
-          for (let k = 0; k < N_ACT; k++) {
+          for (let k = 0; k < nAct; k++) if (p[k] > 0) H -= p[k] * Math.log(p[k]);
+          const dLogit = new Float64Array(nAct);
+          for (let k = 0; k < nAct; k++) {
             if (!x.mask[k]) continue;
             dLogit[k] = dLogp * ((k === x.a ? 1 : 0) - p[k]);
             if (p[k] > 0) dLogit[k] += entCoef * p[k] * (Math.log(p[k]) + H);
@@ -421,9 +427,17 @@
     }
   }
 
+  /* The network, the PPO update and the random numbers, for MultiGoalPlanner (src/multiGoalPlanner.js),
+     which trains the same way on a different environment. */
+  const core = {
+    SEED, PATH_SEED, QUICK_PATHS, GAMMA, LAMBDA,
+    mulberry32, gaussian, makeMLP, forward, makeAdam, cloneNet, ppoUpdate,
+    maskedSoftmax, sample, argmax, normalNodes,
+  };
+
   const PpoPlanner = {
     PORTFOLIOS, MAX_YEARS, EVAL_PATHS,
-    plan, planSteps, rlEfficiency, makeEnv, solveDP, evaluate, glidePath, iterationsFor, mulberry32,
+    plan, planSteps, rlEfficiency, makeEnv, solveDP, evaluate, glidePath, iterationsFor, mulberry32, core,
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = PpoPlanner;

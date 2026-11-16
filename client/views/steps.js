@@ -1,11 +1,11 @@
 /* ============================================================
-   Step navigation: shows one step at a time (Your money, Your
-   goal, Your chances), keeps the step bar and the URL hash in
-   step, and animates the chance ring. Listens for the plan:*
-   events app.js sends; doesn't touch the domain classes.
+   Step navigation view: shows one step at a time (Your money,
+   Your goals, Your chances), keeps the step bar and the URL hash
+   in step, and animates the chance ring. Listens for the plan:*
+   events the controllers send; doesn't change any data.
    ============================================================ */
 
-(function () {
+(function (D) {
   "use strict";
 
   const STEPS = ["money", "goal", "chances"];
@@ -14,8 +14,8 @@
 
   const $ = (id) => document.getElementById(id);
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-  const shortDate = (text) => FinancialGoal.parseDate(text).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const { format } = D;
+  const shortDate = (text) => format.shortMonthYear(FinancialGoal.parseDate(text));
 
   const links = [...document.querySelectorAll(".step")];
   const panels = [...document.querySelectorAll(".panel")];
@@ -75,19 +75,20 @@
 
   /* ---------- step bar and summary ---------- */
 
-  document.addEventListener("plan:update", ({ detail: { profile, goal } }) => {
+  /* goal is the selected FinancialGoal (or null); goalCount is how many goals there are */
+  document.addEventListener("plan:update", ({ detail: { profile, goal, goalCount } }) => {
     const done = { money: Boolean(profile), goal: Boolean(goal) };
     links.forEach((link) => link.classList.toggle("is-done", Boolean(done[link.dataset.step])));
 
     const flow = profile ? profile.monthlyCashFlow : null;
-    $("step-money-meta").textContent = profile ? `${flow < 0 ? "−" : "+"}${money.format(Math.abs(flow))}/mo` : "";
-    $("step-goal-meta").textContent = goal ? goal.name : "";
+    $("step-money-meta").textContent = profile ? `${flow < 0 ? "−" : "+"}${format.money(Math.abs(flow))}/mo` : "";
+    $("step-goal-meta").textContent = goalCount ? format.plural(goalCount, "goal") : "";
 
     $("plan-summary").hidden = !(profile && goal);
     if (profile && goal) {
-      $("sum-income").textContent = money.format(profile.income);
-      $("sum-expenses").textContent = money.format(profile.expenses);
-      $("sum-goal").textContent = `${goal.name}, ${money.format(goal.targetAmount)} by ${shortDate(goal.targetDate)}`;
+      $("sum-income").textContent = format.money(profile.income);
+      $("sum-expenses").textContent = format.money(profile.expenses);
+      $("sum-goal").textContent = `${goal.name}, ${format.money(goal.targetAmount)} by ${shortDate(goal.targetDate)}`;
     }
   });
 
@@ -139,4 +140,4 @@
   arc.style.strokeDasharray = RING_LENGTH;
   arc.style.strokeDashoffset = RING_LENGTH;
   show(stepFromHash(), { focus: false });
-})();
+})(window.Dreamimin);

@@ -60,9 +60,11 @@ test("serves the page and its scripts", async () => {
   expect(page.status).toBe(200);
   expect(page.text).toContain("<title>Dreamimin</title>");
 
-  const script = await request(app).get("/src/financialGoal.js");
-  expect(script.status).toBe(200);
-  expect(script.headers["content-type"]).toMatch(/javascript/);
+  for (const file of ["/src/financialGoal.js", "/src/goalList.js", "/client/app.js", "/client/api/goalApi.js", "/client/views/goalView.js"]) {
+    const script = await request(app).get(file);
+    expect(script.status).toBe(200);
+    expect(script.headers["content-type"]).toMatch(/javascript/);
+  }
 });
 
 // wrong case: files that aren't part of the page are never served
