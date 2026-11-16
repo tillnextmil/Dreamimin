@@ -7,39 +7,43 @@ realistic.
 
 ## Run the app
 
-Install [Node.js 22 LTS](https://nodejs.org/) (22.13 or newer; it
-includes `npm` and the built-in `node:sqlite` database the server uses).
-Then, in the repository folder:
-
-```
+```bash
 npm install
 npm start
 ```
 
-and open http://localhost:3000. Fill in your monthly income and spending,
-then add your goals (name, amount, date and priority). Choose a goal in
-the list to check it and to see your chance of reaching it.
+1. Install [Node.js 22 LTS](https://nodejs.org/), version 22.13 or newer.
+   It comes with `npm` and the `node:sqlite` database the server uses.
+2. Run the two commands above in the repository folder.
+3. Open <http://localhost:3000>.
+4. Enter your monthly income and spending in step 1, add your goals in
+   step 2, and choose a goal to see your chance of reaching it in step 3.
 
-`npm start` serves the page and the API (routes under `/api`, described
-in SPECIFICATIONS.md, item 12) and keeps the data in `data/dreamimin.db`,
-which is not committed. Set `PORT` or `DB_FILE` to change either, for
-example `PORT=4000 npm start`. Stop it with Ctrl+C.
+Stop the server with `Ctrl+C`.
 
-The chance of reaching your goal is worked out by the PPO planner in a Web
-Worker. The page also works opened straight from disk (double-click
-`index.html`), but browsers block workers there, so the planner runs on the
-page instead (same result, a little slower).
+### Change the port or the database file
+
+```bash
+PORT=4000 DB_FILE=/tmp/dreamimin.db npm start
+```
+
+| Variable | Default | Sets |
+|---|---|---|
+| `PORT` | `3000` | The port the page and the API are served on |
+| `DB_FILE` | `data/dreamimin.db` | The SQLite file the server saves to (not committed) |
+
+The API routes are under `/api` and are listed in
+[SPECIFICATIONS.md](SPECIFICATIONS.md), item 12.
 
 ## Run the tests
 
-With Node.js installed as above, in the repository folder:
-
-```
+```bash
 npm install
 npm test
 ```
 
-`npm test` is the same command CI runs, so a local pass means a CI pass.
+CI runs the same `npm test` on every push and pull request, so a local
+pass means a CI pass.
 
 ## Project layout
 

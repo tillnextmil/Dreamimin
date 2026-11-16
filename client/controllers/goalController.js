@@ -176,7 +176,7 @@
        chances in step 3); returns the selected goal as a FinancialGoal, or null */
     function refresh(currentProfile, currentSaved = 0) {
       profile = currentProfile;
-      savings = Math.max(0, currentSaved);   // a negative net worth counts as 0, as in step 3
+      savings = Math.max(0, currentSaved);   // FinancialProfile.moneyForGoals is never below 0 either
       const goal = selected ? toGoal(selected) : null;
       const emptyText = search ? `No goals match "${search}".` : "No goals yet. Add your first one below.";
       view.showList(rows(), { selectedId: selected && selected.id, emptyText });

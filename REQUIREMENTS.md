@@ -62,6 +62,12 @@ out is described in SPECIFICATIONS.md.
     confirming so I don't lose my inputs by accident.
 16. As a user, the same inputs always give me the same probability.
 
+## Emergency Fund
+
+17. As a user, I can set how much money to keep as an emergency fund, so
+    my goals only count what is left after it and a goal I can afford
+    never drains my safety cushion.
+
 ## Later
 
 Charts and trends of funds and spending over time, more than one goal,

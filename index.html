@@ -101,6 +101,17 @@
               <p class="error" id="availableFunds-error" role="alert"></p>
             </div>
 
+            <div class="field">
+              <label for="emergencyFund">Emergency fund to keep <span class="optional">(optional)</span></label>
+              <div class="control control--money">
+                <span aria-hidden="true">$</span>
+                <input id="emergencyFund" name="emergencyFund" type="text" inputmode="decimal" autocomplete="off"
+                       placeholder="0" aria-describedby="emergencyFund-help emergencyFund-error" />
+              </div>
+              <p class="help" id="emergencyFund-help">Money you won't touch for goals, for surprises like losing a job or a car repair. A common rule of thumb is 3 to 6 months of spending. Your goals start from what's left after it.</p>
+              <p class="error" id="emergencyFund-error" role="alert"></p>
+            </div>
+
             <fieldset class="spending">
               <legend>Record spending <span class="optional">(optional)</span></legend>
 
@@ -171,6 +182,8 @@
                 <div><dt>Going out</dt><dd id="stat-expenses"></dd></div>
                 <div><dt>Net worth</dt><dd id="stat-networth"></dd></div>
                 <div id="stat-funds-item" hidden><dt>Funds left</dt><dd id="stat-funds"></dd></div>
+                <div id="stat-kept-item" hidden><dt>Emergency fund</dt><dd id="stat-kept"></dd></div>
+                <div id="stat-goals-item" hidden><dt>For your goals</dt><dd id="stat-goals"></dd></div>
               </dl>
             </div>
           </section>
@@ -327,7 +340,7 @@
               <p id="goal-coverage" class="meter__caption"></p>
 
               <p id="goal-advice" class="callout"></p>
-              <p class="footnote">Counts the money you have now (your available funds, or your net worth if you left those empty) and everything left over each month, as if all of it goes to this goal. Investment growth isn't counted here; your chances in step 3 add it. Choose a goal in the list to check it.</p>
+              <p class="footnote">Counts the money you have for goals (your available funds, or your net worth if you left those empty, minus the emergency fund you keep) and everything left over each month, as if all of it goes to this goal. Investment growth isn't counted here; your chances in step 3 add it. Choose a goal in the list to check it.</p>
             </div>
           </section>
         </div>

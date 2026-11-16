@@ -150,26 +150,26 @@
     $("goal-fill").style.width = coverage + "%";
     $("goal-meter").setAttribute("aria-label", `What's left each month covers ${coverage}% of what this goal needs`);
     if (coveredBySavings && onTrack) {
-      $("goal-coverage").textContent = `The ${format.money(saved)} you have now already covers this goal.`;
+      $("goal-coverage").textContent = `The ${format.money(saved)} you have for goals already covers this goal.`;
     } else if (coveredBySavings) {
-      $("goal-coverage").textContent = `Spending more than you earn takes ${format.money(-have)} a month out of the ${format.money(saved)} you have now.`;
+      $("goal-coverage").textContent = `Spending more than you earn takes ${format.money(-have)} a month out of the ${format.money(saved)} you have for goals.`;
     } else {
       $("goal-coverage").textContent = `What's left each month covers ${coverage}% of what this goal needs` +
-        (saved > 0 ? `, after the ${format.money(saved)} you have now.` : ".");
+        (saved > 0 ? `, after the ${format.money(saved)} you have for goals.` : ".");
     }
 
     const reachBy = (n) => format.monthYear(new Date(new Date().getFullYear(), new Date().getMonth() + n, 1));
-    const withSavings = saved > 0 ? `the ${format.money(saved)} you have now and ` : "";
+    const withSavings = saved > 0 ? `the ${format.money(saved)} you have for goals and ` : "";
     let advice;
     if (onTrack && coveredBySavings) {
-      advice = `The ${format.money(saved)} you have now is enough for ${target}. Keep it set aside until ${format.monthYear(date)}.`;
+      advice = `The ${format.money(saved)} you have for goals is enough for ${target}. Keep it set aside until ${format.monthYear(date)}.`;
     } else if (onTrack) {
       advice = `With ${withSavings}${format.money(have)} a month toward it, you'd reach ${target} in ${format.plural(monthsToReach, "month")}, around ${reachBy(monthsToReach)}.`;
     } else if (coveredBySavings) {
-      advice = `The ${format.money(saved)} you have covers this goal today, but spending more than you earn would use it up before ${format.monthYear(date)}. Spending less or earning more is the first step.`;
+      advice = `The ${format.money(saved)} you have for goals covers this goal today, but spending more than you earn would use it up before ${format.monthYear(date)}. Spending less or earning more is the first step.`;
     } else if (have <= 0) {
       advice = saved > 0
-        ? `Nothing is left over each month, and the ${format.money(saved)} you have covers only part of ${target}. Spending less or earning more is the first step.`
+        ? `Nothing is left over each month, and the ${format.money(saved)} you have for goals covers only part of ${target}. Spending less or earning more is the first step.`
         : "Nothing is left over each month right now, so there's no money to put toward this goal. Spending less or earning more is the first step.";
     } else {
       advice = `You'd need ${format.money(Math.ceil(monthlyGap))} more a month to make it in ${format.plural(monthsLeft, "month")}. At your current pace you'd get there around ${reachBy(monthsToReach)} instead.`;

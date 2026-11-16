@@ -10,15 +10,17 @@
   const { format } = D;
   const $ = (id) => document.getElementById(id);
 
-  /* plan: { netWorth, monthly, cost, months, date } as the odds controller built it */
+  /* plan: { netWorth, keepsFund, monthly, cost, months, date } as the odds controller built it;
+     netWorth is the money for goals, after the emergency fund when keepsFund is true */
   function reason(plan, probability) {
-    const { netWorth, monthly, cost, months, date } = plan;
+    const { netWorth, keepsFund, monthly, cost, months, date } = plan;
     const have = Math.max(0, netWorth);
+    const yours = `the ${format.money(have)} you have for goals` + (keepsFund ? " after your emergency fund" : "");
     let text;
     if (monthly <= 0) {
-      text = `You aren't saving anything each month, so only the ${format.money(have)} you have today can grow toward this.`;
+      text = `You aren't saving anything each month, so only ${yours} can grow toward this.`;
     } else {
-      text = `Saving ${format.money(monthly)} a month until ${format.monthYear(date)}, plus the ${format.money(have)} you have now, adds up to ${format.money(have + monthly * months)} before any growth, against the goal's ${format.money(cost)}.`;
+      text = `Saving ${format.money(monthly)} a month until ${format.monthYear(date)}, plus ${yours}, adds up to ${format.money(have + monthly * months)} before any growth, against the goal's ${format.money(cost)}.`;
     }
     if (!probability.isRealistic) {
       const need = (cost - have) / months;

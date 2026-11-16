@@ -113,7 +113,8 @@
     }
 
     /* profile and goal are a FinancialProfile and the selected FinancialGoal, or null; wealth is
-       where the money starts: the funds left when they're entered, otherwise the net worth */
+       where the money starts: the funds left when they're entered, otherwise the net worth, minus
+       the emergency fund */
     function show({ profile, goal, fundsReady, wealth }) {
       goalName = goal ? goal.name : "";
       if (!profile || !goal) return clear("Add your money and a goal to see your chances of reaching it if you invest.");
@@ -129,7 +130,7 @@
       currentKey = key;
       stopPlanner();
 
-      const plan = { job, netWorth: wealth, monthly: profile.monthlyCashFlow, cost: goal.targetAmount, months, date: FinancialGoal.parseDate(goal.targetDate) };
+      const plan = { job, netWorth: wealth, keepsFund: profile.emergencyFund > 0, monthly: profile.monthlyCashFlow, cost: goal.targetAmount, months, date: FinancialGoal.parseDate(goal.targetDate) };
       const fresh = goal.id !== shownGoalId;
       shownGoalId = goal.id;
       if (plans.has(key)) return showResult(plan, plans.get(key));

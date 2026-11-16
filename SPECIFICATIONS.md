@@ -2,9 +2,10 @@
 
 1. Domain classes. The app uses these classes from our domain model.
    FinancialProfile (`src/financialProfile.js`) stores an id, a name,
-   monthly income, monthly expenses and net worth, provides the monthly
-   cash flow and savings rate, and can be changed with updateIncome,
-   updateExpenses and updateNetWorth. FinancialGoal (`src/financialGoal.js`)
+   monthly income, monthly expenses, net worth and the emergency fund the
+   user keeps, provides the monthly cash flow, the savings rate and the
+   money for goals (see 5), and can be changed with updateIncome,
+   updateExpenses, updateNetWorth and updateEmergencyFund. FinancialGoal (`src/financialGoal.js`)
    stores an id, a name, a target amount, a target date, a priority and
    the smallest amount the user would accept, and works out
    the months remaining, the monthly saving required, whether a monthly
@@ -31,12 +32,18 @@
    spaces, commas and dollar signs are ignored, so "$4,500" is read as
    4500, and decimals are allowed; a field that still is not a number is
    rejected. Income and spending cannot be negative; net worth can be,
-   since a person can owe more than they own. Under each of the two
-   optional fields, a line says what it means: net worth is everything
-   the user owns minus everything they owe, and the goals start from it
-   when Available funds is empty; available funds are the cash the user
-   could put toward goals today, leaving out money for bills or
-   emergencies, and recorded spending comes out of them. A goal needs a name of 1 to
+   since a person can owe more than they own. The emergency fund to keep
+   is optional, $0 when empty, and must be a number of $0 or more
+   ("Emergency fund must be a number." / "Emergency fund can't be
+   negative."). Under each of the three optional fields, a line says what
+   it means: net worth is everything the user owns minus everything they
+   owe, and the goals start from it when Available funds is empty;
+   available funds are the cash the user could put toward goals today,
+   leaving out money for bills or emergencies, and recorded spending comes
+   out of them; the emergency fund is money the user won't touch for
+   goals (3 to 6 months of spending is a common rule of thumb), and the
+   goals start from what's left after it. With an emergency fund, step
+   1's results also show it and the money left for goals. A goal needs a name of 1 to
    60 characters, an amount greater than $0, and a real calendar date
    after today. Its priority is a whole number from 1 (least important)
    to 5 (most), 3 when left out ("Choose a priority from 1 to 5."), and
@@ -69,9 +76,12 @@
    months remaining, and $0 when that money already covers the target:
    $1,200 due in 3 months with $600 saved needs $200 a month.
 
-5. On track. The money the user has now is the same starting money the
-   chance in 7 uses: the available funds left when they are entered,
-   otherwise the net worth, and 0 when that is negative. The goal is on
+5. On track. The money for goals is the same starting money the chance
+   in 7 uses: the available funds left when they are entered, otherwise
+   the net worth, minus the emergency fund, and 0 when that is negative
+   (FinancialProfile.moneyForGoals): $15,000 of funds with a $6,000
+   emergency fund leaves $9,000 for goals, so being able to afford a goal
+   never means spending the emergency fund on it. The goal is on
    track when that money plus the monthly cash flow for the months
    remaining adds up to the target amount, so step 2 and step 3 never
    disagree because one of them ignores savings. With no savings, a cash
@@ -113,8 +123,9 @@
 7. Chance with investing (M2). Once the profile and the chosen goal (see
    13) are both valid, the page shows the probability of reaching it if the user
    invests, from the PPO planner (`src/ppoPlanner.js`). Wealth starts at
-   the available funds when the user has entered them (see 11), otherwise
-   at the net worth (0 when negative), and grows year by year with one of five
+   the money for goals (see 5): the available funds when the user has
+   entered them (see 11), otherwise the net worth, minus the emergency
+   fund (0 when negative), and grows year by year with one of five
    portfolios (see 10), after-inflation returns, with the monthly cash
    flow added at the start of each year; a goal `n` months away is ceil(n / 12) years,
    with the yearly saving spread so the total saved is still n times the
@@ -284,7 +295,7 @@
     | Method | Path | Does | Success |
     |---|---|---|---|
     | GET | `/api/profile` | The profile | 200 Profile |
-    | PUT | `/api/profile` | Saves income, spending and net worth | 200 Profile |
+    | PUT | `/api/profile` | Saves income, spending, net worth and emergency fund | 200 Profile |
     | GET | `/api/risk-preference` | The risk preference | 200 RiskPreference |
     | PUT | `/api/risk-preference` | Saves it | 200 RiskPreference |
     | GET | `/api/goals` | Every goal; `sort` and `search` are optional | 200 Goal[] |
@@ -307,10 +318,11 @@
     | GET | `/api/plans/latest` | The plan saved most recently | 200 Plan |
 
     Profile: `{ "id": 1, "name": "My profile", "income": 5000,
-    "expenses": 3200, "netWorth": 12000 }`. `PUT` takes `income`,
-    `expenses` and `netWorth` (optional, default 0) and checks them with
-    `FinancialProfile.validate` (see 2). Before the first `PUT`,
-    `income` and `expenses` are `null` and `netWorth` is 0.
+    "expenses": 3200, "netWorth": 12000, "emergencyFund": 6000 }`. `PUT`
+    takes `income`, `expenses`, `netWorth` and `emergencyFund` (both
+    optional, default 0) and checks them with `FinancialProfile.validate`
+    (see 2). Before the first `PUT`, `income` and `expenses` are `null`
+    and `netWorth` and `emergencyFund` are 0.
 
     RiskPreference: `{ "maxRiskLevel": 3 }`. The plan only uses
     portfolios with a risk level up to `maxRiskLevel`, a whole number
