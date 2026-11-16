@@ -78,7 +78,7 @@ The page is split the same way (views and controllers in separate files):
 |---|---|---|
 | Views | `client/views/` | What's on screen for each step; no rules and no server calls |
 | Controllers | `client/controllers/` | User input in; calls the domain classes and the API client, then tells the views what to show |
-| API client | `client/api/goalApi.js` | The only code that talks to the server. `MemoryGoalApi` follows the same contract in memory until the server saves goals |
+| API client | `client/api/goalApi.js` | The only code that talks to the server. `MemoryGoalApi` follows the same contract in memory when the page is opened straight from disk |
 | Domain | `src/` | The same classes the server uses |
 
 `client/app.js` starts the page and keeps the steps in step. The

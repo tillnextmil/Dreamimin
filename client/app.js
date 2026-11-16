@@ -14,10 +14,9 @@
 (function (D) {
   "use strict";
 
-  /* Goals are saved on the server once POST, PUT and DELETE /api/goals exist there. Until then,
-     and on a page opened straight from disk, MemoryGoalApi keeps them (same contract, but they
-     are gone after a reload). Set this to true when those routes are merged. */
-  const SERVER_SAVES_GOALS = false;
+    /* Goals are saved on the server through /api/goals. On a page opened straight from disk,
+     MemoryGoalApi keeps them instead (same contract, but they are gone after a reload). */
+  const SERVER_SAVES_GOALS = true;
   const useServer = SERVER_SAVES_GOALS && location.protocol.startsWith("http");
   const api = useServer ? new D.GoalApi.HttpGoalApi() : new D.GoalApi.MemoryGoalApi();
 
