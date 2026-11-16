@@ -258,7 +258,7 @@
     | PUT | `/api/goals/:id` | Edits a goal (every field is sent) | 200 Goal |
     | DELETE | `/api/goals/:id` | Deletes a goal and its saved results | 204 |
     | GET | `/api/funds` | Funds left now, with totals | 200 Funds |
-    | PUT | `/api/funds` | Sets the funds left now | 200 Funds |
+    | PUT | `/api/funds` | Sets the funds from the amount the user entered | 200 Funds |
     | GET | `/api/expenses` | Recorded spending; `category`, `from`, `to` and `search` are optional | 200 Expense[] |
     | POST | `/api/expenses` | Records spending; lowers the funds | 201 Expense |
     | PUT | `/api/expenses/:id` | Edits spending; the funds change by the difference | 200 Expense |
@@ -304,11 +304,19 @@
     name."). `search` keeps the goals whose name contains it, ignoring
     case. An unknown id is a 404 ("No goal with that id.").
 
-    Funds: `{ "balance": 1534.5, "totalSpent": 465.5, "totalIncome":
-    800, "totalLoss": 0 }`. `balance` is the funds left now, as in
-    AvailableFunds (see 11), and is `null` until the first `PUT`; the
-    totals add up the recorded spending, income and losses. `PUT` takes
-    `balance` and checks it with `AvailableFunds.validate`. Spending,
+    Funds: `{ "entered": 1200, "balance": 1534.5, "totalSpent": 465.5,
+    "totalIncome": 800, "totalLoss": 0 }`. `entered` is what the user
+    typed in the Available funds field, before any recorded spending,
+    income or losses, so the page can show it again. `balance` is the
+    funds left now, as in AvailableFunds (see 11): the entered amount
+    plus the recorded income, minus the recorded losses and spending.
+    Both are `null` until the first `PUT`; the totals add up the recorded
+    spending, income and losses. `PUT` takes `entered`, checks it with
+    `AvailableFunds.validate`, and works out the new balance with
+    `AvailableFunds.setEnteredAmount`, the same rule the page uses.
+    Entering less than that leaves the funds below $0, so it is a 409
+    ("That's less than the spending you've recorded.") and nothing
+    changes. Spending,
     income and losses can only be recorded once the funds have been set
     (409, "Enter your available funds first."), and no request can leave
     the funds below $0: recording or editing spending or a loss that is
