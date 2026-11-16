@@ -168,6 +168,7 @@
     | `expenses` | The recorded Expenses, oldest first; a copy that can't be changed |
     | `totalSpent` | The sum of the recorded Expenses' amounts |
     | `updateBalance(amount)` | Sets the funds to a new amount |
+    | `setEnteredAmount(entered)` | Sets the funds from the amount the user entered, minus the spending already recorded; returns the new balance |
     | `recordSpending(expense)` | Takes an Expense, lowers the balance by its amount and keeps it; returns the new balance |
     | `removeSpending(expenseId)` | Removes a recorded Expense and adds its amount back; returns the new balance |
 
@@ -188,6 +189,7 @@
     | `recordSpending` given something that isn't an Expense | TypeError | "Record an Expense." |
     | Spending more than the balance | RangeError | "That's more than your available funds." |
     | `removeSpending` with an unknown id | RangeError | "No spending with that id." |
+    | `setEnteredAmount` with less than the spending recorded | RangeError | "That's less than the spending you've recorded." |
     | Amount not a number | RangeError | "Spending amount must be a number." |
     | Amount of $0 or less | RangeError | "Spending amount must be more than $0." |
     | Date not a real calendar date | RangeError | "Choose a valid date." |

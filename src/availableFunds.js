@@ -50,6 +50,17 @@
       this.#balance = amount;
     }
 
+    /* entered is the amount the user typed for their funds, before any recorded spending; the
+       balance becomes that amount minus the spending already recorded. Returns the new balance. */
+    setEnteredAmount(entered) {
+      const errors = AvailableFunds.validate({ balance: entered });
+      if (errors.balance) throw new RangeError(errors.balance);
+      const balance = AvailableFunds.#toCents(entered - this.totalSpent);
+      if (balance < 0) throw new RangeError("That's less than the spending you've recorded.");
+      this.#balance = balance;
+      return this.#balance;
+    }
+
     /* lowers the balance by the Expense's amount and keeps the Expense; returns the new balance */
     recordSpending(expense) {
       if (!AvailableFunds.#isExpense(expense)) throw new TypeError("Record an Expense.");
