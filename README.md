@@ -50,7 +50,7 @@ src/        domain classes and the goal planner, used by the page and the server
 tests/      unit and API tests; every tests/*.test.js file runs automatically
 data/       the database npm start creates (not committed)
 mvp/        standalone goal-probability page; uses the classes in src/
-docs/       ER diagram (draw.io)
+docs/       ER and CRC diagrams (draw.io)
 prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
@@ -78,6 +78,8 @@ router, one line in `server/app.js`, and a test like
 | FinancialGoal | `src/financialGoal.js` | One goal; monthly saving required and whether you are on track |
 | PpoPlanner | `src/ppoPlanner.js` | Works out the chance of reaching the goal, checked against a DP benchmark |
 | GoalAnalysisResult | `src/goalAnalysisResult.js` | The planner's result: chance, benchmark, outcomes, portfolio each year |
+| MultiGoalPlanner | `src/multiGoalPlanner.js` | Plans every goal together: which to fund in full, in part or skip, and how to invest, checked against a DP benchmark; compares the five risk levels and what-if changes |
+| MultiGoalPlan | `src/multiGoalPlan.js` | That plan's result: each goal's chance and verdict, utility against the benchmark, risk level each year |
 | GoalProbability | `src/goalProbability.js` | A chance from 0 to 1, its verdict and its percent |
 | InvestmentPortfolio | `src/investmentPortfolio.js` | The five portfolios, low to high risk: expected return and volatility |
 | AvailableFunds | `src/availableFunds.js` | The funds available for the goal, lowered by recorded spending |
@@ -90,7 +92,13 @@ router, one line in `server/app.js`, and a test like
   [app.diagrams.net](https://app.diagrams.net) with File > Open from >
   Device, then export a new PNG over `docs/er-diagram.png`. The tables
   and the API that fills them are in SPECIFICATIONS.md, item 12.
-- CRC diagram: [Figma](https://www.figma.com/design/UM2BklAjsoTZjnY2tivwa5/Financial-Planning-App-%E2%80%94-Domain-Model--UML-?node-id=0-1)
+- CRC diagram (final project): [docs/crc-diagram.drawio](docs/crc-diagram.drawio),
+  opened the same way. Its cards are grouped by MVC layer: views,
+  controllers (browser controllers and API routes), model (services,
+  repositories, domain classes and the planners) and the database. Cards
+  with a dashed border are planned and name their owner. The MVP's
+  diagram is on
+  [Figma](https://www.figma.com/design/UM2BklAjsoTZjnY2tivwa5/Financial-Planning-App-%E2%80%94-Domain-Model--UML-?node-id=0-1).
 
 What the app does is in [REQUIREMENTS.md](REQUIREMENTS.md); exactly how it
 behaves is in [SPECIFICATIONS.md](SPECIFICATIONS.md).

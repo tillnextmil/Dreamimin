@@ -381,3 +381,105 @@
     plan, with `allocation_percent`, the share of the money in that
     portfolio; the planner uses one portfolio a year, so it is 1). Every table checks the same limits as
     the API, so a bad value can't be saved even by a bug in a route.
+
+14. Planning every goal together. MultiGoalPlanner
+    (`src/multiGoalPlanner.js`) plans all the goals from one pot of
+    money, and MultiGoalPlan (`src/multiGoalPlan.js`) holds the result.
+    (Item 13 is the goals page.)
+
+    The job. The planner takes the starting wealth (as in 7; 0 when
+    negative), the monthly cash flow, the highest risk level the plan
+    may use (1 to 5, 5 when left out) and 1 to 20 goals, each with an id,
+    its target amount, the months until its target date, its priority
+    (3 when left out) and the smallest amount the user would accept (0
+    when left out). It rejects, with a RangeError, anything else: no
+    goals or more than 20, a goal without an id or two with the same id,
+    an amount of $0 or less, months that are not a whole number of at
+    least 1, a goal more than 40 years away, a priority outside 1 to 5, a
+    smallest amount below $0 or not less than the goal amount, and a
+    risk level outside 1 to 5.
+
+    The model. Time moves from one goal date to the next, with a stop at
+    least every 12 months, so a goal 8 months away is decided after 8
+    months, not after a year. At each stop the plan picks one of the
+    portfolios up to the risk level (see 10) and adds the monthly cash
+    flow for the months until the next stop; wealth then grows as in 7,
+    with the return and the volatility scaled to the length of the step.
+    When a goal comes due the plan does one of three things: takes it in
+    full (pays the target amount), takes it in part (pays the smallest
+    acceptable amount, only when the goal has one) or skips it. What is
+    paid leaves the pot, so an early goal can cost a later one. Goals due
+    the same month are decided most important first. With one goal a
+    whole number of years away, this is the model in 7.
+
+    Utility. A goal taken in full is worth its priority (1 to 5), and a
+    goal taken in part is worth its priority times the smallest amount
+    divided by the target amount: a priority 4 goal of $25,000 taken at
+    $15,000 is worth 2.4. A plan's utility is the average total over the
+    simulated markets, so it is at most the sum of the priorities.
+
+    PPO and the benchmark. A PPO policy is trained to get the most
+    utility; it sees how far through the plan it is, its wealth against
+    the largest goal and, at a goal, the goal's priority, the share its
+    smallest amount is of the full one and the wealth against its cost.
+    A dynamic-programming solution of the same problem is the benchmark.
+    Both are scored on the same 4,000 fixed markets as in 7. RL
+    efficiency is the plan's utility divided by the benchmark's, capped
+    at 100%, and empty when the benchmark's utility is 0. Training
+    always starts from the same seed, so the same inputs give the same
+    plan in the same browser.
+
+    The result of `plan(job)`:
+
+    | Field | Is |
+    |---|---|
+    | `maxRiskLevel` | The risk level the plan was held to |
+    | `utility`, `dpUtility` | The plan's and the benchmark's utility |
+    | `rlEfficiency` | From 0 to 1, or `null` when there is no benchmark |
+    | `riskLevelByYear` | The risk level held at the start of each year, along the path where every year has the expected return |
+    | `goals` | Per goal, in the job's order: `goalId`, `pFull` (reached in full), `pPartial` (reached only in part) and `pAny`, their sum |
+    | `benchmarkGoals` | The same for the DP benchmark |
+    | `timeline` | Per stop: `month` and the wealth left after that stop's goals in a bad, typical and good market (`p10`, `p50`, `p90`) |
+    | `years`, `portfolios` | The length of the plan in years, and the five portfolio names |
+
+    The first five fields, with each goal's `goalId`, `pFull` and
+    `pPartial`, are the body of `POST /api/plans` (see 12).
+    `planSteps(job)` gives the same result a step at a time, as in 7: one
+    `benchmark` message with the benchmark's utility and goal chances,
+    which arrives in well under a second and can be shown while the plan
+    trains, then one `progress` message per PPO round.
+
+    MultiGoalPlan is built from that result and rejects one that doesn't
+    make sense: a risk level outside 1 to 5, a negative utility, an RL
+    efficiency outside 0 to 1 (empty is allowed), fewer than 1 or more
+    than 40 years, a year above the plan's risk level, no goals, two
+    goals with the same id, or a goal whose two chances are not
+    probabilities or add up to more than 1. Each goal has its chance in
+    full, in part and of either, as GoalProbability (see 8), and its
+    verdict comes from the chance of either: 62% in full and 21% in part
+    is 83%, Realistic. `toJSON()` gives the body of `POST /api/plans`. A
+    plan can't be changed after it is created.
+
+    Quick answers. The benchmark needs no training, so three functions
+    answer from it straight away, each in well under a second for a
+    typical plan:
+
+    | Function | Gives |
+    |---|---|
+    | `estimate(job)` | The benchmark's plan: `maxRiskLevel`, `utility`, `goals` and `riskLevelByYear`. The same numbers `plan` reports as `dpUtility` and `benchmarkGoals` |
+    | `compareRiskLevels(job)` | The estimate at each of the five risk levels, lowest first, each with the name of its riskiest `portfolio`, on the same markets |
+    | `whatIf(job, changes)` | The estimate `before` and `after` replacing the job's fields with `changes` (for example `{ monthlySaving: 1200 }`), the `utilityChange`, and per goal its chance `before`, `after` and the `change`; a goal that is only in one of the two has an empty `after` or `before` and an empty `change` |
+
+    Time. Training takes about as long as the single-goal planner: the
+    number of PPO rounds is 2,400 divided by the number of decisions
+    plus one, kept between 100 and 260, and each round plays 960 divided
+    by the number of decisions trajectories, kept between 24 and 64, so
+    a plan with many goals over many years stays within about twice the
+    time of a short one.
+
+    Worker. `src/planner.worker.js` runs both planners off the page.
+    `{ job }` trains a plan (MultiGoalPlanner when the job has a list of
+    goals, otherwise PpoPlanner) and posts each message, then `{ type:
+    "result", ... }`. `{ task: "compare", job }` posts `{ type:
+    "comparison", levels }` and `{ task: "whatIf", job, changes }` posts
+    `{ type: "whatIf", ... }`.
