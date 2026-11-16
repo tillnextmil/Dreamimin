@@ -65,6 +65,22 @@ test("rejects an invalid goal", () => {
   expect(() => insertGoal({ profile: 99 })).toThrow();   // no such profile
 });
 
+// wrong case: text that isn't a date is rejected in all three date columns. date() gives NULL
+// for it, and a CHECK that is NULL lets the row through, so these failed with = and need IS
+test.each(["hello", "", "2028-6-1", "20280601"])("rejects %p as a date", (notADate) => {
+  db.prepare("INSERT INTO available_funds (profile_id, balance) VALUES (?, ?)").run(PROFILE_ID, 500);
+  const fundsId = db.prepare("SELECT funds_id FROM available_funds").get().funds_id;
+  const expense = db.prepare("INSERT INTO expense (funds_id, amount, date) VALUES (?, ?, ?)");
+  const event = db.prepare("INSERT INTO funds_event (funds_id, kind, amount, date) VALUES (?, 'income', ?, ?)");
+
+  expect(() => insertGoal({ date: notADate })).toThrow(/CHECK constraint failed: date\(target_date\)/);
+  expect(() => expense.run(fundsId, 20, notADate)).toThrow(/CHECK constraint failed: date\(date\)/);
+  expect(() => event.run(fundsId, 800, notADate)).toThrow(/CHECK constraint failed: date\(date\)/);
+
+  const saved = (table) => db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n;
+  expect([saved("goal"), saved("expense"), saved("funds_event")]).toEqual([0, 0, 0]);
+});
+
 // wrong case: spending and income/loss need a category or kind from the list
 test("rejects an unknown expense category or funds event kind", () => {
   db.prepare("INSERT INTO available_funds (profile_id, balance) VALUES (?, ?)").run(PROFILE_ID, 500);
