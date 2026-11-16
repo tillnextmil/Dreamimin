@@ -69,3 +69,32 @@ test("can't be changed after it is created", () => {
   expect(Object.isFrozen(expense)).toBe(true);
   expect(expense.amount).toBe(42.5);
 });
+// ---------- Category ----------
+
+// normal case: a category from the list is kept
+test("keeps a category from the list", () => {
+  expect(errorsFor({ category: "food" })).toEqual({});
+  expect(new Expense({ ...VALID, category: "food" }).category).toBe("food");
+});
+
+// edge case: leaving the category out gives "other"
+test("the category is \"other\" when left out", () => {
+  expect(errorsFor({})).toEqual({});
+  expect(new Expense(VALID).category).toBe("other");
+});
+
+// edge case: every category on the list is allowed
+test.each(Expense.CATEGORIES)("allows the category %p", (category) => {
+  expect(errorsFor({ category })).toEqual({});
+});
+
+// wrong case: anything not on the list is rejected, including a different capitalization
+test.each(["pizza", "Food", "", null, 3])("rejects the category %p", (category) => {
+  expect(errorsFor({ category }).category).toBe("Choose a category from the list.");
+});
+
+// wrong case: the constructor throws instead of creating a spending with an unknown category
+test("throws a RangeError for a category that isn't on the list", () => {
+  expect(() => new Expense({ ...VALID, category: "pizza" })).toThrow(RangeError);
+  expect(() => new Expense({ ...VALID, category: "pizza" })).toThrow("Choose a category from the list.");
+});

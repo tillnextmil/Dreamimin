@@ -175,9 +175,9 @@
 
     | Member | Does |
     |---|---|
-    | `new Expense({ id, amount, date, note = "", asOf })` | `date` is "YYYY-MM-DD"; `asOf` is today, so tests can fix the date; `id` is made up when left out |
-    | `Expense.validate({ amount, date, note, asOf })` | Error message per invalid field; empty when valid |
-    | `id`, `amount`, `date`, `note` | The stored values; the note is trimmed |
+    | `new Expense({ id, amount, date, note = "", category = "other", asOf })` | `date` is "YYYY-MM-DD"; `category` is one of `Expense.CATEGORIES` (`housing`, `food`, `transport`, `bills`, `health`, `fun`, `shopping`, `other`); `asOf` is today, so tests can fix the date; `id` is made up when left out |
+    | `Expense.validate({ amount, date, note, category, asOf })` | Error message per invalid field; empty when valid |
+    | `id`, `amount`, `date`, `note`, `category` | The stored values; the note is trimmed |
 
     Rules. Invalid values are rejected by throwing, with these messages:
 
@@ -193,6 +193,7 @@
     | Date not a real calendar date | RangeError | "Choose a valid date." |
     | Date after today | RangeError | "The date can't be in the future." |
     | Note longer than 60 characters | RangeError | "Keep the note to 60 characters or fewer." |
+    | Category not on the list | RangeError | "Choose a category from the list." |
 
     A failed update, recording or removal leaves the funds as they were.
     Exactly the balance can be spent, leaving $0. An Expense can't be
@@ -208,8 +209,8 @@
 
     Storage. The funds and spending can be stored in an `available_funds`
     table (funds id, balance of 0 or more) and an `expense` table (expense
-    id, funds id referencing `available_funds`, amount above 0, date, note
-    of 60 characters or fewer).
+    id, funds id referencing `available_funds`, amount above 0, date, note 
+    of 60 characters or fewer, and a category from the list, `other` by default).
 
 12. Server API. The final app saves its data on a small server: Node
     with Express, storing everything in SQLite through Node's built-in
