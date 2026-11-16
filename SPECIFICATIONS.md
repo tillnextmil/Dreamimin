@@ -427,8 +427,8 @@
     check next to the list and its chance in step 3; switching to another
     goal hides the last goal's details until the new chance is worked out.
     The page talks to the server only through the goal API client
-    (`client/api/goalApi.js`). Until `POST`, `PUT` and `DELETE
-    /api/goals` exist on the server, and whenever the page is opened
+   (`client/api/goalApi.js`). The server saves the goals in SQLite, so
+    they are still there after a reload. When the page is opened
     straight from disk, the client keeps the goals in memory with the
     same rules and messages, so they are gone after a reload.
                           
