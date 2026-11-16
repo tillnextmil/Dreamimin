@@ -1,7 +1,9 @@
 /* ============================================================
-   FinancialGoal — one savings goal: a name, a target amount and
-   a target date. Works out how much to set aside each month and
-   whether a given monthly amount is enough to get there in time.
+   FinancialGoal — one savings goal: a name, a target amount, a
+   target date, how important it is (priority) and the smallest
+   amount the user would still accept. Works out how much to set
+   aside each month and whether a given monthly amount is enough
+   to get there in time.
    ============================================================ */
 
 (function (global) {
@@ -11,21 +13,33 @@
 
   class FinancialGoal {
     static MAX_NAME_LENGTH = 60;
+    static MIN_PRIORITY = 1;       // least important
+    static MAX_PRIORITY = 5;       // most important
+    static DEFAULT_PRIORITY = 3;
 
-    /* targetDate is a "YYYY-MM-DD" string, as an <input type="date"> gives it; asOf is "today" */
-    constructor({ id, name = "My goal", targetAmount, targetDate, asOf = new Date() }) {
-      const errors = FinancialGoal.validate({ name, targetAmount, targetDate, asOf });
+    /* targetDate is a "YYYY-MM-DD" string, as an <input type="date"> gives it; asOf is "today".
+       minAcceptableAmount of 0 means only the full amount counts. */
+    constructor({
+      id, name = "My goal", targetAmount, targetDate,
+      priority = FinancialGoal.DEFAULT_PRIORITY, minAcceptableAmount = 0, asOf = new Date(),
+    }) {
+      const errors = FinancialGoal.validate({ name, targetAmount, targetDate, priority, minAcceptableAmount, asOf });
       const fields = Object.keys(errors);
       if (fields.length) throw new RangeError(errors[fields[0]]);
       this.id = id ?? "goal-" + nextId++;
       this.name = name.trim();
       this.targetAmount = targetAmount;
       this.targetDate = targetDate;
+      this.priority = priority;
+      this.minAcceptableAmount = minAcceptableAmount;
       Object.freeze(this);   // a goal can't be changed into an invalid one after it is checked
     }
 
     /* error message per invalid field; empty when everything is valid */
-    static validate({ name = "My goal", targetAmount, targetDate, asOf = new Date() }) {
+    static validate({
+      name = "My goal", targetAmount, targetDate,
+      priority = FinancialGoal.DEFAULT_PRIORITY, minAcceptableAmount = 0, asOf = new Date(),
+    }) {
       const errors = {};
       if (typeof name !== "string" || name.trim() === "") {
         errors.name = "Give your goal a name.";
@@ -33,6 +47,7 @@
         errors.name = `Keep the name to ${FinancialGoal.MAX_NAME_LENGTH} characters or fewer.`;
       }
 
+      const amountIsValid = typeof targetAmount === "number" && Number.isFinite(targetAmount) && targetAmount > 0;
       if (typeof targetAmount !== "number" || !Number.isFinite(targetAmount)) {
         errors.targetAmount = "Goal amount must be a number.";
       } else if (targetAmount <= 0) {
@@ -42,6 +57,16 @@
       const date = FinancialGoal.parseDate(targetDate);
       if (!date) errors.targetDate = "Choose a valid target date.";
       else if (date <= FinancialGoal.#startOfDay(asOf)) errors.targetDate = "Target date must be after today.";
+
+      if (!Number.isInteger(priority) || priority < FinancialGoal.MIN_PRIORITY || priority > FinancialGoal.MAX_PRIORITY) {
+        errors.priority = `Choose a priority from ${FinancialGoal.MIN_PRIORITY} to ${FinancialGoal.MAX_PRIORITY}.`;
+      }
+
+      // compared with the goal amount only when that is valid, so one mistake doesn't show two messages
+      const minIsNumber = typeof minAcceptableAmount === "number" && Number.isFinite(minAcceptableAmount);
+      if (!minIsNumber || minAcceptableAmount < 0 || (amountIsValid && minAcceptableAmount >= targetAmount)) {
+        errors.minAcceptableAmount = "The smallest amount you'd accept must be $0 or more and less than the goal amount.";
+      }
       return errors;
     }
 
