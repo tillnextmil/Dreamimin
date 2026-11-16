@@ -80,6 +80,7 @@ router, one line in `server/app.js`, and a test like
 | GoalAnalysisResult | `src/goalAnalysisResult.js` | The planner's result: chance, benchmark, outcomes, portfolio each year |
 | GoalProbability | `src/goalProbability.js` | A chance from 0 to 1, its verdict and its percent |
 | InvestmentPortfolio | `src/investmentPortfolio.js` | The five portfolios, low to high risk: expected return and volatility |
+| RetirementPlan | `src/retirementPlan.js` | Yearly withdrawals from the retirement age on, and the chance the money lasts to a chosen age |
 | AvailableFunds | `src/availableFunds.js` | The funds available for the goal, lowered by recorded spending |
 | Expense | `src/expense.js` | One recorded spending: amount, date and note |
 

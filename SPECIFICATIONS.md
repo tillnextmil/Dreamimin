@@ -381,3 +381,47 @@
     plan, with `allocation_percent`, the share of the money in that
     portfolio; the planner uses one portfolio a year, so it is 1). Every table checks the same limits as
     the API, so a bad value can't be saved even by a bug in a route.
+
+15. Retirement withdrawals. The user gives their current age, a
+    retirement age, a yearly withdrawal and the age the money should last
+    to. Until the retirement age they keep saving their monthly saving
+    (12 times it each year). From the retirement age on, the yearly
+    withdrawal is taken out at the start of each year, up to but not
+    including the last age, so retiring at 65 with money lasting to 95
+    is 30 withdrawals. The app shows the probability that every
+    withdrawal is paid. Tax and the order accounts are drawn from are
+    left out, and all amounts are in today's dollars.
+
+    Model. It is the planners' wealth model (item 7) with one portfolio
+    (item 10) held the whole time, Balanced unless the user chooses. In
+    a saving year W(t+1) = max(0, W(t) + s) × growth; in a withdrawal
+    year W(t+1) = (W(t) − w) × growth, where growth =
+    exp[(μ − σ²/2) + σZ]. The money has run out in the first year the
+    balance is less than the withdrawal. A negative net worth counts as
+    $0. The probability is the share of 4,000 fixed, seeded market paths
+    on which the money lasts, so the same inputs always give the same
+    result, and a bigger withdrawal or a later last age can never give a
+    better chance. It is a GoalProbability, so it gets the verdicts of
+    item 8.
+
+    Results. With the probability and verdict the plan gives the balance
+    at retirement (10th, 50th and 90th percentile), the median balance
+    left at the last age, and the age the money runs out on an unlucky
+    path (the 10th percentile, or none when it lasts there too). It can
+    also give the chance at each of the five risk levels, and the
+    largest yearly withdrawal, to the dollar, whose chance is at least a
+    target (80%, the start of "Realistic", unless another is given); that
+    is $0 when even $1 a year misses the target.
+
+    Validation. The three ages are whole numbers from 18 to 120. The
+    retirement age can't be before the current age (it can equal it:
+    retiring this year), and the last age must be after the retirement
+    age. Net worth is a number. Monthly saving is a number of $0 or more
+    ($0 when left out). The yearly withdrawal is more than $0. The risk
+    level is a whole number from 1 to 5. A plan can't be changed after
+    it is created.
+
+    Storage (planned). The ER diagram gets a `retirement_plan` table
+    with `current_age`, `retirement_age`, `lasts_to_age`,
+    `yearly_withdrawal` and `risk_level`, one row per profile; net worth
+    and monthly saving come from the profile.
