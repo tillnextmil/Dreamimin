@@ -1,6 +1,8 @@
 -- The tables of our ER diagram (docs/er-diagram.drawio). Every table checks the same limits as
 -- the API (SPECIFICATIONS.md, item 12), so a bad value can't be saved even by a bug in a route.
 -- IF NOT EXISTS lets the server open a database file it created on an earlier run.
+-- Dates are checked with date(x) IS x, not =: date() gives NULL for text that isn't a date,
+-- and SQLite lets a row through when its CHECK is NULL, so = would save 'hello' as a date.
 
 PRAGMA foreign_keys = ON;
 
@@ -26,7 +28,7 @@ CREATE TABLE IF NOT EXISTS goal (
   profile_id INTEGER NOT NULL REFERENCES profile (profile_id) ON DELETE CASCADE,
   name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 60),
   target_amount REAL NOT NULL CHECK (target_amount > 0),
-  target_date TEXT NOT NULL CHECK (date(target_date) = target_date),
+  target_date TEXT NOT NULL CHECK (date(target_date) IS target_date),
   priority INTEGER NOT NULL DEFAULT 3 CHECK (priority BETWEEN 1 AND 5),
   min_acceptable_amount REAL NOT NULL DEFAULT 0
     CHECK (min_acceptable_amount >= 0 AND min_acceptable_amount < target_amount),
@@ -44,7 +46,7 @@ CREATE TABLE IF NOT EXISTS expense (
   expense_id INTEGER PRIMARY KEY,
   funds_id INTEGER NOT NULL REFERENCES available_funds (funds_id) ON DELETE CASCADE,
   amount REAL NOT NULL CHECK (amount > 0),
-  date TEXT NOT NULL CHECK (date(date) = date),
+  date TEXT NOT NULL CHECK (date(date) IS date),
   note TEXT NOT NULL DEFAULT '' CHECK (length(note) <= 60),
   category TEXT NOT NULL DEFAULT 'other'
     CHECK (category IN ('housing', 'food', 'transport', 'bills', 'health', 'fun', 'shopping', 'other'))
@@ -56,7 +58,7 @@ CREATE TABLE IF NOT EXISTS funds_event (
   funds_id INTEGER NOT NULL REFERENCES available_funds (funds_id) ON DELETE CASCADE,
   kind TEXT NOT NULL CHECK (kind IN ('income', 'loss')),
   amount REAL NOT NULL CHECK (amount > 0),
-  date TEXT NOT NULL CHECK (date(date) = date),
+  date TEXT NOT NULL CHECK (date(date) IS date),
   note TEXT NOT NULL DEFAULT '' CHECK (length(note) <= 60)
 );
 
