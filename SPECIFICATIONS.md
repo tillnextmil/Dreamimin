@@ -5,10 +5,13 @@
    monthly income, monthly expenses and net worth, provides the monthly
    cash flow and savings rate, and can be changed with updateIncome,
    updateExpenses and updateNetWorth. FinancialGoal (`src/financialGoal.js`)
-   stores an id, a name, a target amount and a target date, and works out
+   stores an id, a name, a target amount, a target date, a priority and
+   the smallest amount the user would accept, and works out
    the months remaining, the monthly saving required, whether a monthly
    amount is on track, and how many months a monthly amount takes; a goal
-   can't be changed after it is created. GoalProbability
+   can't be changed after it is created. GoalList (`src/goalList.js`)
+   holds the rules for the list of goals: at most 20, and how the list is
+   sorted and searched (see 12 and 13). GoalProbability
    (`src/goalProbability.js`) holds a probability from 0 to 1 and gives
    its verdict and its percent (see 8). GoalAnalysisResult
    (`src/goalAnalysisResult.js`) holds what the planner worked out for one
@@ -30,7 +33,13 @@
    rejected. Income and spending cannot be negative; net worth can be,
    since a person can owe more than they own. A goal needs a name of 1 to
    60 characters, an amount greater than $0, and a real calendar date
-   after today. Both classes reject invalid values by throwing an error
+   after today. Its priority is a whole number from 1 (least important)
+   to 5 (most), 3 when left out ("Choose a priority from 1 to 5."), and
+   the smallest amount the user would accept is $0 or more and less than
+   the goal amount, $0 when left out, meaning only the full amount counts
+   ("The smallest amount you'd accept must be $0 or more and less than
+   the goal amount."; checked against the goal amount only when that is
+   valid). Both classes reject invalid values by throwing an error
    (a RangeError for a bad field, a TypeError when a monthly saving passed
    to FinancialGoal is not a number), and a FinancialProfile update with an invalid value leaves the profile
    unchanged. On the page, an error appears under its field once the user
@@ -65,21 +74,26 @@
    existing savings and investment growth.
 
 6. Updating results. Results are recalculated each time the user changes
-   any field. The monthly money results are shown once income and
-   spending are valid, and the goal check once the profile and the goal
-   are both valid; otherwise each shows a message saying what to add. The
-   Start over button in the top bar empties every field and removes the
-   recorded spending and any error messages. When anything has been
-   entered it first asks "Start over?" in a dialog: Clear everything goes
-   ahead, while Keep my answers, Escape or a click outside the dialog
-   leaves everything as it was. Inputs are not saved between visits. The page shows one of
-   three steps at a time (Your money, Your goal, Your chances), chosen in
-   the step bar or with Next and Back; the step is kept in the address
-   (#money, #goal, #chances), so the browser's back button and links
-   work. A step is marked done once its inputs are valid.
+   a field on step 1 or a goal is added, edited, deleted or chosen. The
+   monthly money results are shown once income and spending are valid,
+   and the goal check once the profile and the chosen goal are both
+   valid; otherwise each shows a message saying what to add. The
+   Start over button in the top bar empties every field, deletes every
+   goal and removes the recorded spending and any error messages. When
+   anything has been entered or a goal exists, it first asks "Start
+   over?" in a dialog: Clear everything goes ahead, while Keep my
+   answers, Escape or a click outside the dialog leaves everything as it
+   was. Step 1's inputs are not saved between visits yet. The page shows
+   one of three steps at a time (Your money, Your goals, Your chances),
+   chosen in the step bar or with Next and Back; the step is kept in the
+   address (#money, #goal, #chances), so the browser's back button and
+   links work. A step is marked done once its inputs are valid (for Your
+   goals, once there is a chosen goal that can be checked); the step bar
+   shows the monthly cash flow under Your money and the number of goals
+   under Your goals.
 
-7. Chance with investing (M2). Once the profile and the goal are both
-   valid, the page shows the probability of reaching the goal if the user
+7. Chance with investing (M2). Once the profile and the chosen goal (see
+   13) are both valid, the page shows the probability of reaching it if the user
    invests, from the PPO planner (`src/ppoPlanner.js`). Wealth starts at
    the available funds when the user has entered them (see 11), otherwise
    at the net worth (0 when negative), and grows year by year with one of five
@@ -389,3 +403,31 @@
     plan, with `allocation_percent`, the share of the money in that
     portfolio; the planner uses one portfolio a year, so it is 1). Every table checks the same limits as
     the API, so a bad value can't be saved even by a bug in a route.
+
+13. Multiple goals (page). Step 2, Your goals, lists every goal and has
+    a form under the list for adding one. A goal is added with a name,
+    an amount, a date, a priority (3 unless chosen) and, optionally, the
+    smallest amount the user would accept; Add goal (or Enter in a field)
+    saves it if every field is valid (see 2), and otherwise shows each
+    field's error and puts the cursor on the first one. Each goal in the
+    list shows its name, amount and date, its priority, the smallest
+    amount when there is one, the saving it needs each month, and, once
+    income and spending are valid, whether it is on track (see 5). A goal
+    whose date has passed says "Date has passed" and can be edited to a
+    later date. Edit puts the goal in the form ("Edit <name>", Save
+    changes and Cancel); saving keeps its id, so extending a goal's date
+    loses nothing. Delete asks "Delete <name>?" in a dialog first: Delete
+    goal goes ahead, while Keep it, Escape or a click outside leaves the
+    goal. The list can be searched by name (ignoring case) and sorted by
+    soonest date (the default), most important, largest amount or name;
+    the order and the 20-goal limit are GoalList's rules, the same ones
+    the API follows (see 12). The count shows as "3 of 20", and with 20
+    goals Add goal is turned off and says why. Choosing a goal in the list
+    (the newest one after adding, the first one otherwise) shows its goal
+    check next to the list and its chance in step 3; switching to another
+    goal hides the last goal's details until the new chance is worked out.
+    The page talks to the server only through the goal API client
+    (`client/api/goalApi.js`). Until `POST`, `PUT` and `DELETE
+    /api/goals` exist on the server, and whenever the page is opened
+    straight from disk, the client keeps the goals in memory with the
+    same rules and messages, so they are gone after a reload.

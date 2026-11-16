@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dreamimin</title>
-  <meta name="description" content="Enter your monthly money and one goal, and see whether you can reach it in time." />
+  <meta name="description" content="Enter your monthly money and your goals, and see whether you can reach each one in time." />
   <link rel="icon" type="image/png" href="logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,7 +35,7 @@
         <li>
           <a class="step" href="#goal" data-step="goal">
             <span class="step__num" aria-hidden="true"><span>2</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9" /></svg></span>
-            <span class="step__text"><span class="step__title"><span class="step__your">Your </span>goal</span><span class="step__meta" id="step-goal-meta"></span></span>
+            <span class="step__text"><span class="step__title"><span class="step__your">Your </span>goals</span><span class="step__meta" id="step-goal-meta"></span></span>
           </a>
         </li>
         <li>
@@ -174,7 +174,7 @@
           </section>
 
           <div class="panel__nav">
-            <a class="btn btn--primary" href="#goal">Next: your goal
+            <a class="btn btn--primary" href="#goal">Next: your goals
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </a>
           </div>
@@ -182,40 +182,108 @@
         </div>
       </section>
 
-      <!-- step 2: your goal -->
+      <!-- step 2: your goals -->
       <section class="panel" id="panel-goal" data-step="goal" aria-labelledby="goal-title" hidden>
         <div class="panel__grid">
-          <div class="card">
-            <h2 id="goal-title" tabindex="-1">Your goal</h2>
-
-            <div class="field">
-              <label for="goalName">Goal name</label>
-              <div class="control">
-                <input id="goalName" name="goalName" type="text" autocomplete="off" maxlength="60"
-                       placeholder="e.g. Emergency fund" aria-describedby="goalName-error" />
-              </div>
-              <p class="error" id="goalName-error" role="alert"></p>
+          <div class="card goals">
+            <div class="goals__head">
+              <h2 id="goal-title" tabindex="-1">Your goals</h2>
+              <span class="goals__count" id="goal-count"></span>
             </div>
 
-            <div class="field-row">
+            <div class="goals__tools" id="goal-tools" hidden>
               <div class="field">
-                <label for="goalAmount">Amount</label>
-                <div class="control control--money">
-                  <span aria-hidden="true">$</span>
-                  <input id="goalAmount" name="goalAmount" type="text" inputmode="decimal" autocomplete="off"
-                         placeholder="0" aria-describedby="goalAmount-error" />
-                </div>
-                <p class="error" id="goalAmount-error" role="alert"></p>
-              </div>
-
-              <div class="field">
-                <label for="goalDate">Reach it by</label>
+                <label for="goalSearch">Search</label>
                 <div class="control">
-                  <input id="goalDate" name="goalDate" type="date" aria-describedby="goalDate-error" />
+                  <input id="goalSearch" name="goalSearch" type="search" autocomplete="off" placeholder="Goal name" />
                 </div>
-                <p class="error" id="goalDate-error" role="alert"></p>
+              </div>
+              <div class="field">
+                <label for="goalSort">Sort by</label>
+                <div class="control control--select">
+                  <select id="goalSort" name="goalSort">
+                    <option value="date">Soonest date</option>
+                    <option value="priority">Most important</option>
+                    <option value="amount">Largest amount</option>
+                    <option value="name">Name, A to Z</option>
+                  </select>
+                </div>
               </div>
             </div>
+
+            <p class="error" id="goal-list-error" role="alert"></p>
+            <ul class="goal-list" id="goal-list" aria-label="Your goals"></ul>
+            <div class="goal-list__empty" id="goal-list-empty">
+              <p id="goal-list-empty-text">No goals yet. Add your first one below.</p>
+            </div>
+
+            <fieldset class="goal-form" id="goal-form">
+              <legend id="goal-form-title">Add a goal</legend>
+
+              <div class="field">
+                <label for="goalName">Goal name</label>
+                <div class="control">
+                  <input id="goalName" name="goalName" type="text" autocomplete="off" maxlength="60"
+                         placeholder="e.g. Emergency fund" aria-describedby="goalName-error" />
+                </div>
+                <p class="error" id="goalName-error" role="alert"></p>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="goalAmount">Amount</label>
+                  <div class="control control--money">
+                    <span aria-hidden="true">$</span>
+                    <input id="goalAmount" name="goalAmount" type="text" inputmode="decimal" autocomplete="off"
+                           placeholder="0" aria-describedby="goalAmount-error" />
+                  </div>
+                  <p class="error" id="goalAmount-error" role="alert"></p>
+                </div>
+
+                <div class="field">
+                  <label for="goalDate">Reach it by</label>
+                  <div class="control">
+                    <input id="goalDate" name="goalDate" type="date" aria-describedby="goalDate-error" />
+                  </div>
+                  <p class="error" id="goalDate-error" role="alert"></p>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="goalPriority">Priority</label>
+                  <div class="control control--select">
+                    <select id="goalPriority" name="goalPriority" aria-describedby="goalPriority-help goalPriority-error">
+                      <option value="5">5, most important</option>
+                      <option value="4">4</option>
+                      <option value="3" selected>3</option>
+                      <option value="2">2</option>
+                      <option value="1">1, least important</option>
+                    </select>
+                  </div>
+                  <p class="help" id="goalPriority-help">Which goals come first when money is tight.</p>
+                  <p class="error" id="goalPriority-error" role="alert"></p>
+                </div>
+
+                <div class="field">
+                  <label for="goalMin">Smallest amount you'd accept <span class="optional">(optional)</span></label>
+                  <div class="control control--money">
+                    <span aria-hidden="true">$</span>
+                    <input id="goalMin" name="goalMin" type="text" inputmode="decimal" autocomplete="off"
+                           placeholder="0" aria-describedby="goalMin-help goalMin-error" />
+                  </div>
+                  <p class="help" id="goalMin-help">Leave empty if only the full amount will do.</p>
+                  <p class="error" id="goalMin-error" role="alert"></p>
+                </div>
+              </div>
+
+              <div class="goal-form__actions">
+                <button type="button" class="btn btn--primary" id="goal-save">Add goal</button>
+                <button type="button" class="btn btn--ghost" id="goal-cancel" hidden>Cancel</button>
+              </div>
+              <p class="help" id="goal-limit" aria-live="polite"></p>
+              <p class="error" id="goal-form-error" role="alert"></p>
+            </fieldset>
           </div>
 
           <section class="card card--result goal-card" aria-labelledby="goal-result-title" aria-live="polite">
@@ -228,7 +296,7 @@
                 <circle cx="12" cy="12" r="5" />
                 <circle cx="12" cy="12" r="1" />
               </svg>
-              <p id="goal-empty-text">Add your goal's name, amount and date to see if you can reach it.</p>
+              <p id="goal-empty-text">Add a goal to see if you can reach it.</p>
             </div>
 
             <div id="goal-result" hidden>
@@ -257,7 +325,7 @@
               <p id="goal-coverage" class="meter__caption"></p>
 
               <p id="goal-advice" class="callout"></p>
-              <p class="footnote">Assumes everything left over each month goes to this goal. Savings you already have and investment growth aren't counted here; your chances in step 3 include both.</p>
+              <p class="footnote">Assumes everything left over each month goes to this goal. Savings you already have and investment growth aren't counted here; your chances in step 3 include both. Choose a goal in the list to check it.</p>
             </div>
           </section>
         </div>
@@ -292,7 +360,7 @@
               <path d="M3 17l5-5 4 4 8-8" />
               <path d="M15 8h5v5" />
             </svg>
-            <p id="odds-empty-text">Add your money and your goal to see your chances of reaching it if you invest.</p>
+            <p id="odds-empty-text">Add your money and a goal to see your chances of reaching it if you invest.</p>
             <a class="btn btn--ghost" href="#money">Go to step 1</a>
           </div>
 
@@ -349,7 +417,7 @@
   <dialog class="confirm" id="start-over-dialog" aria-labelledby="start-over-title" aria-describedby="start-over-text">
     <form method="dialog" class="confirm__body">
       <h2 id="start-over-title">Start over?</h2>
-      <p id="start-over-text">This clears your money, your goal and any spending you've recorded. It can't be undone.</p>
+      <p id="start-over-text">This clears your money, deletes all your goals and removes any spending you've recorded. It can't be undone.</p>
       <div class="confirm__actions">
         <button class="btn btn--ghost" value="cancel" autofocus>Keep my answers</button>
         <button class="btn btn--danger" value="confirm">Clear everything</button>
@@ -357,15 +425,39 @@
     </form>
   </dialog>
 
+  <!-- asks before a goal is deleted; the goal view fills in the goal's name -->
+  <dialog class="confirm" id="delete-goal-dialog" aria-labelledby="delete-goal-title" aria-describedby="delete-goal-text">
+    <form method="dialog" class="confirm__body">
+      <h2 id="delete-goal-title">Delete this goal?</h2>
+      <p id="delete-goal-text"></p>
+      <div class="confirm__actions">
+        <button class="btn btn--ghost" value="cancel" autofocus>Keep it</button>
+        <button class="btn btn--danger" value="confirm">Delete goal</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- domain classes (shared with the server) -->
   <script src="src/financialProfile.js"></script>
   <script src="src/financialGoal.js"></script>
+  <script src="src/goalList.js"></script>
   <script src="src/ppoPlanner.js"></script>
   <script src="src/goalProbability.js"></script>
   <script src="src/goalAnalysisResult.js"></script>
   <script src="src/investmentPortfolio.js"></script>
   <script src="src/availableFunds.js"></script>
   <script src="src/expense.js"></script>
-  <script src="steps.js"></script>
-  <script src="app.js"></script>
+  <!-- the page: formatting, the API client, views, then controllers -->
+  <script src="client/format.js"></script>
+  <script src="client/api/goalApi.js"></script>
+  <script src="client/views/fieldView.js"></script>
+  <script src="client/views/moneyView.js"></script>
+  <script src="client/views/goalView.js"></script>
+  <script src="client/views/oddsView.js"></script>
+  <script src="client/views/steps.js"></script>
+  <script src="client/controllers/moneyController.js"></script>
+  <script src="client/controllers/goalController.js"></script>
+  <script src="client/controllers/oddsController.js"></script>
+  <script src="client/app.js"></script>
 </body>
 </html>
