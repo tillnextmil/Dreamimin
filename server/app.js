@@ -20,7 +20,7 @@ const goalRoutes = require("./routes/goalRoutes");
 
 const ROOT = path.join(__dirname, "..");
 /* only the page's own files are served, never the database, package.json or the server code */
-const PAGE_FILES = ["index.html", "styles.css", "app.js", "steps.js", "logo.png"];
+const PAGE_FILES = ["index.html", "styles.css", "logo.png"];
 
 function createApp({ db }) {
   const goalService = new GoalService(new GoalRepository(db), { profileId: PROFILE_ID });
@@ -39,6 +39,7 @@ function createApp({ db }) {
     app.get(`/${file}`, (req, res) => res.sendFile(file, { root: ROOT }));
   }
   app.use("/src", express.static(path.join(ROOT, "src")));
+  app.use("/client", express.static(path.join(ROOT, "client")));
 
   /* a body that isn't valid JSON is the client's mistake; anything else is a bug on the server */
   app.use((error, req, res, next) => {
