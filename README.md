@@ -97,6 +97,7 @@ the in-memory one.
 | MultiGoalPlan | `src/multiGoalPlan.js` | That plan's result: each goal's chance and verdict, utility against the benchmark, risk level each year |
 | GoalProbability | `src/goalProbability.js` | A chance from 0 to 1, its verdict and its percent |
 | InvestmentPortfolio | `src/investmentPortfolio.js` | The five portfolios, low to high risk: expected return and volatility |
+| RetirementPlan | `src/retirementPlan.js` | Yearly withdrawals from the retirement age on, and the chance the money lasts to a chosen age |
 | AvailableFunds | `src/availableFunds.js` | The funds available for the goal, lowered by recorded spending |
 | Expense | `src/expense.js` | One recorded spending: amount, date, note and category |
 
