@@ -1,29 +1,25 @@
 /* ============================================================
    Step navigation view: shows one step at a time (Your money,
    Your goals, Your chances), keeps the step bar and the URL hash
-   in step, and animates the chance ring. Listens for the plan:*
-   events the controllers send; doesn't change any data.
+   in step, and shows a short summary under each step. Listens
+   for the plan:* events the controllers send; doesn't change
+   any data.
    ============================================================ */
 
 (function (D) {
   "use strict";
 
   const STEPS = ["money", "goal", "chances"];
-  const RING_LENGTH = 2 * Math.PI * 52;   // circumference of the ring's r=52 circle
-  const COUNT_MS = 900;                   // how long the percent counts up after training
 
   const $ = (id) => document.getElementById(id);
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const { format } = D;
-  const shortDate = (text) => format.shortMonthYear(FinancialGoal.parseDate(text));
 
   const links = [...document.querySelectorAll(".step")];
   const panels = [...document.querySelectorAll(".panel")];
   const indicator = document.querySelector(".steps__indicator");
-  const arc = $("odds-arc");
-  const ring = $("odds-ring");
 
-  let current = null, countFrame = null, shown = 0;
+  let current = null;
 
   /* ---------- switching steps ---------- */
 
@@ -84,60 +80,20 @@
     $("step-money-meta").textContent = profile ? `${flow < 0 ? "−" : "+"}${format.money(Math.abs(flow))}/mo` : "";
     $("step-goal-meta").textContent = goalCount ? format.plural(goalCount, "goal") : "";
 
-    $("plan-summary").hidden = !(profile && goal);
-    if (profile && goal) {
+    $("plan-summary").hidden = !(profile && goalCount);
+    if (profile && goalCount) {
       $("sum-income").textContent = format.money(profile.income);
       $("sum-expenses").textContent = format.money(profile.expenses);
-      $("sum-goal").textContent = `${goal.name}, ${format.money(goal.targetAmount)} by ${shortDate(goal.targetDate)}`;
+      $("sum-goals").textContent = String(goalCount);
     }
   });
 
-  /* ---------- chance ring ---------- */
+  /* ---------- chances ---------- */
 
-  function setArc(value, tone) {
-    arc.style.strokeDashoffset = RING_LENGTH * (1 - value);
-    ring.dataset.tone = tone;
-  }
+  /* text: the one goal's chance ("72%"), or how many goals are realistic ("2 of 3 realistic") */
+  document.addEventListener("plan:progress", () => { $("step-chances-meta").textContent = ""; });
+  document.addEventListener("plan:result", ({ detail: { text } }) => { $("step-chances-meta").textContent = text; });
+  document.addEventListener("plan:empty", () => { $("step-chances-meta").textContent = ""; });
 
-  /* counts the percent up from what is showing to the final value, then shows the exact text */
-  function countTo(value, text) {
-    cancelAnimationFrame(countFrame);
-    const from = shown, start = performance.now();
-    const tick = (now) => {
-      const t = Math.min(1, (now - start) / COUNT_MS);
-      const eased = 1 - Math.pow(1 - t, 3);
-      $("odds-prob").textContent = Math.round((from + (value - from) * eased) * 100) + "%";
-      if (t < 1) countFrame = requestAnimationFrame(tick);
-      else $("odds-prob").textContent = text;
-    };
-    if (reducedMotion.matches) $("odds-prob").textContent = text;
-    else countFrame = requestAnimationFrame(tick);
-    shown = value;
-  }
-
-  document.addEventListener("plan:progress", ({ detail: { prob } }) => {
-    cancelAnimationFrame(countFrame);
-    ring.classList.add("is-training");
-    if (prob !== null && prob !== undefined) { setArc(prob, "mid"); shown = prob; }
-    $("step-chances-meta").textContent = "";
-  });
-
-  document.addEventListener("plan:result", ({ detail: { value, text, tone } }) => {
-    ring.classList.remove("is-training");
-    setArc(value, tone);
-    countTo(value, text);
-    $("step-chances-meta").textContent = text;
-  });
-
-  document.addEventListener("plan:empty", () => {
-    cancelAnimationFrame(countFrame);
-    ring.classList.remove("is-training");
-    setArc(0, "mid");
-    shown = 0;
-    $("step-chances-meta").textContent = "";
-  });
-
-  arc.style.strokeDasharray = RING_LENGTH;
-  arc.style.strokeDashoffset = RING_LENGTH;
   show(stepFromHash(), { focus: false });
 })(window.Dreamimin);
