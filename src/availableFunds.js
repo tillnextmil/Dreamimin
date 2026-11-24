@@ -2,6 +2,7 @@
    AvailableFunds — the money the user has available for the
    goal, and the spending recorded against it. Recording an
    Expense lowers the balance; removing it adds the amount back.
+   Also adds the spending up by category for the step 1 chart.
    ============================================================ */
 
 (function (global) {
@@ -42,6 +43,25 @@
 
     get totalSpent() {
       return AvailableFunds.#toCents(this.#expenses.reduce((sum, expense) => sum + expense.amount, 0));
+    }
+
+    /* The recorded spending added up per category, largest first: [{ category, amount, share }],
+       where share is the part of all the spending (0 to 1). Only categories with spending are
+       listed; an Expense without a category counts as "other". Equal amounts keep `order`, the
+       categories' own order (Expense.CATEGORIES on the page). */
+    spendingByCategory(order = []) {
+      const totals = new Map();
+      for (const { category = "other", amount } of this.#expenses) {
+        totals.set(category, (totals.get(category) || 0) + amount);
+      }
+      const total = this.totalSpent;
+      const rank = (category) => (order.includes(category) ? order.indexOf(category) : order.length);
+      return [...totals]
+        .map(([category, sum]) => {
+          const amount = AvailableFunds.#toCents(sum);
+          return { category, amount, share: amount / total };
+        })
+        .sort((a, b) => b.amount - a.amount || rank(a.category) - rank(b.category) || (a.category < b.category ? -1 : 1));
     }
 
     updateBalance(amount) {
