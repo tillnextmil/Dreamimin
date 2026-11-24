@@ -80,7 +80,7 @@ The page is split the same way (views and controllers in separate files):
 
 | Layer | Where | Does |
 |---|---|---|
-| Views | `client/views/` | What's on screen for each step; no rules and no server calls |
+| Views | `client/views/` | What's on screen for each step; no rules and no server calls. `timelineChart.js` turns the plan's timeline into the step 3 chart |
 | Controllers | `client/controllers/` | User input in; calls the domain classes and the API client, then tells the views what to show |
 | API client | `client/api/goalApi.js` | The only code that talks to the server. `MemoryGoalApi` follows the same contract in memory when the page is opened straight from disk |
 | Domain | `src/` | The same classes the server uses |
@@ -94,11 +94,11 @@ the in-memory one.
 |---|---|---|
 | FinancialProfile | `src/financialProfile.js` | Income, spending and net worth; monthly cash flow and savings rate |
 | FinancialGoal | `src/financialGoal.js` | One goal with its priority and smallest acceptable amount; monthly saving required and whether you are on track |
-| GoalList | `src/goalList.js` | The rules for the list of goals: at most 20, sorting and searching |
-| PpoPlanner | `src/ppoPlanner.js` | Works out the chance of reaching the goal, checked against a DP benchmark |
-| GoalAnalysisResult | `src/goalAnalysisResult.js` | The planner's result: chance, benchmark, outcomes, portfolio each year |
+| GoalList | `src/goalList.js` | The rules for the list of goals: at most 20, sorting and searching, and which goals the planner can plan |
+| PpoPlanner | `src/ppoPlanner.js` | Works out the chance of reaching one goal, checked against a DP benchmark (used by the `mvp/` page) |
+| GoalAnalysisResult | `src/goalAnalysisResult.js` | PpoPlanner's result: chance, benchmark, outcomes, portfolio each year |
 | MultiGoalPlanner | `src/multiGoalPlanner.js` | Plans every goal together: which to fund in full, in part or skip, and how to invest, checked against a DP benchmark; compares the five risk levels and what-if changes |
-| MultiGoalPlan | `src/multiGoalPlan.js` | That plan's result: each goal's chance and verdict, utility against the benchmark, risk level each year |
+| MultiGoalPlan | `src/multiGoalPlan.js` | That plan's result: each goal's chance and verdict, utility against the benchmark, risk level each year as stages; step 3 shows it |
 | GoalProbability | `src/goalProbability.js` | A chance from 0 to 1, its verdict and its percent |
 | InvestmentPortfolio | `src/investmentPortfolio.js` | The five portfolios, low to high risk: expected return and volatility |
 | RetirementPlan | `src/retirementPlan.js` | Yearly withdrawals from the retirement age on, and the chance the money lasts to a chosen age |
