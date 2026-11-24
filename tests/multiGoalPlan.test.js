@@ -132,3 +132,54 @@ test.each([
 test("rejects a chance that isn't a number", () => {
   expect(() => planWith({ goals: [{ goalId: 1, pFull: "0.5", pPartial: 0 }] })).toThrow(TypeError);
 });
+
+// normal case: with the portfolio names, the risk level each year reads as stages
+// Author: Aiyan Tong
+describe("describeGlide", () => {
+  const NAMES = ["Cautious", "Conservative", "Balanced", "Growth", "Aggressive"];
+
+  test("names each run of years and the year it ends", () => {
+    const plan = planWith({ portfolios: NAMES });
+    expect(plan.glideStages()).toEqual([
+      { portfolio: "Balanced", firstYear: 0, lastYear: 1 },
+      { portfolio: "Conservative", firstYear: 2, lastYear: 2 },
+      { portfolio: "Cautious", firstYear: 3, lastYear: 3 },
+    ]);
+    expect(plan.describeGlide(2026)).toBe("Balanced until 2028, Conservative to 2029, then Cautious.");
+  });
+
+  // edge case: one risk level the whole way
+  test("says when the plan never changes", () => {
+    expect(planWith({ portfolios: NAMES, riskLevelByYear: [2, 2, 2] }).describeGlide(2026)).toBe("Conservative the whole way.");
+  });
+
+  // edge case: without names, each stage says its risk level
+  test("uses the risk level without portfolio names", () => {
+    expect(planWith({ riskLevelByYear: [3, 1] }).describeGlide(2026)).toBe("Risk level 3 until 2027, then Risk level 1.");
+  });
+
+  // normal case: the planner's result already has the names
+  test("takes the names from the planner's result", () => {
+    const r = MultiGoalPlanner.plan(
+      { netWorth: 5000, monthlySaving: 400, goals: [{ id: 1, targetAmount: 9000, months: 24 }] },
+      { iterations: 10, evalPaths: 300 },
+    );
+    expect(new MultiGoalPlan(r).portfolios).toEqual(NAMES);
+  });
+
+  // wrong case: names that aren't five strings
+  test.each([
+    ["four names", NAMES.slice(1)],
+    ["a blank name", ["", ...NAMES.slice(1)]],
+    ["not a list", "Balanced"],
+  ])("rejects %s", (_, portfolios) => {
+    expect(() => planWith({ portfolios })).toThrow(TypeError);
+  });
+});
+
+// normal case: how many goals are Realistic (80% or more, in full or in part)
+test("counts the realistic goals", () => {
+  expect(planWith({}).realisticCount()).toBe(1);   // 62% + 21% = 83%, and 30%
+  expect(planWith({ goals: [{ goalId: 1, pFull: 0.79, pPartial: 0 }] }).realisticCount()).toBe(0);
+  expect(planWith({ goals: [{ goalId: 1, pFull: 0.8, pPartial: 0 }] }).realisticCount()).toBe(1);
+});

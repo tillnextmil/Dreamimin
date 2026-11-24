@@ -1,6 +1,7 @@
 /* ============================================================
    GoalList — the rules for a user's list of goals: how many
-   there can be, and how the list is sorted and searched
+   there can be, how the list is sorted and searched, and which
+   goals the planner can plan together
    (SPECIFICATIONS.md, item 12). Works on plain goal objects in
    the API's shape ({ id, name, targetAmount, targetDate,
    priority, ... }), so the page's API client and the server's
@@ -9,6 +10,10 @@
 
 (function (global) {
   "use strict";
+
+  const FinancialGoal = typeof module !== "undefined" && module.exports
+    ? require("./financialGoal")
+    : global.FinancialGoal;
 
   /* how each sort orders two goals; ties fall back to the soonest date, then the oldest goal */
   const bySoonest = (a, b) => (a.targetDate < b.targetDate ? -1 : a.targetDate > b.targetDate ? 1 : 0);
@@ -26,6 +31,9 @@
     static DEFAULT_SORT = "date";
     static TOO_MANY = `You can have up to ${GoalList.MAX_GOALS} goals.`;
     static BAD_SORT = "Sort by date, priority, amount or name.";
+    static MAX_YEARS = 40;                 // the furthest ahead the planner looks
+    static DATE_PASSED = "Its date has passed.";
+    static TOO_FAR = `It's more than ${GoalList.MAX_YEARS} years away.`;
 
     /* the error message for a sort that isn't one of SORTS, or null when it's fine */
     static checkSort(sort) {
@@ -46,6 +54,26 @@
       return goals
         .filter((goal) => goal.name.toLowerCase().includes(wanted))
         .sort((a, b) => ORDERS[sort](a, b) || byOldest(a, b));
+    }
+
+    /* Splits goals into the ones the planner can plan together and the ones it can't, both soonest
+       first. planned: each goal with `months`, the whole months until its date (FinancialGoal's
+       monthsRemaining); left: each goal with the `reason` it can't be planned (its date has passed,
+       or it is more than MAX_YEARS away). asOf is "today". */
+    static forPlanner(goals, asOf = new Date()) {
+      const planned = [], left = [];
+      for (const saved of GoalList.arrange(goals)) {
+        const errors = FinancialGoal.validate({ ...saved, asOf });
+        const problem = Object.values(errors)[0];
+        if (problem) {
+          left.push({ ...saved, reason: errors.targetDate ? GoalList.DATE_PASSED : problem });
+          continue;
+        }
+        const months = new FinancialGoal({ ...saved, asOf }).monthsRemaining(asOf);
+        if (months > GoalList.MAX_YEARS * 12) left.push({ ...saved, reason: GoalList.TOO_FAR });
+        else planned.push({ ...saved, months });
+      }
+      return { planned, left };
     }
   }
 
