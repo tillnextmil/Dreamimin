@@ -2,8 +2,8 @@
    FinancialGoal — one savings goal: a name, a target amount, a
    target date, how important it is (priority) and the smallest
    amount the user would still accept. Works out how much to set
-   aside each month and whether a given monthly amount is enough
-   to get there in time.
+   aside each month and whether a given monthly amount, plus any
+   money already saved, is enough to get there in time.
    ============================================================ */
 
 (function (global) {
@@ -88,27 +88,62 @@
       return Math.max(1, months);
     }
 
-    monthlySavingsRequired(asOf = new Date()) {
-      return this.targetAmount / this.monthsRemaining(asOf);
+    /* what's left to save each month once `saved` (money the user already has for it) is counted;
+       0 when the savings already cover the target */
+    monthlySavingsRequired(asOf = new Date(), saved = 0) {
+      FinancialGoal.#checkSaved(saved);
+      return Math.max(0, this.targetAmount - saved) / this.monthsRemaining(asOf);
     }
 
-    /* true when saving `monthlySaving` a month reaches the target by the target date */
-    isOnTrack(monthlySaving, asOf = new Date()) {
+    /* true when `saved` now plus `monthlySaving` a month adds up to the target by the target date,
+       with no investment growth. A negative monthlySaving eats into the savings. */
+    isOnTrack(monthlySaving, asOf = new Date(), saved = 0) {
       FinancialGoal.#checkSaving(monthlySaving);
-      return monthlySaving >= this.monthlySavingsRequired(asOf);
+      FinancialGoal.#checkSaved(saved);
+      return monthlySaving >= (this.targetAmount - saved) / this.monthsRemaining(asOf);
     }
 
-    /* months it takes to reach the target at `monthlySaving` a month; Infinity when the saving is 0 or less */
-    monthsToReach(monthlySaving) {
+    /* months it takes to reach the target from `saved` at `monthlySaving` a month: 0 when the savings
+       already cover it, Infinity when they don't and the saving is 0 or less */
+    monthsToReach(monthlySaving, saved = 0) {
       FinancialGoal.#checkSaving(monthlySaving);
+      FinancialGoal.#checkSaved(saved);
+      if (saved >= this.targetAmount) return 0;
       if (monthlySaving <= 0) return Infinity;
       // round away floating-point noise first, so 17 / (17 / 7) is 7 months, not 8
-      const months = Math.round((this.targetAmount / monthlySaving) * 1e6) / 1e6;
+      const months = Math.round(((this.targetAmount - saved) / monthlySaving) * 1e6) / 1e6;
       return Math.ceil(months);
+    }
+
+    /* Everything the goal check on the page shows, worked out here so the view only formats it.
+       monthlySaving is what's left each month; saved is the money the user has now (0 or more).
+       Assumes all of both go to this goal, with no investment growth. */
+    check(monthlySaving, { saved = 0, asOf = new Date() } = {}) {
+      const monthlyNeeded = this.monthlySavingsRequired(asOf, saved);
+      const onTrack = this.isOnTrack(monthlySaving, asOf, saved);
+      const putIn = Math.max(0, monthlySaving);
+      return {
+        saved,
+        monthlySaving,
+        monthlyNeeded,
+        onTrack,
+        monthsLeft: this.monthsRemaining(asOf),
+        monthsToReach: this.monthsToReach(monthlySaving, saved),
+        coveredBySavings: saved >= this.targetAmount,
+        // the extra needed each month; 0 when on track
+        monthlyGap: onTrack ? 0 : Math.max(0, monthlyNeeded - putIn),
+        // share of the monthly amount needed that what's left each month covers, 0 to 1
+        coverage: monthlyNeeded === 0 ? (onTrack ? 1 : 0) : Math.min(1, putIn / monthlyNeeded),
+      };
     }
 
     static #checkSaving(value) {
       if (typeof value !== "number" || !Number.isFinite(value)) throw new TypeError("Monthly saving must be a number.");
+    }
+
+    static #checkSaved(value) {
+      if (typeof value !== "number" || !Number.isFinite(value)) throw new TypeError("Savings must be a number.");
+      if (value < 0) throw new RangeError("Savings can't be negative.");
     }
 
     static #startOfDay(date) {

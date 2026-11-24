@@ -48,7 +48,12 @@
       meta.className = "goal-item__meta";
       const parts = [`${format.money(row.targetAmount)} by ${format.longDate(row.date)}`, `Priority ${row.priority} of 5`];
       if (row.minAcceptableAmount > 0) parts.push(`would accept ${format.money(row.minAcceptableAmount)}`);
-      if (row.monthlyNeeded !== null) parts.push(`${format.money(row.monthlyNeeded)} a month`);
+      // $0 a month means the savings cover it; say so unless spending more than earning eats into them
+      if (row.monthlyNeeded === 0) {
+        if (!row.status || row.status.tone === "ok") parts.push("covered by your savings");
+      } else if (row.monthlyNeeded !== null) {
+        parts.push(`${format.money(row.monthlyNeeded)} a month`);
+      }
       meta.textContent = parts.join(" · ");
       select.append(name, meta);
 
@@ -118,48 +123,56 @@
     return D.views.fields.confirm($("delete-goal-dialog"));
   }
 
-  /* The goal check card for the selected goal. profile and goal are a FinancialProfile and a
-     FinancialGoal, or null; emptyText says what's missing when they aren't both there. */
-  function showGoalCheck(profile, goal, emptyText) {
-    const ready = Boolean(profile && goal);
-    $("goal-empty").hidden = ready;
-    $("goal-result").hidden = !ready;
-    if (!ready) {
+  /* The goal check card for the selected goal. goal is a FinancialGoal and check is what
+     goal.check() worked out, or null; emptyText says what's missing when there's no check. */
+  function showGoalCheck(goal, check, emptyText) {
+    $("goal-empty").hidden = Boolean(check);
+    $("goal-result").hidden = !check;
+    if (!check) {
       $("goal-empty-text").textContent = emptyText;
       return;
     }
 
-    const card = document.querySelector(".goal-card");
-    const needed = goal.monthlySavingsRequired();
-    const have = profile.monthlyCashFlow;
-    const onTrack = goal.isOnTrack(have);
-    const months = goal.monthsRemaining();
-    card.classList.toggle("is-short", !onTrack);
+    const { saved, monthlySaving: have, monthlyNeeded, onTrack, monthsLeft, monthsToReach, coveredBySavings, monthlyGap } = check;
+    const target = format.money(goal.targetAmount);
+    const date = FinancialGoal.parseDate(goal.targetDate);
+    const coverage = Math.round(check.coverage * 100);
+    document.querySelector(".goal-card").classList.toggle("is-short", !onTrack);
 
     $("goal-name").textContent = goal.name;
-    $("goal-target").textContent = `${format.money(goal.targetAmount)} by ${format.longDate(FinancialGoal.parseDate(goal.targetDate))}`;
+    $("goal-target").textContent = `${target} by ${format.longDate(date)}`;
     $("goal-status").className = "status " + (onTrack ? "status--ok" : "status--short");
     $("goal-status").innerHTML = (onTrack ? ICON_OK : ICON_SHORT) + `<span>${onTrack ? "On track" : "Not on track yet"}</span>`;
 
-    $("goal-needed").textContent = format.money(Math.ceil(needed));
+    $("goal-needed").textContent = format.money(Math.ceil(monthlyNeeded));
     $("goal-have").textContent = format.signed(have);
 
-    const coverage = have > 0 ? Math.min(100, Math.round((have / needed) * 100)) : 0;
     $("goal-fill").style.width = coverage + "%";
-    $("goal-meter").setAttribute("aria-label", `Your monthly surplus covers ${coverage}% of what this goal needs`);
-    $("goal-coverage").textContent = `Your surplus covers ${coverage}% of what this goal needs each month.`;
-
-    let advice;
-    const reachBy = (n) => format.monthYear(new Date(new Date().getFullYear(), new Date().getMonth() + n, 1));
-    if (onTrack) {
-      const n = goal.monthsToReach(have);
-      advice = `Putting ${format.money(have)} a month toward it, you'd reach ${format.money(goal.targetAmount)} in ${format.plural(n, "month")}, around ${reachBy(n)}.`;
-    } else if (have <= 0) {
-      advice = "Nothing is left over each month right now, so there's no money to put toward this goal. Spending less or earning more is the first step.";
+    $("goal-meter").setAttribute("aria-label", `What's left each month covers ${coverage}% of what this goal needs`);
+    if (coveredBySavings && onTrack) {
+      $("goal-coverage").textContent = `The ${format.money(saved)} you have for goals already covers this goal.`;
+    } else if (coveredBySavings) {
+      $("goal-coverage").textContent = `Spending more than you earn takes ${format.money(-have)} a month out of the ${format.money(saved)} you have for goals.`;
     } else {
-      const gap = Math.ceil(needed - have);
-      const n = goal.monthsToReach(have);
-      advice = `You'd need ${format.money(gap)} more a month to make it in ${format.plural(months, "month")}. At your current pace you'd get there around ${reachBy(n)} instead.`;
+      $("goal-coverage").textContent = `What's left each month covers ${coverage}% of what this goal needs` +
+        (saved > 0 ? `, after the ${format.money(saved)} you have for goals.` : ".");
+    }
+
+    const reachBy = (n) => format.monthYear(new Date(new Date().getFullYear(), new Date().getMonth() + n, 1));
+    const withSavings = saved > 0 ? `the ${format.money(saved)} you have for goals and ` : "";
+    let advice;
+    if (onTrack && coveredBySavings) {
+      advice = `The ${format.money(saved)} you have for goals is enough for ${target}. Keep it set aside until ${format.monthYear(date)}.`;
+    } else if (onTrack) {
+      advice = `With ${withSavings}${format.money(have)} a month toward it, you'd reach ${target} in ${format.plural(monthsToReach, "month")}, around ${reachBy(monthsToReach)}.`;
+    } else if (coveredBySavings) {
+      advice = `The ${format.money(saved)} you have for goals covers this goal today, but spending more than you earn would use it up before ${format.monthYear(date)}. Spending less or earning more is the first step.`;
+    } else if (have <= 0) {
+      advice = saved > 0
+        ? `Nothing is left over each month, and the ${format.money(saved)} you have for goals covers only part of ${target}. Spending less or earning more is the first step.`
+        : "Nothing is left over each month right now, so there's no money to put toward this goal. Spending less or earning more is the first step.";
+    } else {
+      advice = `You'd need ${format.money(Math.ceil(monthlyGap))} more a month to make it in ${format.plural(monthsLeft, "month")}. At your current pace you'd get there around ${reachBy(monthsToReach)} instead.`;
     }
     $("goal-advice").textContent = advice;
   }

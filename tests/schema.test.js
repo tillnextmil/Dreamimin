@@ -26,6 +26,7 @@ test("starts with the profile, a risk preference of 5 and the five portfolios", 
   const profile = db.prepare("SELECT * FROM profile").all();
   expect(profile).toEqual([{
     profile_id: PROFILE_ID, name: "My profile", monthly_income: null, monthly_expenses: null, net_worth: 0,
+    emergency_fund: 0,
   }]);
   expect(db.prepare("SELECT max_risk_level FROM risk_preference WHERE profile_id = ?").get(PROFILE_ID).max_risk_level).toBe(5);
   const names = db.prepare("SELECT name FROM investment_portfolio ORDER BY risk_level").all().map((r) => r.name);
@@ -52,6 +53,14 @@ test("min_acceptable_amount must be from 0 up to less than the target amount", (
   expect(() => insertGoal({ min: 11999.99 })).not.toThrow();
   expect(() => insertGoal({ min: 12000 })).toThrow();
   expect(() => insertGoal({ min: -1 })).toThrow();
+});
+
+// wrong case: the emergency fund can be 0 or more, never negative, as FinancialProfile checks
+test("rejects a negative emergency fund", () => {
+  const setFund = (amount) => db.prepare("UPDATE profile SET emergency_fund = ? WHERE profile_id = ?").run(amount, PROFILE_ID);
+  expect(() => setFund(6000)).not.toThrow();
+  expect(() => setFund(0)).not.toThrow();
+  expect(() => setFund(-1)).toThrow();
 });
 
 // wrong case: the goal table rejects what the API rejects

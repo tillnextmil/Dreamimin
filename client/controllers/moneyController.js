@@ -1,6 +1,6 @@
 /* ============================================================
    Step 1 controller (Your money): reads the income, spending,
-   net worth and available funds fields, builds a
+   net worth, available funds and emergency fund fields, builds a
    FinancialProfile and keeps the AvailableFunds, and handles
    recording and removing spending. The rules live in the domain
    classes; this file only passes input to them and tells the
@@ -19,6 +19,7 @@
     expenses: { group: "profile", key: "expenses", missing: "Enter your monthly spending." },
     netWorth: { group: "profile", key: "netWorth", optional: true },
     availableFunds: { group: "funds", key: "balance", optional: true },
+    emergencyFund: { group: "profile", key: "emergencyFund", optional: true },
   };
   const CLASSES = { profile: FinancialProfile, funds: AvailableFunds };
 

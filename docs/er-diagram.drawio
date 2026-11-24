@@ -52,6 +52,8 @@
         <mxCell id="a17-e" style="endArrow=none;html=1;rounded=0;strokeColor=#666666;" edge="1" parent="1" source="profile" target="a17"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="a18" value="net_worth" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="940" y="540" width="100.0" height="40" as="geometry" /></mxCell>
         <mxCell id="a18-e" style="endArrow=none;html=1;rounded=0;strokeColor=#666666;" edge="1" parent="1" source="profile" target="a18"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a18b" value="emergency_fund" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="845" y="605" width="150" height="40" as="geometry" /></mxCell>
+        <mxCell id="a18b-e" style="endArrow=none;html=1;rounded=0;strokeColor=#666666;" edge="1" parent="1" source="profile" target="a18b"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="a19" value="plan_id" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="1165" y="315" width="90.0" height="40" as="geometry" /></mxCell>
         <mxCell id="a19-e" style="endArrow=none;html=1;rounded=0;strokeColor=#666666;" edge="1" parent="1" source="plan" target="a19"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="a20" value="created_at" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="1295" y="280" width="110.0" height="40" as="geometry" /></mxCell>

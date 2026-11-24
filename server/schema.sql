@@ -7,13 +7,15 @@
 PRAGMA foreign_keys = ON;
 
 -- Until sign-in exists there is one profile, created with the database (see server/db.js).
--- Income and spending are NULL until the user saves them.
+-- Income and spending are NULL until the user saves them. emergency_fund is the money the user
+-- keeps for surprises; the goals start from what's left after it.
 CREATE TABLE IF NOT EXISTS profile (
   profile_id INTEGER PRIMARY KEY,
   name TEXT NOT NULL DEFAULT 'My profile',
   monthly_income REAL CHECK (monthly_income >= 0),
   monthly_expenses REAL CHECK (monthly_expenses >= 0),
-  net_worth REAL NOT NULL DEFAULT 0
+  net_worth REAL NOT NULL DEFAULT 0,
+  emergency_fund REAL NOT NULL DEFAULT 0 CHECK (emergency_fund >= 0)
 );
 
 -- The plan only uses portfolios up to max_risk_level; 5 lets it use all of them.
