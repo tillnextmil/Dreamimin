@@ -102,7 +102,7 @@ the in-memory one.
 | GoalProbability | `src/goalProbability.js` | A chance from 0 to 1, its verdict and its percent |
 | InvestmentPortfolio | `src/investmentPortfolio.js` | The five portfolios, low to high risk: expected return and volatility |
 | RetirementPlan | `src/retirementPlan.js` | Yearly withdrawals from the retirement age on, and the chance the money lasts to a chosen age |
-| AvailableFunds | `src/availableFunds.js` | The funds available for the goal, lowered by recorded spending |
+| AvailableFunds | `src/availableFunds.js` | The funds available for the goal, lowered by recorded spending; adds the spending up by category for the step 1 chart (drawn by `client/views/pieChart.js`) |
 | Expense | `src/expense.js` | One recorded spending: amount, date, note and category |
 
 ## Diagrams

@@ -21,8 +21,9 @@ out is described in SPECIFICATIONS.md.
 4. As a user, I can enter the funds I have available to put toward my
    goal, update them later, and see my results for the goal change with
    them.
-5. As a user, I can record what I spend, so my available funds stay up
-   to date and I can see how my spending affects my goal.
+5. As a user, I can record what I spend, with a category, so my
+   available funds stay up to date, I can see how my spending affects my
+   goal, and I can see in a chart which categories my spending went to.
 
 ## Financial Goal
 
