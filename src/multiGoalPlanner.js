@@ -220,11 +220,13 @@
 
   /* policy: { invest(d, W) -> portfolio index, goal(d, W) -> TAKE, PARTIAL or SKIP } for decision d.
      Returns the utility and, per goal (in the job's order), how often it was reached in full or in
-     part; with `withTimeline`, also the 10th/50th/90th percentile wealth left at each stop. */
+     part; with `withTimeline`, also the 10th/50th/90th percentile wealth at each stop, before and
+     after that stop's goals are paid. */
   function evaluate(policy, env, n = EVAL_PATHS, withTimeline = false) {
     const K = env.steps.length, z = marketPaths(n, K);
     const full = new Uint32Array(env.goals.length), part = new Uint32Array(env.goals.length);
     const left = withTimeline ? env.steps.map(() => new Float64Array(n)) : null;
+    const grown = withTimeline ? env.steps.map(() => new Float64Array(n)) : null;   // before the goals
     let reward = 0;
     for (let path = 0; path < n; path++) {
       let W = env.W0;
@@ -233,6 +235,7 @@
         if (!goal) {
           if (left && step.k > 0) left[step.k - 1][path] = W;
           W = grow(W, policy.invest(d, W), step, z[path * K + step.k]);
+          if (grown) grown[step.k][path] = W;
           continue;
         }
         const action = policy.goal(d, W);
@@ -252,10 +255,11 @@
       })),
     };
     if (left) {
-      result.timeline = env.steps.map((step, k) => {
-        const sorted = left[k].sort();
-        return { month: step.end, p10: sorted[floor(n * 0.1)], p50: sorted[floor(n * 0.5)], p90: sorted[floor(n * 0.9)] };
-      });
+      const percentiles = (values) => {
+        const sorted = values.sort();
+        return { p10: sorted[floor(n * 0.1)], p50: sorted[floor(n * 0.5)], p90: sorted[floor(n * 0.9)] };
+      };
+      result.timeline = env.steps.map((step, k) => ({ month: step.end, ...percentiles(left[k]), before: percentiles(grown[k]) }));
     }
     return result;
   }

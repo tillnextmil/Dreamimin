@@ -275,6 +275,22 @@ describe("plan", () => {
     });
   });
 
+  // normal case: each stop also has the money just before its goals are paid, so a chart can show the drop
+  test("reports the money before each stop's goals are paid", () => {
+    const r = MultiGoalPlanner.plan(JOB, QUICK);
+    const goalMonths = JOB.goals.map((g) => g.months);
+    r.timeline.forEach((t) => {
+      expect(t.before.p10).toBeLessThanOrEqual(t.before.p50);
+      expect(t.before.p50).toBeLessThanOrEqual(t.before.p90);
+      for (const key of ["p10", "p50", "p90"]) {
+        if (goalMonths.includes(t.month)) expect(t.before[key]).toBeGreaterThanOrEqual(t[key]);
+        else expect(t.before[key]).toBe(t[key]);   // nothing is paid at a stop without a goal
+      }
+    });
+    const trip = r.timeline.find((t) => t.month === 8);
+    expect(trip.before.p50 - trip.p50).toBeGreaterThan(0);   // the trip is paid in a typical market
+  });
+
   // normal case: progress is reported, benchmark first, one message per PPO round
   test("reports the benchmark and then each round", () => {
     const messages = [];
