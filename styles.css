@@ -18,6 +18,16 @@
   --negative-soft: #fdecea;
   --meter-track: #ece9e2;
 
+  /* spending categories, in Expense.CATEGORIES order; checked for colour-blind separation */
+  --cat-housing: #2a78d6;
+  --cat-food: #eb6834;
+  --cat-transport: #1baf7a;
+  --cat-bills: #eda100;
+  --cat-health: #e87ba4;
+  --cat-fun: #008300;
+  --cat-shopping: #6250d6;
+  --cat-other: #8f948f;
+
   --radius: 20px;
   --radius-sm: 12px;
   --shadow: 0 1px 1px rgba(22, 32, 27, 0.03), 0 2px 6px rgba(22, 32, 27, 0.04), 0 16px 40px -12px rgba(22, 32, 27, 0.10);
@@ -399,6 +409,60 @@ h2[tabindex]:focus { outline: none; }
 .spending__list { list-style: none; margin: 10px 0 0; padding: 0; }
 .spending__list li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 15px; }
 .spending__list li span { overflow-wrap: anywhere; }
+.spending__info { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.spending__category { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+
+/* spending by category: a ring and its legend */
+[data-key="housing"] { --cat: var(--cat-housing); }
+[data-key="food"] { --cat: var(--cat-food); }
+[data-key="transport"] { --cat: var(--cat-transport); }
+[data-key="bills"] { --cat: var(--cat-bills); }
+[data-key="health"] { --cat: var(--cat-health); }
+[data-key="fun"] { --cat: var(--cat-fun); }
+[data-key="shopping"] { --cat: var(--cat-shopping); }
+[data-key="other"] { --cat: var(--cat-other); }
+.swatch { width: 10px; height: 10px; border-radius: 50%; background: var(--cat, var(--cat-other)); flex: none; }
+
+.spend-chart {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.spend-chart__title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.spend-chart__body { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; }
+.spend-chart__pie { position: relative; flex: none; width: 148px; height: 148px; }
+.spend-chart__total {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.spend-chart__total strong { font-family: var(--font-display); font-size: 26px; font-weight: 400; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.spend-chart__total span { color: var(--muted); font-size: 13px; }
+.pie { display: block; }
+.pie-slice { fill: var(--cat); stroke: var(--surface-2); stroke-width: 2; stroke-linejoin: round; transition: opacity var(--fast) ease; }
+.spend-chart[data-active] .pie-slice:not(.is-active) { opacity: 0.3; }
+.spend-chart__legend { flex: 1 1 200px; min-width: 0; list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.spend-chart__legend li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto 3.4em;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--fast) ease;
+}
+.spend-chart__legend li.is-active { background: var(--surface); }
+.spend-chart__name { overflow-wrap: anywhere; }
+.spend-chart__amount { font-weight: 600; }
+.spend-chart__share { color: var(--muted); text-align: right; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(-4px); } }
 
 /* dropdowns look like the text fields */

@@ -1,6 +1,7 @@
 /* ============================================================
-   Step 1 view (Your money): the monthly money results and the
-   list of recorded spending. Display only: it reads from the
+   Step 1 view (Your money): the monthly money results, the
+   list of recorded spending and the spending-by-category chart
+   (pieChart.js). Display only: it reads from the
    FinancialProfile and AvailableFunds it is given and never
    changes them or calls the server.
    ============================================================ */
@@ -8,8 +9,35 @@
 (function (D) {
   "use strict";
 
-  const { format } = D;
+  const { format, PieChart } = D;
   const $ = (id) => document.getElementById(id);
+
+  /* a share from 0 to 1 as a whole percent, never "0%" or "100%" for a part: 0.004 -> "<1%", 0.996 -> ">99%" */
+  function percent(share) {
+    const whole = Math.round(share * 100);
+    if (share > 0 && whole === 0) return "<1%";
+    if (share < 1 && whole === 100) return ">99%";
+    return whole + "%";
+  }
+
+  /* "transport" -> "Transport" */
+  const categoryName = (category) => category.charAt(0).toUpperCase() + category.slice(1);
+
+  /* a coloured dot for a category; the stylesheet gives each category its colour */
+  function swatch(category) {
+    const dot = document.createElement("span");
+    dot.className = "swatch";
+    dot.dataset.key = category;
+    dot.setAttribute("aria-hidden", "true");
+    return dot;
+  }
+
+  /* fills the category picker, with `selected` chosen */
+  function showCategories(categories, selected) {
+    const select = $("spendCategory");
+    select.replaceChildren(...categories.map((category) => new Option(categoryName(category), category)));
+    select.value = selected;
+  }
 
   /* profile is a FinancialProfile or null; funds is the AvailableFunds or null */
   function showMoney(profile, funds) {
@@ -53,12 +81,14 @@
     }
   }
 
-  /* The funds left and the recorded spending, each with a Remove button carrying the spending's
-     id in data-expense-id; the money controller handles the clicks. */
-  function showSpending(funds, ready) {
+  /* The funds left and the recorded spending, each with its category and a Remove button carrying
+     the spending's id in data-expense-id; the money controller handles the clicks. byCategory is
+     AvailableFunds.spendingByCategory(), for the chart. */
+  function showSpending(funds, ready, byCategory = []) {
     const list = $("spending-list");
     list.replaceChildren();
     $("spending-add").disabled = !funds || !ready;
+    showByCategory(funds && ready ? byCategory : []);
     if (!funds || !ready) {
       $("spending-left").textContent = "";
       return;
@@ -70,17 +100,69 @@
     for (const expense of funds.expenses) {
       const item = document.createElement("li");
       const text = document.createElement("span");
+      text.className = "spending__text";
       text.textContent = `${format.longDate(Expense.parseDate(expense.date))}: ${format.cents(expense.amount)}${expense.note ? ", " + expense.note : ""}`;
+      const category = document.createElement("span");
+      category.className = "spending__category";
+      category.append(swatch(expense.category), categoryName(expense.category));
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "link-btn";
       remove.textContent = "Remove";
       remove.dataset.expenseId = expense.id;
       remove.setAttribute("aria-label", `Remove ${format.cents(expense.amount)} spending`);
-      item.append(text, remove);
+      const info = document.createElement("div");
+      info.className = "spending__info";
+      info.append(text, category);
+      item.append(info, remove);
       list.appendChild(item);
     }
   }
+
+  /* The ring and its legend, largest category first, once spending is in two categories or more:
+     with one there is nothing to split, and the list already says it all. rows: [{ category,
+     amount, share }]. */
+  function showByCategory(rows) {
+    const chart = $("spend-chart");
+    chart.hidden = rows.length < 2;
+    if (chart.hidden) return;
+    const built = PieChart.build({
+      slices: rows.map((r) => ({ key: r.category, value: r.amount, label: `${categoryName(r.category)}: ${format.cents(r.amount)}` })),
+    });
+    $("spend-pie").innerHTML = built.svg;
+    $("spend-total").textContent = format.money(rows.reduce((sum, r) => sum + r.amount, 0));
+
+    const legend = $("spend-legend");
+    legend.replaceChildren();
+    for (const { category, amount, share } of rows) {
+      const item = document.createElement("li");
+      item.dataset.key = category;
+      const name = document.createElement("span");
+      name.className = "spend-chart__name";
+      name.textContent = categoryName(category);
+      const money = document.createElement("span");
+      money.className = "spend-chart__amount";
+      money.textContent = format.cents(amount);
+      const part = document.createElement("span");
+      part.className = "spend-chart__share";
+      part.textContent = percent(share);
+      item.append(swatch(category), name, money, part);
+      legend.append(item);
+    }
+  }
+
+  /* pointing at a slice or a legend row brings out that category in both */
+  function highlight(category) {
+    const chart = $("spend-chart");
+    if (category) chart.dataset.active = category;
+    else delete chart.dataset.active;
+    for (const el of chart.querySelectorAll("[data-key]")) el.classList.toggle("is-active", el.dataset.key === category);
+  }
+  $("spend-chart").addEventListener("pointerover", (event) => {
+    const target = event.target.closest(".pie-slice, .spend-chart__legend li");
+    highlight(target ? target.dataset.key : null);
+  });
+  $("spend-chart").addEventListener("pointerleave", () => highlight(null));
 
   const showSpendingError = (message) => { $("spending-error").textContent = message; };
   const showSpendingImpact = (text) => { $("spending-impact").textContent = text; };
@@ -97,5 +179,5 @@
     $("spendNote").value = "";
   }
 
-  D.views.money = { showMoney, showSpending, showSpendingError, showSpendingImpact, setSpendingDate, clearSpendingInputs };
+  D.views.money = { showMoney, showCategories, showSpending, showSpendingError, showSpendingImpact, setSpendingDate, clearSpendingInputs };
 })(window.Dreamimin);
