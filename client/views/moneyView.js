@@ -164,6 +164,21 @@
   });
   $("spend-chart").addEventListener("pointerleave", () => highlight(null));
 
+  /* fills in and opens the remove dialog for one Expense; resolves to true when the user confirms */
+  function confirmRemoveSpending(expense) {
+    const amount = format.cents(expense.amount);
+    const details = [format.longDate(Expense.parseDate(expense.date)), categoryName(expense.category), expense.note].filter(Boolean).join(" · ");
+    $("remove-spending-text").textContent = `${amount}, ${details}. It comes off your list, and ${amount} goes back into your available funds.`;
+    return D.views.fields.confirm($("remove-spending-dialog"));
+  }
+
+  /* After spending is removed, focus moves to the Remove button now in its place (or the last one),
+     or to the amount field when nothing is left, so keyboard users don't lose their place. */
+  function focusAfterRemove(index) {
+    const buttons = $("spending-list").querySelectorAll("[data-expense-id]");
+    (buttons[Math.min(index, buttons.length - 1)] || $("spendAmount")).focus();
+  }
+
   const showSpendingError = (message) => { $("spending-error").textContent = message; };
   const showSpendingImpact = (text) => { $("spending-impact").textContent = text; };
 
@@ -179,5 +194,8 @@
     $("spendNote").value = "";
   }
 
-  D.views.money = { showMoney, showCategories, showSpending, showSpendingError, showSpendingImpact, setSpendingDate, clearSpendingInputs };
+  D.views.money = {
+    showMoney, showCategories, showSpending, confirmRemoveSpending, focusAfterRemove,
+    showSpendingError, showSpendingImpact, setSpendingDate, clearSpendingInputs,
+  };
 })(window.Dreamimin);

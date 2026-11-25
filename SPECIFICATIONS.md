@@ -252,7 +252,13 @@
     it, a form to record spending (amount, date, category, note; the
     category is Other unless chosen, and stays as chosen for the next
     one) with a list of what has been recorded, each with its category
-    and a Remove button. Once spending is in two categories or more, a
+    and a Remove button. Remove asks "Remove this spending?" in a dialog
+    first, naming the amount, date, category and note ("$86.00, November
+    18, 2026 · Food · Dinner out."): Remove spending goes ahead and puts
+    the amount back in the funds, while Keep it, Escape or a click
+    outside the dialog leaves it. After a removal, keyboard focus moves
+    to the Remove button now in its place (the last one when it was at
+    the end), or to the Amount field when none are left. Once spending is in two categories or more, a
     chart above the list shows how it splits (`client/views/pieChart.js`):
     a ring with a slice per category, largest first, clockwise from 12
     o'clock, the total spent in the middle, and a legend with each
