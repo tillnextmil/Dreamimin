@@ -217,6 +217,7 @@
     | `setEnteredAmount(entered)` | Sets the funds from the amount the user entered, minus the spending already recorded; returns the new balance |
     | `recordSpending(expense)` | Takes an Expense, lowers the balance by its amount and keeps it; returns the new balance |
     | `removeSpending(expenseId)` | Removes a recorded Expense and adds its amount back; returns the new balance |
+    | `editSpending(expenseId, edited)` | Swaps a recorded Expense for its edited version (same id); the balance changes by the difference; returns the new balance |
     | `spendingByCategory(order)` | The recorded spending added up per category, largest first: `{ category, amount, share }` for each category with spending, where `amount` is rounded to the cent and `share` is that amount over `totalSpent`; equal amounts follow `order` (the page passes `Expense.CATEGORIES`); an Expense without a category counts as `other` |
 
     Expense (`src/expense.js`):
@@ -236,6 +237,8 @@
     | `recordSpending` given something that isn't an Expense | TypeError | "Record an Expense." |
     | Spending more than the balance | RangeError | "That's more than your available funds." |
     | `removeSpending` with an unknown id | RangeError | "No spending with that id." |
+    | `editSpending` that would leave the funds below $0 | RangeError | "That's more than your available funds." |
+    | `editSpending` with an edit that has a different id | RangeError | "The edited spending must keep its id." |
     | `setEnteredAmount` with less than the spending recorded | RangeError | "That's less than the spending you've recorded." |
     | Amount not a number | RangeError | "Spending amount must be a number." |
     | Amount of $0 or less | RangeError | "Spending amount must be more than $0." |
