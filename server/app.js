@@ -25,6 +25,7 @@ const ProfileService = require("./services/profileService");
 const profileRoutes = require("./routes/profileRoutes");
 const FundsRepository = require("./repositories/fundsRepository");
 const ExpenseRepository = require("./repositories/expenseRepository");
+const FundsEventRepository = require("./repositories/fundsEventRepository");
 const FundsService = require("./services/fundsService");
 const { fundsRoutes, expenseRoutes } = require("./routes/fundsRoutes");
 
@@ -37,7 +38,9 @@ function createApp({ db }) {
   const goalService = new GoalService(goalRepository, { profileId: PROFILE_ID });
   const planService = new PlanService(new PlanRepository(db), goalRepository, { profileId: PROFILE_ID });
   const profileService = new ProfileService(new ProfileRepository(db), { profileId: PROFILE_ID });
-  const fundsService = new FundsService(new FundsRepository(db), new ExpenseRepository(db), { profileId: PROFILE_ID });
+  const fundsService = new FundsService(
+  new FundsRepository(db), new ExpenseRepository(db), new FundsEventRepository(db), { profileId: PROFILE_ID }
+  );
 
   const app = express();
   app.use(express.json());

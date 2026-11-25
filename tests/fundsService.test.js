@@ -6,6 +6,7 @@
 const { openDatabase, PROFILE_ID } = require("../server/db");
 const FundsRepository = require("../server/repositories/fundsRepository");
 const ExpenseRepository = require("../server/repositories/expenseRepository");
+const FundsEventRepository = require("../server/repositories/fundsEventRepository");
 const FundsService = require("../server/services/fundsService");
 const ServiceError = require("../server/services/serviceError");
 
@@ -16,7 +17,7 @@ const DINNER = { amount: 86, date: "2026-11-24", note: "Dinner", category: "food
 let db, service;
 beforeEach(() => {
   db = openDatabase(":memory:");
-  service = new FundsService(new FundsRepository(db), new ExpenseRepository(db), { profileId: PROFILE_ID, now: () => TODAY });
+  service = new FundsService(new FundsRepository(db), new ExpenseRepository(db), new FundsEventRepository(db), { profileId: PROFILE_ID, now: () => TODAY });
 });
 
 afterEach(() => {

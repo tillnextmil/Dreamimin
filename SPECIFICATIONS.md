@@ -301,7 +301,7 @@
     table (funds id, the profile they belong to, the entered amount and
     the balance, both 0 or more) and an `expense` table (expense id, funds
     id referencing `available_funds`, amount above 0, date, note of 60
-    characters or fewer, and a category from the list, `other` by default).
+    characters or fewer, and a category from the list, `other` by default), and a `funds_event` table (event id, funds id, kind `income` or `loss`, amount above 0, date, note of 60 characters or fewer).
 
 12. Server API. The final app saves its data on a small server: Node
     with Express, storing everything in SQLite through Node's built-in
