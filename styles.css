@@ -737,7 +737,8 @@ h2[tabindex]:focus { outline: none; }
 /* step 3: chance with investing */
 .odds { display: grid; gap: 22px; }
 .odds > .callout { margin-top: 0; }
-.odds .stats, .odds .facts, .odds .how { margin-top: 0; }
+.odds .stats, .odds .facts, .odds .how, .odds .plan-saved { margin-top: 0; }
+.plan-saved.is-error { color: var(--negative); }
 #odds-result[aria-busy="true"] #timeline-section,
 #odds-result[aria-busy="true"] .stats,
 #odds-result[aria-busy="true"] .facts { opacity: 0.5; transition: opacity var(--medium) ease; }

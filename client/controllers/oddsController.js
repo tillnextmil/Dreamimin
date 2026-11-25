@@ -1,9 +1,10 @@
 /* ============================================================
    Step 3 controller (Your chances): plans every goal together
    with the MultiGoalPlanner, in a Web Worker when the browser
-   allows it and on the page otherwise, keeps finished plans,
-   answers the what-if slider from the planner's quick estimate,
-   and tells the odds view and the step bar what to show.
+   allows it and on the page otherwise, keeps finished plans and
+   saves each one on the server, answers the what-if slider from
+   the planner's quick estimate, and tells the odds view and the
+   step bar what to show.
    ============================================================ */
 
 (function (D) {
@@ -22,8 +23,10 @@
   const plannerGoal = ({ id, targetAmount, months, priority, minAcceptableAmount }) => ({ id, targetAmount, months, priority, minAcceptableAmount });
 
   /* notify(name, detail) tells the step bar (views/steps.js) what changed;
-     showImpact(text) shows on step 1 how recorded spending changed the chance */
-  function createOddsController({ notify, showImpact }) {
+     showImpact(text) shows on step 1 how recorded spending changed the chance;
+     savePlan(body) saves a finished plan (POST /api/plans) and returns a promise, or is null when
+     there is no server to save to */
+  function createOddsController({ notify, showImpact, savePlan = null }) {
     /* the planner gives the same result for the same job, so finished plans are kept per job */
     const plans = new Map();
     let worker = null, runId = 0, debounce = null, currentKey = null;
@@ -50,7 +53,21 @@
       notify("plan:empty");
     }
 
-    /* done: { result: a MultiGoalPlan, timeline: the planner's timeline } */
+    /* Saves a finished plan once; done.saved says how that went ({ state: "saving" | "saved" |
+       "failed", message }), and the page shows it while that plan is on screen. A plan that couldn't
+       be saved is tried again when it is shown again. */
+    function save(key, done) {
+      if (savePlan && (!done.saved || done.saved.state === "failed")) {
+        done.saved = { state: "saving" };
+        savePlan(done.result.toJSON()).then(
+          () => { done.saved = { state: "saved" }; },
+          (error) => { done.saved = { state: "failed", message: error.message }; },
+        ).then(() => { if (key === currentKey) view.showSaved(done.saved); });
+      }
+      if (key === currentKey) view.showSaved(done.saved);
+    }
+
+    /* done: { result: a MultiGoalPlan, timeline: the planner's timeline, saved } */
     function showResult(done) {
       const { result, timeline } = done;
       view.showPlan(plan, result);
@@ -118,6 +135,7 @@
           }
           plans.set(key, done);
           showResult(done);
+          save(key, done);
           if (worker) worker.terminate();
           worker = null;
         }
@@ -170,7 +188,8 @@
       if (plans.has(key)) {
         stopPlanner();
         currentKey = key;
-        return showResult(plans.get(key));
+        showResult(plans.get(key));
+        return save(key, plans.get(key));
       }
       if (key === currentKey) return;   // the same plan is still training; only names or the chosen goal changed
       currentKey = key;
