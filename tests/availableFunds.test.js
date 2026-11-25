@@ -239,3 +239,89 @@ test("rejects an unknown id, a changed id or something that isn't an Expense", (
   expect(() => funds.editSpending("e1", { id: "e1", amount: 0 })).toThrow(TypeError);
   expect(funds.balance).toBe(400);
 });
+
+// ---------- Income and losses ----------
+
+// Stands in for a FundsEvent (src/fundsEvent.js): an id, a kind, an amount and a date.
+function event(id, kind, amount, date = "2026-10-15") {
+  return Object.freeze({ id, kind, amount, date, note: "" });
+}
+
+// normal case: income raises the balance, a loss lowers it, and the totals add them up
+test("income raises the balance and a loss lowers it", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  expect(funds.recordEvent(event("i1", "income", 800))).toBe(1800);
+  expect(funds.recordEvent(event("l1", "loss", 300))).toBe(1500);
+  expect(funds.totalIncome).toBe(800);
+  expect(funds.totalLoss).toBe(300);
+  expect(funds.events.map((e) => e.id)).toEqual(["i1", "l1"]);
+});
+
+// normal case: the entered amount counts income and losses as well as spending
+test("setEnteredAmount works out entered + income - losses - spending", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  funds.recordEvent(event("i1", "income", 800));
+  funds.recordEvent(event("l1", "loss", 300));
+  funds.recordSpending(spending("e1", 200));
+  expect(funds.setEnteredAmount(2000)).toBe(2300);
+  expect(() => funds.setEnteredAmount(0)).not.toThrow();   // 0 + 800 - 300 - 200 = 300
+  expect(() => funds.setEnteredAmount(-1)).toThrow("Available funds can't be negative.");
+});
+
+// wrong case: a loss more than the funds is rejected and changes nothing
+test("rejects a loss more than the funds", () => {
+  const funds = new AvailableFunds({ balance: 100 });
+  expect(() => funds.recordEvent(event("l1", "loss", 100.01))).toThrow("That's more than your available funds.");
+  expect(funds.balance).toBe(100);
+  expect(funds.events).toEqual([]);
+});
+
+// normal case: removing an event undoes its change
+test("removing income or a loss undoes its change", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  funds.recordEvent(event("i1", "income", 500));
+  funds.recordEvent(event("l1", "loss", 200));
+  expect(funds.removeEvent("l1")).toBe(1500);
+  expect(funds.removeEvent("i1")).toBe(1000);
+});
+
+// wrong case: removing income that has already been spent is rejected and changes nothing
+test("rejects removing income that has been spent", () => {
+  const funds = new AvailableFunds({ balance: 0 });
+  funds.recordEvent(event("i1", "income", 500));
+  funds.recordSpending(spending("e1", 400));
+  expect(() => funds.removeEvent("i1")).toThrow("That would leave your available funds below $0.");
+  expect(funds.balance).toBe(100);
+  expect(() => funds.removeEvent("nope")).toThrow("No income or loss with that id.");
+});
+
+// normal case: editing an event changes the balance by the difference, even when the kind changes
+test("editing income or a loss changes the balance by the difference", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  funds.recordEvent(event("i1", "income", 500));
+  expect(funds.editEvent("i1", event("i1", "income", 700))).toBe(1700);
+  expect(funds.editEvent("i1", event("i1", "loss", 100))).toBe(900);
+  expect(funds.totalIncome).toBe(0);
+  expect(funds.totalLoss).toBe(100);
+});
+
+// wrong case: an edit that would leave the funds below $0 says why, and changes nothing
+test("rejects an edit that would leave the funds below $0", () => {
+  const funds = new AvailableFunds({ balance: 0 });
+  funds.recordEvent(event("i1", "income", 500));
+  funds.recordSpending(spending("e1", 400));
+  expect(() => funds.editEvent("i1", event("i1", "income", 300))).toThrow("That would leave your available funds below $0.");
+  expect(() => funds.editEvent("i1", event("i1", "loss", 1))).toThrow("That's more than your available funds.");
+  expect(() => funds.editEvent("i1", event("i2", "income", 600))).toThrow("The edited income or loss must keep its id.");
+  expect(funds.balance).toBe(100);
+});
+
+// wrong case: something that isn't income or a loss can't be recorded
+test.each([{ id: "x", kind: "gift", amount: 10 }, { id: "x", kind: "income", amount: 0 }, { kind: "loss", amount: 5 }, null])(
+  "rejects %p as income or a loss",
+  (notAnEvent) => {
+    const funds = new AvailableFunds({ balance: 100 });
+    expect(() => funds.recordEvent(notAnEvent)).toThrow("Record income or a loss.");
+    expect(funds.balance).toBe(100);
+  }
+);

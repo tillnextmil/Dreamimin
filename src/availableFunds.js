@@ -1,8 +1,9 @@
 /* ============================================================
    AvailableFunds — the money the user has available for the
-   goal, and the spending recorded against it. Recording an
-   Expense lowers the balance; removing it adds the amount back.
-   Also adds the spending up by category for the step 1 chart.
+   goal, and the spending, income and losses recorded against
+   it. Recording an Expense or a loss lowers the balance, income
+   raises it, and removing one undoes its change. Also adds the
+   spending up by category for the step 1 chart.
    ============================================================ */
 
 (function (global) {
@@ -13,6 +14,7 @@
   class AvailableFunds {
     #balance;
     #expenses = [];
+    #events = [];
 
     /* balance is the funds available now, in dollars; id is made up when left out */
     constructor({ id, balance }) {
@@ -30,7 +32,7 @@
       return errors;
     }
 
-    /* the funds left now, after recorded spending */
+    /* the funds left now, after recorded spending, income and losses */
     get balance() {
       return this.#balance;
     }
@@ -39,6 +41,20 @@
     get expenses() {
       const sorted = [...this.#expenses].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
       return Object.freeze(sorted);
+    }
+
+    /* the recorded income and losses (FundsEvents), oldest first; a copy that can't be changed */
+    get events() {
+      const sorted = [...this.#events].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+      return Object.freeze(sorted);
+    }
+
+    get totalIncome() {
+      return AvailableFunds.#total(this.#events.filter((e) => e.kind === "income"));
+    }
+
+    get totalLoss() {
+      return AvailableFunds.#total(this.#events.filter((e) => e.kind === "loss"));
     }
 
     get totalSpent() {
@@ -70,12 +86,12 @@
       this.#balance = amount;
     }
 
-    /* entered is the amount the user typed for their funds, before any recorded spending; the
-       balance becomes that amount minus the spending already recorded. Returns the new balance. */
+    /* entered is the amount the user typed for their funds, before any recorded spending, income
+       or losses; the balance becomes entered + income - losses - spending. Returns the new balance. */
     setEnteredAmount(entered) {
       const errors = AvailableFunds.validate({ balance: entered });
       if (errors.balance) throw new RangeError(errors.balance);
-      const balance = AvailableFunds.#toCents(entered - this.totalSpent);
+      const balance = AvailableFunds.#toCents(entered + this.totalIncome - this.totalLoss - this.totalSpent);
       if (balance < 0) throw new RangeError("That's less than the spending you've recorded.");
       this.#balance = balance;
       return this.#balance;
@@ -98,7 +114,7 @@
       this.#balance = AvailableFunds.#toCents(this.#balance + removed.amount);
       return this.#balance;
     }
-    
+
     /* swaps a recorded Expense for its edited version (same id): the balance changes by the
        difference between the two amounts. Returns the new balance; changes nothing on an error. */
     editSpending(expenseId, edited) {
@@ -111,6 +127,63 @@
       this.#expenses[index] = edited;
       this.#balance = balance;
       return this.#balance;
+    }
+
+    /* records income (raises the balance) or a loss (lowers it); returns the new balance */
+    recordEvent(event) {
+      if (!AvailableFunds.#isEvent(event)) throw new TypeError("Record income or a loss.");
+      const balance = AvailableFunds.#toCents(this.#balance + AvailableFunds.#change(event));
+      if (balance < 0) throw new RangeError("That's more than your available funds.");
+      this.#events.push(event);
+      this.#balance = balance;
+      return this.#balance;
+    }
+
+    /* removes recorded income or a loss and undoes its change; returns the new balance */
+    removeEvent(eventId) {
+      const index = this.#events.findIndex((event) => event.id === eventId);
+      if (index === -1) throw new RangeError("No income or loss with that id.");
+      const balance = AvailableFunds.#toCents(this.#balance - AvailableFunds.#change(this.#events[index]));
+      if (balance < 0) throw new RangeError("That would leave your available funds below $0.");
+      this.#events.splice(index, 1);
+      this.#balance = balance;
+      return this.#balance;
+    }
+
+    /* swaps recorded income or a loss for its edited version (same id); the balance changes by the
+       difference. Returns the new balance; changes nothing on an error. */
+    editEvent(eventId, edited) {
+      const index = this.#events.findIndex((event) => event.id === eventId);
+      if (index === -1) throw new RangeError("No income or loss with that id.");
+      if (!AvailableFunds.#isEvent(edited)) throw new TypeError("Record income or a loss.");
+      if (edited.id !== eventId) throw new RangeError("The edited income or loss must keep its id.");
+      const balance = AvailableFunds.#toCents(
+        this.#balance - AvailableFunds.#change(this.#events[index]) + AvailableFunds.#change(edited)
+      );
+      if (balance < 0) {
+        throw new RangeError(edited.kind === "loss"
+          ? "That's more than your available funds."
+          : "That would leave your available funds below $0.");
+      }
+      this.#events[index] = edited;
+      this.#balance = balance;
+      return this.#balance;
+    }
+
+    /* a FundsEvent has an id, a kind of income or loss, and an amount above 0 */
+    static #isEvent(value) {
+      return typeof value === "object" && value !== null && value.id !== undefined &&
+        (value.kind === "income" || value.kind === "loss") &&
+        typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount > 0;
+    }
+
+    /* how an event changes the balance: + for income, - for a loss */
+    static #change(event) {
+      return event.kind === "income" ? event.amount : -event.amount;
+    }
+
+    static #total(items) {
+      return AvailableFunds.#toCents(items.reduce((sum, item) => sum + item.amount, 0));
     }
 
     /* an Expense has an id and an amount above 0; checking that shape means this file

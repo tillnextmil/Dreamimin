@@ -1,25 +1,28 @@
 /* ============================================================
-   FundsService: the user's available funds and the spending
-   recorded against them (SPECIFICATIONS.md, items 11 and 12).
-   Every change goes through an AvailableFunds built from what
-   is saved, so the server follows the same rules as the page:
-   Expense checks each spending, and AvailableFunds keeps the
-   funds from going below $0. Anything the request gets wrong is
-   thrown as a ServiceError.
+   FundsService: the user's available funds, and the spending,
+   income and losses recorded against them (SPECIFICATIONS.md,
+   items 11 and 12). Every change goes through an AvailableFunds
+   built from what is saved, so the server follows the same rules
+   as the page: Expense and FundsEvent check each item, and
+   AvailableFunds keeps the funds from going below $0. Anything
+   the request gets wrong is thrown as a ServiceError.
    ============================================================ */
 
 const AvailableFunds = require("../../src/availableFunds");
 const Expense = require("../../src/expense");
+const FundsEvent = require("../../src/fundsEvent");
 const ServiceError = require("./serviceError");
 
 const NO_FUNDS = "Enter your available funds first.";
 const NOT_FOUND = "No spending with that id.";
+const EVENT_NOT_FOUND = "No income or loss with that id.";
 
 class FundsService {
   /* now gives "today", so tests can fix the date that spending can't be after */
-  constructor(fundsRepository, expenseRepository, { profileId, now = () => new Date() }) {
+  constructor(fundsRepository, expenseRepository, eventRepository, { profileId, now = () => new Date() }) {
     this.funds = fundsRepository;
     this.expenses = expenseRepository;
+    this.events = eventRepository;
     this.profileId = profileId;
     this.now = now;
   }
@@ -29,10 +32,16 @@ class FundsService {
     const saved = this.funds.find(this.profileId);
     if (!saved) return { entered: null, balance: null, totalSpent: 0, totalIncome: 0, totalLoss: 0 };
     const funds = this.#load(saved);
-    return { entered: saved.entered, balance: funds.balance, totalSpent: funds.totalSpent, totalIncome: 0, totalLoss: 0 };
+    return {
+      entered: saved.entered,
+      balance: funds.balance,
+      totalSpent: funds.totalSpent,
+      totalIncome: funds.totalIncome,
+      totalLoss: funds.totalLoss,
+    };
   }
 
-  /* sets the funds from what the user entered; the spending already recorded is taken off */
+  /* sets the funds from what the user entered; the income, losses and spending already recorded count too */
   setEntered(input) {
     const { entered } = FundsService.#body(input);
     const problem = AvailableFunds.validate({ balance: entered }).balance;
@@ -96,18 +105,83 @@ class FundsService {
     });
   }
 
-  /* the saved funds; spending can only be recorded once they're entered (409) */
+  /* the recorded income and losses, oldest first; kind ("income" or "loss") is optional */
+  listEvents({ kind } = {}) {
+    if (kind !== undefined && !FundsEvent.KINDS.includes(kind)) throw ServiceError.invalid({ kind: "Choose income or loss." });
+    const saved = this.funds.find(this.profileId);
+    return saved ? this.events.findAll(saved.id, { kind }) : [];
+  }
+
+  /* records income (raises the funds) or a loss (lowers them) */
+  addEvent(input) {
+    const saved = this.#savedFunds();
+    const fields = this.#checkedEvent(input);
+    const funds = this.#load(saved);
+    FundsService.#asConflict(() => funds.recordEvent({ id: "new", ...fields }));
+    return this.funds.transaction(() => {
+      this.funds.updateBalance(saved.id, funds.balance);
+      return this.events.create(saved.id, fields);
+    });
+  }
+
+  /* edits income or a loss; the funds change by the difference */
+  updateEvent(id, input) {
+    const saved = this.#savedFunds();
+    const current = this.#findEvent(saved.id, id);
+    const fields = this.#checkedEvent(input);
+    const funds = this.#load(saved);
+    FundsService.#asConflict(() => funds.editEvent(current.id, { id: current.id, ...fields }));
+    return this.funds.transaction(() => {
+      this.funds.updateBalance(saved.id, funds.balance);
+      return this.events.update(saved.id, current.id, fields);
+    });
+  }
+
+  /* removes income or a loss and undoes its change to the funds */
+  deleteEvent(id) {
+    const saved = this.#savedFunds();
+    const current = this.#findEvent(saved.id, id);
+    const funds = this.#load(saved);
+    FundsService.#asConflict(() => funds.removeEvent(current.id));
+    this.funds.transaction(() => {
+      this.funds.updateBalance(saved.id, funds.balance);
+      this.events.remove(saved.id, current.id);
+    });
+  }
+
+  /* the saved funds; spending, income and losses can only be recorded once they're entered (409) */
   #savedFunds() {
     const saved = this.funds.find(this.profileId);
     if (!saved) throw ServiceError.conflict(NO_FUNDS);
     return saved;
   }
 
-  /* an AvailableFunds holding what's saved: the entered amount, with each spending recorded against it */
+  /* an AvailableFunds holding what's saved: the entered amount, with each income, loss and spending
+     recorded against it. Income goes first, so the order the rest was recorded in never matters. */
   #load(saved) {
     const funds = new AvailableFunds({ id: saved.id, balance: saved.entered });
+    const events = this.events.findAll(saved.id);
+    for (const event of events.filter((e) => e.kind === "income")) funds.recordEvent(event);
+    for (const event of events.filter((e) => e.kind === "loss")) funds.recordEvent(event);
     for (const expense of this.expenses.findAll(saved.id)) funds.recordSpending(expense);
     return funds;
+  }
+
+  /* the income or loss with that id; an id that isn't a whole number is treated as unknown */
+  #findEvent(fundsId, id) {
+    const eventId = /^[1-9]\d*$/.test(String(id)) ? Number(id) : null;
+    const event = eventId === null ? null : this.events.findById(fundsId, eventId);
+    if (!event) throw ServiceError.notFound(EVENT_NOT_FOUND);
+    return event;
+  }
+
+  /* kind, amount, date and note checked by FundsEvent, with its defaults; other fields are ignored */
+  #checkedEvent(input) {
+    const body = FundsService.#body(input);
+    const fields = { kind: body.kind, amount: body.amount, date: body.date, note: body.note === undefined ? "" : body.note };
+    const errors = FundsEvent.validate({ ...fields, asOf: this.now() });
+    if (Object.keys(errors).length) throw ServiceError.invalid(errors);
+    return { ...fields, note: String(fields.note).trim() };
   }
 
   /* the spending with that id; an id that isn't a whole number is treated as unknown */
