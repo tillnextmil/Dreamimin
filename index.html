@@ -491,6 +491,18 @@
     </form>
   </dialog>
 
+  <!-- asks before recorded spending is removed; the money view fills in which one -->
+  <dialog class="confirm" id="remove-spending-dialog" aria-labelledby="remove-spending-title" aria-describedby="remove-spending-text">
+    <form method="dialog" class="confirm__body">
+      <h2 id="remove-spending-title">Remove this spending?</h2>
+      <p id="remove-spending-text"></p>
+      <div class="confirm__actions">
+        <button class="btn btn--ghost" value="cancel" autofocus>Keep it</button>
+        <button class="btn btn--danger" value="confirm">Remove spending</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- domain classes (shared with the server) -->
   <script src="src/financialProfile.js"></script>
   <script src="src/financialGoal.js"></script>
