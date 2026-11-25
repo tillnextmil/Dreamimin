@@ -1,0 +1,150 @@
+/* ============================================================
+   FundsService: the user's available funds and the spending
+   recorded against them (SPECIFICATIONS.md, items 11 and 12).
+   Every change goes through an AvailableFunds built from what
+   is saved, so the server follows the same rules as the page:
+   Expense checks each spending, and AvailableFunds keeps the
+   funds from going below $0. Anything the request gets wrong is
+   thrown as a ServiceError.
+   ============================================================ */
+
+const AvailableFunds = require("../../src/availableFunds");
+const Expense = require("../../src/expense");
+const ServiceError = require("./serviceError");
+
+const NO_FUNDS = "Enter your available funds first.";
+const NOT_FOUND = "No spending with that id.";
+
+class FundsService {
+  /* now gives "today", so tests can fix the date that spending can't be after */
+  constructor(fundsRepository, expenseRepository, { profileId, now = () => new Date() }) {
+    this.funds = fundsRepository;
+    this.expenses = expenseRepository;
+    this.profileId = profileId;
+    this.now = now;
+  }
+
+  /* { entered, balance, totalSpent, totalIncome, totalLoss }; entered and balance are null until the first PUT */
+  getFunds() {
+    const saved = this.funds.find(this.profileId);
+    if (!saved) return { entered: null, balance: null, totalSpent: 0, totalIncome: 0, totalLoss: 0 };
+    const funds = this.#load(saved);
+    return { entered: saved.entered, balance: funds.balance, totalSpent: funds.totalSpent, totalIncome: 0, totalLoss: 0 };
+  }
+
+  /* sets the funds from what the user entered; the spending already recorded is taken off */
+  setEntered(input) {
+    const { entered } = FundsService.#body(input);
+    const problem = AvailableFunds.validate({ balance: entered }).balance;
+    if (problem) throw ServiceError.invalid({ entered: problem });
+    const saved = this.funds.find(this.profileId);
+    const funds = saved ? this.#load(saved) : new AvailableFunds({ balance: entered });
+    FundsService.#asConflict(() => funds.setEnteredAmount(entered));
+    this.funds.save(this.profileId, { entered, balance: funds.balance });
+    return this.getFunds();
+  }
+
+  /* the recorded spending, oldest first, filtered by category, date range and note text */
+  listExpenses({ category, from, to, search } = {}) {
+    const errors = {};
+    if (category !== undefined && !Expense.CATEGORIES.includes(category)) errors.category = "Choose a category from the list.";
+    if (from !== undefined && !Expense.parseDate(from)) errors.from = "Choose a valid date.";
+    if (to !== undefined && !Expense.parseDate(to)) errors.to = "Choose a valid date.";
+    if (!errors.from && !errors.to && from !== undefined && to !== undefined && from > to) {
+      errors.to = "The end date can't be before the start date.";
+    }
+    if (Object.keys(errors).length) throw ServiceError.invalid(errors);
+    const saved = this.funds.find(this.profileId);
+    if (!saved) return [];
+    return this.expenses.findAll(saved.id, { category, from, to, search: search === undefined ? "" : String(search).trim() });
+  }
+
+  /* records spending and lowers the funds */
+  addExpense(input) {
+    const saved = this.#savedFunds();
+    const fields = this.#checked(input);
+    const funds = this.#load(saved);
+    FundsService.#asConflict(() => funds.recordSpending({ id: "new", ...fields }));
+    return this.funds.transaction(() => {
+      this.funds.updateBalance(saved.id, funds.balance);
+      return this.expenses.create(saved.id, fields);
+    });
+  }
+
+  /* edits spending; the funds change by the difference */
+  updateExpense(id, input) {
+    const saved = this.#savedFunds();
+    const current = this.#findExpense(saved.id, id);
+    const fields = this.#checked(input);
+    const funds = this.#load(saved);
+    FundsService.#asConflict(() => funds.editSpending(current.id, { id: current.id, ...fields }));
+    return this.funds.transaction(() => {
+      this.funds.updateBalance(saved.id, funds.balance);
+      return this.expenses.update(saved.id, current.id, fields);
+    });
+  }
+
+  /* removes spending and adds its amount back to the funds */
+  deleteExpense(id) {
+    const saved = this.#savedFunds();
+    const current = this.#findExpense(saved.id, id);
+    const funds = this.#load(saved);
+    funds.removeSpending(current.id);
+    this.funds.transaction(() => {
+      this.funds.updateBalance(saved.id, funds.balance);
+      this.expenses.remove(saved.id, current.id);
+    });
+  }
+
+  /* the saved funds; spending can only be recorded once they're entered (409) */
+  #savedFunds() {
+    const saved = this.funds.find(this.profileId);
+    if (!saved) throw ServiceError.conflict(NO_FUNDS);
+    return saved;
+  }
+
+  /* an AvailableFunds holding what's saved: the entered amount, with each spending recorded against it */
+  #load(saved) {
+    const funds = new AvailableFunds({ id: saved.id, balance: saved.entered });
+    for (const expense of this.expenses.findAll(saved.id)) funds.recordSpending(expense);
+    return funds;
+  }
+
+  /* the spending with that id; an id that isn't a whole number is treated as unknown */
+  #findExpense(fundsId, id) {
+    const expenseId = /^[1-9]\d*$/.test(String(id)) ? Number(id) : null;
+    const expense = expenseId === null ? null : this.expenses.findById(fundsId, expenseId);
+    if (!expense) throw ServiceError.notFound(NOT_FOUND);
+    return expense;
+  }
+
+  /* amount, date, note and category checked by Expense, with its defaults; other fields are ignored */
+  #checked(input) {
+    const body = FundsService.#body(input);
+    const fields = {
+      amount: body.amount,
+      date: body.date,
+      note: body.note === undefined ? "" : body.note,
+      category: body.category === undefined ? "other" : body.category,
+    };
+    const errors = Expense.validate({ ...fields, asOf: this.now() });
+    if (Object.keys(errors).length) throw ServiceError.invalid(errors);
+    return { ...fields, note: String(fields.note).trim() };
+  }
+
+  static #body(input) {
+    return input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  }
+
+  /* AvailableFunds throws a RangeError when a change would leave the funds below $0: that's a 409 */
+  static #asConflict(change) {
+    try {
+      return change();
+    } catch (error) {
+      if (error instanceof RangeError) throw ServiceError.conflict(error.message);
+      throw error;
+    }
+  }
+}
+
+module.exports = FundsService;
