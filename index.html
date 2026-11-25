@@ -379,16 +379,18 @@
 
       <!-- step 3: your chances -->
       <section class="panel" id="panel-chances" data-step="chances" aria-labelledby="odds-title" hidden>
-        <section class="card odds-card" aria-labelledby="odds-title" aria-live="polite">
+        <section class="card odds-card" aria-labelledby="odds-title">
           <div class="card__head">
             <h2 id="odds-title" tabindex="-1">Your chances with investing</h2>
             <div class="summary" id="plan-summary" hidden>
               <span class="summary__item"><span class="summary__label">In</span> <strong id="sum-income"></strong></span>
               <span class="summary__item"><span class="summary__label">Out</span> <strong id="sum-expenses"></strong></span>
-              <span class="summary__item"><span class="summary__label">Goal</span> <strong id="sum-goal"></strong></span>
+              <span class="summary__item"><span class="summary__label">Goals</span> <strong id="sum-goals"></strong></span>
               <a class="summary__edit" href="#goal">Edit</a>
             </div>
           </div>
+
+          <p class="sr-only" id="odds-announce" aria-live="polite"></p>
 
           <div id="odds-empty" class="empty">
             <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
@@ -400,49 +402,65 @@
             <a class="btn btn--ghost" href="#money">Go to step 1</a>
           </div>
 
-          <div id="odds-result" class="odds-layout" hidden aria-busy="true">
-            <div class="odds-main">
-              <div class="ring" id="odds-ring" data-tone="mid">
-                <svg viewBox="0 0 120 120" aria-hidden="true">
-                  <circle class="ring__track" cx="60" cy="60" r="52" />
-                  <circle class="ring__arc" id="odds-arc" cx="60" cy="60" r="52" />
-                </svg>
-                <div class="ring__center">
-                  <span id="odds-prob" class="odds__num">–</span>
-                  <span class="odds__label">chance of reaching it</span>
+          <div id="odds-result" class="odds" hidden aria-busy="true">
+            <div class="training" id="odds-training">
+              <div class="meter"><div class="meter__fill" id="odds-bar"></div></div>
+              <p id="odds-training-text" class="meter__caption" aria-live="polite">Training the planner…</p>
+            </div>
+
+            <p id="odds-reason" class="callout"></p>
+
+            <ul class="chances" id="chance-list" aria-label="Your chance of reaching each goal"></ul>
+
+            <div class="odds__row">
+              <section class="odds-section" id="timeline-section" aria-labelledby="timeline-title" hidden>
+                <h3 id="timeline-title">Your money over time</h3>
+                <p class="help" id="timeline-help">The money for your goals, after each goal is paid. The line is a typical market; the band runs from a bad market to a good one.</p>
+                <div class="timeline" id="timeline" tabindex="0" role="group" aria-labelledby="timeline-title" aria-describedby="timeline-help timeline-keys"></div>
+                <p class="timeline__readout" id="timeline-readout" aria-live="polite"></p>
+                <p class="sr-only" id="timeline-keys">Use the left and right arrow keys to move through the dates.</p>
+                <table class="sr-only" id="timeline-table">
+                  <caption>The money for your goals at each date</caption>
+                  <thead><tr><th scope="col">Date</th><th scope="col">Bad market</th><th scope="col">Typical market</th><th scope="col">Good market</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </section>
+
+              <section class="odds-section whatif" aria-labelledby="whatif-title">
+                <h3 id="whatif-title">What if you saved a different amount?</h3>
+                <div class="whatif__control">
+                  <div class="whatif__label">
+                    <label for="whatif-saving">Saving each month</label>
+                    <output id="whatif-value" for="whatif-saving"></output>
+                  </div>
+                  <input id="whatif-saving" name="whatifSaving" type="range" min="0" max="0" step="50" value="0" aria-describedby="whatif-help" />
+                  <div class="whatif__scale" aria-hidden="true"><span id="whatif-min"></span><span id="whatif-max"></span></div>
                 </div>
-              </div>
-              <p id="odds-verdict" class="status status--mid">Working it out…</p>
-
-              <div class="training" id="odds-training">
-                <div class="meter"><div class="meter__fill" id="odds-bar"></div></div>
-                <p id="odds-training-text" class="meter__caption">Training the planner…</p>
-              </div>
+                <ul class="whatif__list" id="whatif-list" aria-live="polite"></ul>
+                <p class="help" id="whatif-help">A quick estimate from the best possible plan (DP), so it can differ a little from the chances above. Nothing you entered changes.</p>
+                <button type="button" class="link-btn" id="whatif-reset" hidden>Back to what you save now</button>
+              </section>
             </div>
 
-            <div class="odds-detail">
-              <p id="odds-reason" class="callout"></p>
+            <dl class="stats" id="odds-stats" hidden>
+              <div><dt>Our planner's score <span class="term">(PPO)</span></dt><dd id="odds-rl"></dd></div>
+              <div><dt>Best possible score <span class="term">(DP)</span></dt><dd id="odds-dp"></dd></div>
+              <div><dt>How close it gets <span class="term">(RL efficiency)</span></dt><dd id="odds-efficiency"></dd></div>
+            </dl>
 
-              <dl class="stats" id="odds-stats" hidden>
-                <div><dt>Our planner's chance <span class="term">(PPO)</span></dt><dd id="odds-rl"></dd></div>
-                <div><dt>Best possible chance <span class="term">(DP)</span></dt><dd id="odds-dp"></dd></div>
-                <div><dt>How close it gets <span class="term">(RL efficiency)</span></dt><dd id="odds-efficiency"></dd></div>
-              </dl>
+            <dl class="facts" id="odds-facts" hidden>
+              <div><dt>How the planner invests</dt><dd id="odds-glide"></dd></div>
+            </dl>
 
-              <dl class="facts" id="odds-facts" hidden>
-                <div><dt>How the planner invests</dt><dd id="odds-glide"></dd></div>
-                <div><dt>Where you'd likely land</dt><dd id="odds-range"></dd></div>
-              </dl>
-
-              <details class="how">
-                <summary>How we got this number</summary>
-                <p>A reinforcement-learning planner (PPO) plays out thousands of possible markets, year by year, choosing among five portfolios from cautious to aggressive and, in your goal year, whether to buy the goal. It learns the moves that reach the goal most often. The percentage is how often its plan reaches the goal across 4,000 simulated markets.</p>
-                <p>The five portfolios it chooses from, from lowest to highest risk:</p>
-                <ul id="portfolio-list"></ul>
-                <p id="odds-efficiency-text"></p>
-                <p class="footnote">Today's dollars and after-inflation returns throughout. Savings are added at the start of each year. The same inputs always give the same result. Not financial advice.</p>
-              </details>
-            </div>
+            <details class="how">
+              <summary>How we got these numbers</summary>
+              <p>A reinforcement-learning planner (PPO) plays out thousands of possible markets for all your goals together, from one pot of money. At each step it chooses among five portfolios from cautious to aggressive, and when a goal comes due it pays it in full, pays the smallest amount you'd accept, or skips it to keep the money for a goal that matters more. It learns the moves that score best: a goal paid in full scores its priority, and a goal paid in part scores its priority times the share of the full amount paid.</p>
+              <p>Each goal's chance is how often the plan pays it, in full or in part, across 4,000 simulated markets.</p>
+              <p>The five portfolios it chooses from, from lowest to highest risk:</p>
+              <ul id="portfolio-list"></ul>
+              <p id="odds-efficiency-text"></p>
+              <p class="footnote">Today's dollars and after-inflation returns throughout. The same inputs always give the same result. Not financial advice.</p>
+            </details>
           </div>
         </section>
       </section>
@@ -479,7 +497,8 @@
   <script src="src/goalList.js"></script>
   <script src="src/ppoPlanner.js"></script>
   <script src="src/goalProbability.js"></script>
-  <script src="src/goalAnalysisResult.js"></script>
+  <script src="src/multiGoalPlanner.js"></script>
+  <script src="src/multiGoalPlan.js"></script>
   <script src="src/investmentPortfolio.js"></script>
   <script src="src/availableFunds.js"></script>
   <script src="src/expense.js"></script>
@@ -490,6 +509,7 @@
   <script src="client/views/pieChart.js"></script>
   <script src="client/views/moneyView.js"></script>
   <script src="client/views/goalView.js"></script>
+  <script src="client/views/timelineChart.js"></script>
   <script src="client/views/oddsView.js"></script>
   <script src="client/views/steps.js"></script>
   <script src="client/controllers/moneyController.js"></script>

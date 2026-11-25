@@ -2,7 +2,8 @@
    MultiGoalPlan — what the planner worked out for all the goals
    together at one risk level: each goal's chance of being reached
    in full or in part with its verdict, the plan's utility against
-   the DP benchmark, and the risk level held each year.
+   the DP benchmark, and the risk level held each year, which it
+   can describe as stages ("Balanced until 2028, then Cautious.").
    Built from the result MultiGoalPlanner.plan returns; toJSON()
    gives the body POST /api/plans takes (SPECIFICATIONS.md, item 12).
    ============================================================ */
@@ -18,8 +19,9 @@
 
   class MultiGoalPlan {
     /* goals: [{ goalId, pFull, pPartial }], the chance of reaching the full amount and the chance
-       of only reaching the smallest acceptable amount; riskLevelByYear[y] is the risk level in year y */
-    constructor({ maxRiskLevel, utility, dpUtility, rlEfficiency, riskLevelByYear, goals }) {
+       of only reaching the smallest acceptable amount; riskLevelByYear[y] is the risk level in year y;
+       portfolios, when given, names the portfolio at each risk level, lowest first */
+    constructor({ maxRiskLevel, utility, dpUtility, rlEfficiency, riskLevelByYear, goals, portfolios = null }) {
       if (!Number.isInteger(maxRiskLevel) || maxRiskLevel < 1 || maxRiskLevel > MAX_RISK_LEVEL) {
         throw new RangeError(`Choose a risk level from 1 to ${MAX_RISK_LEVEL}.`);
       }
@@ -44,6 +46,10 @@
         return Object.freeze({ goalId, full, partial, chance, verdict: chance.verdict });
       });
       if (new Set(results.map((r) => r.goalId)).size !== results.length) throw new RangeError("Two goals can't share an id.");
+      if (portfolios !== null && !(Array.isArray(portfolios) && portfolios.length === MAX_RISK_LEVEL
+          && portfolios.every((name) => typeof name === "string" && name.trim() !== ""))) {
+        throw new TypeError(`Portfolios must be ${MAX_RISK_LEVEL} names, lowest risk first.`);
+      }
 
       this.maxRiskLevel = maxRiskLevel;
       this.utility = utility;
@@ -51,7 +57,37 @@
       this.rlEfficiency = rlEfficiency;   // null when the benchmark can't reach any goal
       this.riskLevelByYear = Object.freeze([...riskLevelByYear]);
       this.goals = Object.freeze(results);
+      this.portfolios = portfolios && Object.freeze([...portfolios]);
       Object.freeze(this);
+    }
+
+    /* how many goals have a Realistic verdict */
+    realisticCount() {
+      return this.goals.filter((r) => r.chance.isRealistic).length;
+    }
+
+    /* runs of years at the same risk level: [{ portfolio, firstYear, lastYear }], years counted from 0;
+       portfolio is the level's name, or "Risk level n" without names */
+    glideStages() {
+      const name = (level) => (this.portfolios ? this.portfolios[level - 1] : `Risk level ${level}`);
+      const stages = [];
+      this.riskLevelByYear.forEach((level, year) => {
+        const last = stages[stages.length - 1];
+        if (last && last.portfolio === name(level)) last.lastYear = year;
+        else stages.push({ portfolio: name(level), firstYear: year, lastYear: year });
+      });
+      return stages;
+    }
+
+    /* [3, 3, 2, 1] from 2026 -> "Balanced until 2028, Conservative to 2029, then Cautious." */
+    describeGlide(startYear) {
+      const stages = this.glideStages();
+      if (stages.length === 1) return `${stages[0].portfolio} the whole way.`;
+      return stages.map((s, i) => {
+        if (i === 0) return `${s.portfolio} until ${startYear + s.lastYear + 1}`;
+        if (i === stages.length - 1) return `then ${s.portfolio}`;
+        return `${s.portfolio} to ${startYear + s.lastYear + 1}`;
+      }).join(", ") + ".";
     }
 
     /* the result for one goal, or undefined when the plan doesn't have it */

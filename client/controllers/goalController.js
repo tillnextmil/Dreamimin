@@ -35,6 +35,7 @@
      selected goal change, so the other steps can update */
   function createGoalController({ form, api, onChange }) {
     let goals = [];             // the goals as the API last listed them (sorted and searched)
+    let everyGoal = [];         // every goal, whatever the search, for planning them together
     let selected = null;        // the saved goal being checked; kept even when a search hides it
     let editingId = null;       // the goal in the form, or null when the form adds a new one
     let total = 0;              // how many goals there are, ignoring the search
@@ -84,6 +85,7 @@
         goals = listed;
         total = (all || listed).length;
         const everything = all || listed;
+        everyGoal = everything;
         selected = everything.find((g) => selected && String(g.id) === String(selected.id)) || everything[0] || null;
         view.showListError("");
       } catch (error) {
@@ -265,7 +267,7 @@
     tomorrow.setDate(tomorrow.getDate() + 1);
     view.setMinDate(format.isoDate(tomorrow));
 
-    return { load, refresh, removeAll, hasTyped, count: () => total };
+    return { load, refresh, removeAll, hasTyped, count: () => total, all: () => everyGoal };
   }
 
   D.controllers = D.controllers || {};

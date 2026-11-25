@@ -117,12 +117,16 @@
    address (#money, #goal, #chances), so the browser's back button and
    links work. A step is marked done once its inputs are valid (for Your
    goals, once there is a chosen goal that can be checked); the step bar
-   shows the monthly cash flow under Your money and the number of goals
-   under Your goals.
+   shows the monthly cash flow under Your money, the number of goals
+   under Your goals and, once the chances are worked out (see 16), the
+   one goal's chance or how many goals are realistic ("2 of 3
+   realistic") under Your chances.
 
-7. Chance with investing (M2). Once the profile and the chosen goal (see
-   13) are both valid, the page shows the probability of reaching it if the user
-   invests, from the PPO planner (`src/ppoPlanner.js`). Wealth starts at
+7. Chance with investing (M2). The PPO planner (`src/ppoPlanner.js`)
+   works out the probability of reaching one goal if the user invests.
+   The page now plans every goal together with MultiGoalPlanner (see 14
+   and 16), which uses this model; the standalone page in `mvp/` still
+   uses PpoPlanner. Wealth starts at
    the money for goals (see 5): the available funds when the user has
    entered them (see 11), otherwise the net worth, minus the emergency
    fund (0 when negative), and grows year by year with one of five
@@ -134,13 +138,10 @@
    4,000 fixed simulated markets. A dynamic-programming solution of the
    same problem is the benchmark, and RL efficiency is the planner's
    probability divided by the benchmark's, capped at 100%, and not shown
-   when the benchmark is 0. The page labels the three in plain words with
-   the technical name under each: "Our planner's chance (PPO)", "Best
-   possible chance (DP)" and "How close it gets (RL efficiency)". Training always starts from the same seed and
+   when the benchmark is 0. Training always starts from the same seed and
    never from an earlier run, so the same inputs always give the same
-   result. While training, the page shows a progress bar and the
-   probability so far; the planner runs in a Web Worker, or on the page in
-   short slices when the browser blocks workers (pages opened from disk).
+   result. The planners run in a Web Worker, or on the page in short
+   slices when the browser blocks workers (pages opened from disk).
 
 8. Goal probability and verdict. A GoalProbability must be a number from
    0 to 1: anything else is rejected (a TypeError when it is not a number,
@@ -158,7 +159,7 @@
    result and rejects one that doesn't make sense: RL efficiency must be
    from 0 to 1, or empty when there is no benchmark; the outcomes must be
    numbers in order (10th ≤ 50th ≤ 90th percentile); and there must be one
-   portfolio per year, each one of the five. The page shows RL efficiency
+   portfolio per year, each one of the five. The `mvp/` page shows RL efficiency
    as a whole percent, or "–" when it is empty, and the outcomes as "About
    $X by <date> in a typical market; $Y in a bad one, $Z in a good one"
    (50th, 10th and 90th percentile). The portfolio for each year is shown
@@ -472,8 +473,8 @@
     the API follows (see 12). The count shows as "3 of 20", and with 20
     goals Add goal is turned off and says why. Choosing a goal in the list
     (the newest one after adding, the first one otherwise) shows its goal
-    check next to the list and its chance in step 3; switching to another
-    goal hides the last goal's details until the new chance is worked out.
+    check next to the list; step 3 shows the chance of every goal (see
+    16).
     The page talks to the server only through the goal API client
    (`client/api/goalApi.js`). The server saves the goals in SQLite, so
     they are still there after a reload. When the page is opened
@@ -537,7 +538,7 @@
     | `riskLevelByYear` | The risk level held at the start of each year, along the path where every year has the expected return |
     | `goals` | Per goal, in the job's order: `goalId`, `pFull` (reached in full), `pPartial` (reached only in part) and `pAny`, their sum |
     | `benchmarkGoals` | The same for the DP benchmark |
-    | `timeline` | Per stop: `month` and the wealth left after that stop's goals in a bad, typical and good market (`p10`, `p50`, `p90`) |
+    | `timeline` | Per stop: `month`, the wealth left after that stop's goals in a bad, typical and good market (`p10`, `p50`, `p90`), and `before`, the same three just before those goals are paid (equal to them at a stop with no goal) |
     | `years`, `portfolios` | The length of the plan in years, and the five portfolio names |
 
     The first five fields, with each goal's `goalId`, `pFull` and
@@ -552,11 +553,16 @@
     efficiency outside 0 to 1 (empty is allowed), fewer than 1 or more
     than 40 years, a year above the plan's risk level, no goals, two
     goals with the same id, or a goal whose two chances are not
-    probabilities or add up to more than 1. Each goal has its chance in
+    probabilities or add up to more than 1, or portfolio names that are
+    not five names. Each goal has its chance in
     full, in part and of either, as GoalProbability (see 8), and its
     verdict comes from the chance of either: 62% in full and 21% in part
-    is 83%, Realistic. `toJSON()` gives the body of `POST /api/plans`. A
-    plan can't be changed after it is created.
+    is 83%, Realistic. With the five portfolio names (the planner's
+    result has them) the risk level each year reads as stages, as in 9:
+    "Balanced until 2028, Conservative to 2029, then Cautious.", where
+    each year is when that stage ends; without them each stage is "Risk
+    level n". `toJSON()` gives the body of `POST /api/plans`. A plan
+    can't be changed after it is created.
 
     Quick answers. The benchmark needs no training, so three functions
     answer from it straight away, each in well under a second for a
@@ -625,3 +631,76 @@
     with `current_age`, `retirement_age`, `lasts_to_age`,
     `yearly_withdrawal` and `risk_level`, one row per profile; net worth
     and monthly saving come from the profile.
+
+16. Your chances (page). Step 3 plans every goal together with
+    MultiGoalPlanner (see 14). It shows a message instead while step 1's
+    income and spending aren't valid, while there are no goals, or while
+    the available funds have an error.
+
+    Which goals. GoalList (`forPlanner`) decides: a goal is planned when
+    its date is after today and no more than 40 years away, with `months`
+    the whole months until its date (see 4). A goal whose date has passed
+    since it was saved, or that is more than 40 years away, gets a card
+    saying why ("Its date has passed." or "It's more than 40 years
+    away.") with a link to edit it in step 2, and isn't planned. With no
+    goal left to plan, step 3 says so. The job is the money for goals
+    (see 5), the monthly cash flow and each planned goal's id, amount,
+    months, priority and smallest acceptable amount, at risk level 5.
+
+    Training. The planner starts 450 ms after the last change, so typing
+    doesn't restart it on every key. While it trains, a progress bar
+    shows the round ("round 40 of 180") and each goal's chance so far.
+    A finished plan is kept for its job, so going back to the same inputs
+    shows it at once. Renaming a goal or choosing another goal in step 2
+    doesn't retrain. While a new plan trains, goals that were in the last
+    plan keep their chance marked "Updating…", and the chart and scores
+    are dimmed; the first time, they stay hidden until the plan is done.
+
+    Goal cards. One card per goal, soonest first: its name, amount, date
+    and priority, a ring and percent with the chance of reaching it in
+    full or in part, and its verdict (see 8). A goal with a smallest
+    acceptable amount that is sometimes reached only in part also says
+    "62% in full, 21% more at the $15,000 you'd accept." Above the cards,
+    the page explains the plan: the monthly saving until the last goal
+    plus the money for goals, before any growth, against the total of
+    all goals; when not every goal is Realistic it adds that the plan
+    pays the most important goals first (and takes the smallest amount
+    where one is set). Once done, screen readers hear "2 of your 3 goals
+    are realistic." (or the one goal's chance).
+
+    Money over time. A chart of the money for goals from today to the
+    last goal (`client/views/timelineChart.js`): the typical market (50th
+    percentile) as a line, a band from a bad to a good market (10th to
+    90th), a straight drop at each goal's stop from the money before it
+    is paid to the money after, and a dashed line at each goal with its
+    name above (goals in the same month share one label, "Trip + 1
+    more"; long names are cut to 20 characters; labels that would
+    overlap go on another row, up to three). The amounts are on round
+    gridlines from $0 ($10K, $20K…) and the years on the axis. Pointing
+    at the chart, or using the arrow keys, Home and End once it has
+    focus, picks a stop and says, for example, "June 2030, after House:
+    about $7,900 in a typical market, $1,500 in a bad one and $14,000 in
+    a good one."; with no stop picked it shows the last one. A goal's
+    stop uses the goal's own date. The same numbers are in a table for
+    screen readers. The chart is drawn at the width it has, so the text
+    stays readable on a phone.
+
+    What if. A slider changes the monthly saving in $50 steps, from what
+    is saved now down to about $0 and up by the larger of $500 and what
+    is saved now. It shows the amount and the change ("$1,900 a month
+    (+$200)"). 120 ms after it stops, the page asks MultiGoalPlanner's
+    `whatIf` (the DP estimate, so it needs no training) and lists, per
+    goal, its chance before and after and the change in points ("+13
+    points", "No change"). It runs in a worker of its own, so it answers
+    while a plan trains, and only the newest slider value waits its
+    turn. It changes nothing the user entered; "Back to what you save
+    now" puts the slider back. A change to the job puts it back too.
+
+    Scores. Under the chart: the plan's score (its utility) and the
+    benchmark's, each out of the sum of the priorities ("9.3 of 10"),
+    labelled "Our planner's score (PPO)" and "Best possible score (DP)",
+    RL efficiency ("How close it gets (RL efficiency)", see 14), and how
+    the planner invests as stages (see 14). After spending is recorded
+    or removed on step 1, step 1 says how the goal chosen in step 2 moved
+    once the new plan is done ("Your chance of reaching Car went from 39%
+    to 8%." or "stays at 39%").

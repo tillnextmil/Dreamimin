@@ -2,7 +2,8 @@
    Starts the page: creates the goal API client and the three
    step controllers, and keeps them in step. Whenever something
    changes, update() refreshes step 1, then the goals, then the
-   chances, and tells the step bar. Also handles Start over.
+   chances for every goal, and tells the step bar. Also handles
+   Start over.
 
    The page's layers (see README.md):
      views/        what's on screen; no rules, no server calls
@@ -21,7 +22,7 @@
   const api = useServer ? new D.GoalApi.HttpGoalApi() : new D.GoalApi.MemoryGoalApi();
 
   const form = document.getElementById("plan-form");
-  /* tells the step navigation (views/steps.js) what changed, so it can update the step bar and the chance ring */
+  /* tells the step navigation (views/steps.js) what changed, so it can update the step bar */
   const notify = (name, detail = {}) => document.dispatchEvent(new CustomEvent(name, { detail }));
 
   const odds = D.controllers.odds({ notify, showImpact: D.views.money.showSpendingImpact });
@@ -35,7 +36,7 @@
        the chances (step 3) both start from it, so they agree. */
     const wealth = profile ? profile.moneyForGoals(funds ? funds.balance : null) : 0;
     const goal = goals.refresh(profile, wealth);
-    odds.show({ profile, goal, fundsReady, wealth });
+    odds.show({ profile, goals: goals.all(), selected: goal, fundsReady, wealth });
     notify("plan:update", { profile, goal, goalCount: goals.count() });
   }
 

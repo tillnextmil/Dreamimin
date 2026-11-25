@@ -68,3 +68,35 @@ test("allows adding until there are 20 goals", () => {
   expect(GoalList.canAdd(20)).toBe(false);
   expect(GoalList.TOO_MANY).toBe("You can have up to 20 goals.");
 });
+
+describe("forPlanner", () => {
+  const TODAY = new Date(2026, 10, 23);   // Nov 23, 2026
+  const goal = (id, targetDate, extra = {}) => ({ id, name: `Goal ${id}`, targetAmount: 5000, targetDate, priority: 3, minAcceptableAmount: 0, ...extra });
+
+  // normal case: goals the planner can take come soonest first, each with its months
+  test("plans goals soonest first, with the months until each date", () => {
+    const { planned, left } = GoalList.forPlanner([goal(1, "2030-06-01"), goal(2, "2027-09-01"), goal(3, "2027-11-23")], TODAY);
+    expect(planned.map((g) => [g.id, g.months])).toEqual([[2, 9], [3, 12], [1, 42]]);
+    expect(planned[0]).toMatchObject({ name: "Goal 2", targetAmount: 5000, priority: 3 });
+    expect(left).toEqual([]);
+  });
+
+  // edge case: a goal whose date has passed since it was saved isn't planned, and says why
+  test("leaves out a goal whose date has passed", () => {
+    const { planned, left } = GoalList.forPlanner([goal(1, "2026-11-23"), goal(2, "2027-01-01")], TODAY);
+    expect(planned.map((g) => g.id)).toEqual([2]);
+    expect(left).toEqual([{ ...goal(1, "2026-11-23"), reason: "Its date has passed." }]);
+  });
+
+  // edge case: exactly 40 years away is planned; a day later isn't
+  test("plans goals up to 40 years away", () => {
+    const { planned, left } = GoalList.forPlanner([goal(1, "2066-11-23"), goal(2, "2066-12-23")], TODAY);
+    expect(planned.map((g) => [g.id, g.months])).toEqual([[1, 480]]);
+    expect(left.map((g) => [g.id, g.reason])).toEqual([[2, "It's more than 40 years away."]]);
+  });
+
+  // edge case: no goals
+  test("plans nothing without goals", () => {
+    expect(GoalList.forPlanner([], TODAY)).toEqual({ planned: [], left: [] });
+  });
+});

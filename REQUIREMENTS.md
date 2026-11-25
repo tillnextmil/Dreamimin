@@ -69,7 +69,20 @@ out is described in SPECIFICATIONS.md.
     my goals only count what is left after it and a goal I can afford
     never drains my safety cushion.
 
+## Planning Every Goal
+
+18. As a user, I can see the chance of reaching each of my goals when
+    they are planned together from the same money, with a verdict for
+    each, and the plan puts my most important goals first when the money
+    can't cover all of them.
+19. As a user, I can see a chart of my money for goals over time in a
+    bad, a typical and a good market, with the drop where each goal is
+    paid.
+20. As a user, I can move a slider to see how saving more or less each
+    month would change each goal's chance, without changing what I
+    entered.
+
 ## Later
 
-Charts and trends of funds and spending over time, more than one goal,
-and saving inputs between visits are planned for the final project.
+Charts and trends of funds and spending over time, and saving inputs
+between visits are planned for the final project.

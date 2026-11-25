@@ -726,53 +726,115 @@ h2[tabindex]:focus { outline: none; }
 .summary__edit:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* step 3: chance with investing */
-.odds-layout { display: grid; gap: 28px; }
-@media (min-width: 880px) {
-  .odds-layout { grid-template-columns: 220px 1fr; gap: 40px; align-items: start; }
-  .odds-main .ring { width: 200px; }
-  .ring__center .odds__num { font-size: 60px; }
-  .odds-detail .facts { grid-template-columns: 1fr 1fr; gap: 24px; }
+.odds { display: grid; gap: 22px; }
+.odds > .callout { margin-top: 0; }
+.odds .stats, .odds .facts, .odds .how { margin-top: 0; }
+#odds-result[aria-busy="true"] #timeline-section,
+#odds-result[aria-busy="true"] .stats,
+#odds-result[aria-busy="true"] .facts { opacity: 0.5; transition: opacity var(--medium) ease; }
 
+.training { width: 100%; max-width: 360px; }
+.training .meter__fill { background: var(--primary); transition: width 120ms linear; }
+
+/* a card per goal with its chance */
+.chances {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
-.odds-main { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
-.odds-detail .callout:first-child { margin-top: 0; }
-
-.ring { position: relative; width: 240px; max-width: 100%; aspect-ratio: 1; }
-.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring circle { fill: none; stroke-width: 7; }
-.ring__track { stroke: var(--meter-track); }
-.ring__arc {
+.chance {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+.chance__ring { position: relative; flex: 0 0 64px; width: 64px; height: 64px; }
+.chance__ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.chance__ring circle { fill: none; stroke-width: 6; }
+.chance__track { stroke: var(--meter-track); }
+.chance__arc {
   stroke: var(--primary);
   stroke-linecap: round;
-  transition: stroke-dashoffset 1000ms var(--ease-out), stroke var(--medium) ease;
+  transition: stroke-dashoffset 900ms var(--ease-out), stroke var(--medium) ease;
 }
-.ring.is-training .ring__arc { stroke: #9bb2a5; transition: stroke-dashoffset 300ms linear; }
-.ring[data-tone="ok"] .ring__arc { stroke: var(--positive); }
-.ring[data-tone="short"] .ring__arc { stroke: var(--warning); }
-.ring__center {
+.chance.is-training .chance__arc { stroke: #9bb2a5; transition: stroke-dashoffset 300ms linear; }
+.chance[data-tone="ok"] .chance__arc { stroke: var(--positive); }
+.chance[data-tone="short"] .chance__arc { stroke: var(--warning); }
+.chance__num {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-.odds__num {
-  font-family: var(--font-display);
-  font-size: 72px;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  color: var(--text);
 }
-.odds__label { color: var(--muted); font-size: 14px; max-width: 14ch; }
-#odds-result[aria-busy="true"] .odds__num { color: var(--muted); }
+.chance.is-training .chance__num, .chance--left .chance__num { color: var(--muted); }
+.chance__body { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.chance__name { font-weight: 650; overflow-wrap: anywhere; }
+.chance__meta, .chance__detail { color: var(--muted); font-size: 14px; }
+.chance__detail:empty { display: none; }
+.chance__detail a { color: var(--primary); font-weight: 600; text-underline-offset: 3px; }
+.chance .status { margin: 6px 0 2px; padding-left: 12px; font-size: 13px; }
+.chance--left { background: transparent; border-style: dashed; border-color: var(--input-border); }
 
-#odds-verdict { padding-left: 12px; font-size: 15px; }
+/* money over time and what if: side by side on wide screens */
+.odds__row { display: grid; gap: 28px; padding-top: 22px; border-top: 1px solid var(--border); }
+@media (min-width: 880px) {
+  .odds__row { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 40px; }
+  .odds .facts { grid-template-columns: 1fr 1fr; gap: 24px; }
+}
+.odds-section { min-width: 0; }
+.odds-section h3 { margin: 0; font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+.odds-section .help { margin-top: 4px; }
 
-.training { width: 100%; max-width: 260px; }
-.training .meter__fill { background: var(--primary); transition: width 120ms linear; }
+.timeline { margin-top: 14px; border-radius: var(--radius-sm); touch-action: pan-y; cursor: crosshair; }
+.timeline:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; }
+.tl { display: block; overflow: visible; }
+.tl-grid { stroke: var(--meter-track); stroke-width: 1; }
+.tl-axis { stroke: var(--input-border); stroke-width: 1; }
+.tl-tick { fill: var(--muted); font: 12px var(--font); font-variant-numeric: tabular-nums; }
+.tl-band { fill: var(--primary); opacity: 0.14; }
+.tl-line { fill: none; stroke: var(--primary); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.tl-goal { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.7; }
+.tl-goal-label { fill: var(--text); font: 600 12px var(--font); }
+.tl-guide { stroke: var(--text); stroke-width: 1; opacity: 0.3; }
+.tl-dot { fill: var(--surface); stroke: var(--primary); stroke-width: 2.5; }
+.timeline__readout { margin-top: 10px; font-size: 14px; min-height: 3em; }
+
+.whatif__control { margin-top: 14px; }
+.whatif__label { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; }
+.whatif__label label { font-size: 14px; font-weight: 600; }
+.whatif__label output { font-weight: 600; font-variant-numeric: tabular-nums; }
+.whatif input[type="range"] { display: block; width: 100%; height: 28px; margin: 8px 0 0; accent-color: var(--primary); cursor: pointer; }
+.whatif__scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.whatif__list { list-style: none; margin: 12px 0 0; padding: 0; transition: opacity var(--fast) ease; }
+.whatif__list.is-working { opacity: 0.5; }
+.whatif__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.whatif__name { font-weight: 600; overflow-wrap: anywhere; }
+.whatif__chances { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.whatif__change { padding: 2px 8px; border-radius: 999px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.whatif__change--ok { background: var(--positive-soft); color: var(--positive); }
+.whatif__change--short { background: var(--warning-soft); color: var(--warning); }
+.whatif__change--same { background: var(--meter-track); color: var(--muted); }
+.whatif .help { margin-top: 12px; }
+#whatif-reset { margin: 8px 0 0 -12px; color: var(--primary); font-weight: 600; }
+#whatif-reset:hover { background: var(--primary-soft); }
 
 .facts { margin: 22px 0 0; display: grid; gap: 14px; }
 .facts dt { color: var(--muted); font-size: 13px; }
