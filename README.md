@@ -55,7 +55,7 @@ src/        domain classes and the goal planner, used by the page and the server
 tests/      unit and API tests; every tests/*.test.js file runs automatically
 data/       the database npm start creates (not committed)
 mvp/        standalone goal-probability page; uses the classes in src/
-docs/       ER and CRC diagrams (draw.io)
+docs/       ER and CRC diagrams (draw.io and PNG); usability/ has the usability test script
 prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
