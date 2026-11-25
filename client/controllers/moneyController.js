@@ -2,9 +2,9 @@
    Step 1 controller (Your money): reads the income, spending,
    net worth, available funds and emergency fund fields, builds a
    FinancialProfile and keeps the AvailableFunds, and handles
-   recording spending (with its category) and removing it. The rules live in the domain
-   classes; this file only passes input to them and tells the
-   money view what to show.
+   recording spending (with its category) and removing it, after
+   asking. The rules live in the domain classes; this file only
+   passes input to them and tells the money view what to show.
    ============================================================ */
 
 (function (D) {
@@ -108,10 +108,17 @@
       onChange();
     }
 
-    function removeSpending(expenseId) {
-      funds.removeSpending(expenseId);
+    /* asks first (it names the spending), then removes it and puts its amount back in the funds */
+    async function removeSpending(expenseId) {
+      const index = funds ? funds.expenses.findIndex((expense) => String(expense.id) === String(expenseId)) : -1;
+      if (index === -1) return;
+      const expense = funds.expenses[index];
+      if (!(await view.confirmRemoveSpending(expense))) return;
+      if (!funds || !funds.expenses.includes(expense)) return;   // already gone while the dialog was open
+      funds.removeSpending(expense.id);
       onSpendingChanged();
       onChange();
+      view.focusAfterRemove(index);
     }
 
     /* true when something has been typed or spending recorded, so Start over would lose it;

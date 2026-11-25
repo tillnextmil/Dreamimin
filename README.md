@@ -55,7 +55,7 @@ src/        domain classes and the goal planner, used by the page and the server
 tests/      unit and API tests; every tests/*.test.js file runs automatically
 data/       the database npm start creates (not committed)
 mvp/        standalone goal-probability page; uses the classes in src/
-docs/       ER and CRC diagrams (draw.io and PNG); usability/ has the usability test script
+docs/       the project documents (see docs/README.md): proposal and interviews, diagrams, usability test
 prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
@@ -67,14 +67,14 @@ so each can be tested on its own:
 |---|---|---|
 | Routes | `server/routes/` | HTTP in and out: reads the request, sends JSON and the status code |
 | Services | `server/services/` | What the app does: rules, validation with the domain classes, sorting and searching |
-| Repositories | `server/repositories/` | The SQL for one table each; turns rows into plain objects |
+| Repositories | `server/repositories/` | The SQL for one table each (a plan's three tables share `planRepository.js`, since a plan is saved in one go); turns rows into plain objects |
 | Domain | `src/` | The classes the page uses too, such as FinancialGoal and AvailableFunds |
 | Database | `server/db.js`, `server/schema.sql` | Opens SQLite and creates the tables of the ER diagram |
 
 `server/app.js` connects the layers and `server/index.js` starts the
-server. To add a route, follow `/api/goals`: a repository, a service, a
-router, one line in `server/app.js`, and a test like
-`tests/goalsApi.test.js`.
+server. The routes so far are `/api/goals` and `POST /api/plans`. To add
+one, follow `/api/goals`: a repository, a service, a router, one line in
+`server/app.js`, and a test like `tests/goalsApi.test.js`.
 
 The page is split the same way (views and controllers in separate files):
 
@@ -82,7 +82,7 @@ The page is split the same way (views and controllers in separate files):
 |---|---|---|
 | Views | `client/views/` | What's on screen for each step; no rules and no server calls. `timelineChart.js` turns the plan's timeline into the step 3 chart |
 | Controllers | `client/controllers/` | User input in; calls the domain classes and the API client, then tells the views what to show |
-| API client | `client/api/goalApi.js` | The only code that talks to the server. `MemoryGoalApi` follows the same contract in memory when the page is opened straight from disk |
+| API clients | `client/api/` | The only code that talks to the server: `goalApi.js` for goals (`MemoryGoalApi` follows the same contract in memory when the page is opened straight from disk), `planApi.js` to save each finished plan, and `request.js`, which both use to send JSON and turn failures into an `ApiError` |
 | Domain | `src/` | The same classes the server uses |
 
 `client/app.js` starts the page and keeps the steps in step. The
@@ -121,7 +121,9 @@ the in-memory one.
   diagram is on
   [Figma](https://www.figma.com/design/UM2BklAjsoTZjnY2tivwa5/Financial-Planning-App-%E2%80%94-Domain-Model--UML-?node-id=0-1).
 
-What the app does is in [REQUIREMENTS.md](REQUIREMENTS.md); exactly how it
+Every document the project hands in is listed in
+[docs/README.md](docs/README.md). What the app does is in
+[REQUIREMENTS.md](REQUIREMENTS.md); exactly how it
 behaves is in [SPECIFICATIONS.md](SPECIFICATIONS.md).
 
 ## Add a test

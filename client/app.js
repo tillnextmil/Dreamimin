@@ -15,17 +15,23 @@
 (function (D) {
   "use strict";
 
-    /* Goals are saved on the server through /api/goals. On a page opened straight from disk,
-     MemoryGoalApi keeps them instead (same contract, but they are gone after a reload). */
+  /* Goals are saved on the server through /api/goals, and each finished plan through /api/plans.
+     On a page opened straight from disk, MemoryGoalApi keeps the goals instead (same contract,
+     but they are gone after a reload) and plans aren't saved. */
   const SERVER_SAVES_GOALS = true;
   const useServer = SERVER_SAVES_GOALS && location.protocol.startsWith("http");
   const api = useServer ? new D.GoalApi.HttpGoalApi() : new D.GoalApi.MemoryGoalApi();
+  const planApi = useServer ? new D.PlanApi.HttpPlanApi() : null;
 
   const form = document.getElementById("plan-form");
   /* tells the step navigation (views/steps.js) what changed, so it can update the step bar */
   const notify = (name, detail = {}) => document.dispatchEvent(new CustomEvent(name, { detail }));
 
-  const odds = D.controllers.odds({ notify, showImpact: D.views.money.showSpendingImpact });
+  const odds = D.controllers.odds({
+    notify,
+    showImpact: D.views.money.showSpendingImpact,
+    savePlan: planApi && ((body) => planApi.save(body)),
+  });
   const money = D.controllers.money({ form, onChange: update, onSpendingChanged: odds.spendingChanged });
   const goals = D.controllers.goals({ form, api, onChange: update });
 

@@ -252,7 +252,13 @@
     it, a form to record spending (amount, date, category, note; the
     category is Other unless chosen, and stays as chosen for the next
     one) with a list of what has been recorded, each with its category
-    and a Remove button. Once spending is in two categories or more, a
+    and a Remove button. Remove asks "Remove this spending?" in a dialog
+    first, naming the amount, date, category and note ("$86.00, November
+    18, 2026 · Food · Dinner out."): Remove spending goes ahead and puts
+    the amount back in the funds, while Keep it, Escape or a click
+    outside the dialog leaves it. After a removal, keyboard focus moves
+    to the Remove button now in its place (the last one when it was at
+    the end), or to the Amount field when none are left. Once spending is in two categories or more, a
     chart above the list shows how it splits (`client/views/pieChart.js`):
     a ring with a slice per category, largest first, clockwise from 12
     o'clock, the total spent in the middle, and a legend with each
@@ -434,14 +440,29 @@
     for each year, 1 to 40 years; `goals` has one entry per saved goal,
     where `pFull` is the chance of reaching the full amount and
     `pPartial` the chance of only reaching `minAcceptableAmount`, both
-    from 0 to 1 and together no more than 1. An invalid field is a 400
-    naming it; a `goalId` that doesn't exist is a 404 ("No goal with
-    that id."). The response adds `id`, `createdAt`, and for each goal
+    from 0 to 1 and together no more than 1. The rules and messages are
+    MultiGoalPlan's (`MultiGoalPlan.validate`, see 14), so an invalid
+    field is a 400 naming it with the same message the page would get,
+    for example `{ "errors": { "goals": "A goal's full and partial
+    chances can't add up to more than 1." } }`, one message per field;
+    a body that isn't a JSON object gets a message for every field. A
+    `goalId` that isn't one of the user's goals (or isn't a whole
+    number) is a 404 ("No goal with that id."), checked after the
+    fields. The response adds `id`, `createdAt`, and for each goal
     `pAny` (`pFull + pPartial`) and the `verdict` GoalProbability gives
-    `pAny` (see 8). `GET /api/plans/latest` returns the same shape, or a
-    404 ("No plan has been saved yet.") before the first. A saved plan
-    is a record of what was worked out: editing a goal afterwards
-    doesn't change it, and deleting a goal deletes that goal's results.
+    `pAny` (see 8); its goals come soonest target date first, as the
+    page lists them. The plan, its goal results and its years are saved
+    in one transaction, so a request that fails saves none of them;
+    each year's row points at the portfolio with that year's risk level.
+    `GET /api/plans/latest` returns the same shape, or a 404 ("No plan
+    has been saved yet.") before the first. A saved plan is a record of
+    what was worked out: editing a goal afterwards doesn't change it,
+    and deleting a goal deletes that goal's results.
+
+    Layers: `server/routes/planRoutes.js`, `server/services/planService.js`
+    and `server/repositories/planRepository.js`, which reads a saved plan
+    back in this shape (`findById`). `POST` is built; `GET
+    /api/plans/latest` is next.
 
     Storage. Each item is a row in the SQLite database, in the tables of
     our ER diagram (`docs/er-diagram.drawio`): `profile`,
@@ -554,7 +575,13 @@
     than 40 years, a year above the plan's risk level, no goals, two
     goals with the same id, or a goal whose two chances are not
     probabilities or add up to more than 1, or portfolio names that are
-    not five names. Each goal has its chance in
+    not five names. `MultiGoalPlan.validate(result)` applies the same
+    rules and gives one message per invalid field (`maxRiskLevel`,
+    `utility`, `dpUtility`, `rlEfficiency`, `riskLevelByYear`, `goals`,
+    `portfolios`), empty when the result is valid; the constructor
+    throws the first one. When the risk level itself is invalid, the
+    years are checked against level 5, so one mistake gives one message.
+    Each goal has its chance in
     full, in part and of either, as GoalProbability (see 8), and its
     verdict comes from the chance of either: 62% in full and 21% in part
     is 83%, Realistic. With the five portfolio names (the planner's
@@ -704,3 +731,13 @@
     or removed on step 1, step 1 says how the goal chosen in step 2 moved
     once the new plan is done ("Your chance of reaching Car went from 39%
     to 8%." or "stays at 39%").
+
+    Saving. Each plan the planner finishes is saved once through `POST
+    /api/plans` (see 12) by the plan API client (`client/api/planApi.js`),
+    with the body `MultiGoalPlan.toJSON()` gives. Under the scores the
+    page says "Saving this plan…", then "This plan is saved.", or, in red,
+    "This plan couldn't be saved." followed by the server's message (for
+    example when the server can't be reached). A plan shown again from
+    the ones kept on the page isn't saved twice; one that couldn't be
+    saved is tried again when it is shown again. A page opened straight
+    from disk has no server, so it saves nothing and says nothing.
