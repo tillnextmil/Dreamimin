@@ -214,10 +214,14 @@
     | `expenses` | The recorded Expenses, oldest first; a copy that can't be changed |
     | `totalSpent` | The sum of the recorded Expenses' amounts |
     | `updateBalance(amount)` | Sets the funds to a new amount |
-    | `setEnteredAmount(entered)` | Sets the funds from the amount the user entered, minus the spending already recorded; returns the new balance |
+    | `setEnteredAmount(entered)` | Sets the funds from the amount the user entered: entered + income − losses − spending; returns the new balance |
     | `recordSpending(expense)` | Takes an Expense, lowers the balance by its amount and keeps it; returns the new balance |
     | `removeSpending(expenseId)` | Removes a recorded Expense and adds its amount back; returns the new balance |
     | `editSpending(expenseId, edited)` | Swaps a recorded Expense for its edited version (same id); the balance changes by the difference; returns the new balance |
+    | `events`, `totalIncome`, `totalLoss` | The recorded income and losses (oldest first, a copy that can't be changed), and their totals |
+    | `recordEvent(event)` | Records a FundsEvent: income raises the balance, a loss lowers it; returns the new balance |
+    | `removeEvent(eventId)` | Removes recorded income or a loss and undoes its change; returns the new balance |
+    | `editEvent(eventId, edited)` | Swaps recorded income or a loss for its edited version (same id); the balance changes by the difference |
     | `spendingByCategory(order)` | The recorded spending added up per category, largest first: `{ category, amount, share }` for each category with spending, where `amount` is rounded to the cent and `share` is that amount over `totalSpent`; equal amounts follow `order` (the page passes `Expense.CATEGORIES`); an Expense without a category counts as `other` |
 
     Expense (`src/expense.js`):
@@ -235,6 +239,7 @@
     | `new FundsEvent({ id, kind, amount, date, note = "", asOf })` | `kind` is `income` or `loss` ("Choose income or loss."); `amount`, `date` and `note` follow the same rules and messages as an Expense; `id` is made up when left out |
     | `FundsEvent.validate({ kind, amount, date, note, asOf })` | Error message per invalid field; empty when valid |
     | `change` | `+amount` for income, `-amount` for a loss |
+
     Rules. Invalid values are rejected by throwing, with these messages:
 
     | Case | Error | Message |
@@ -246,6 +251,11 @@
     | `removeSpending` with an unknown id | RangeError | "No spending with that id." |
     | `editSpending` that would leave the funds below $0 | RangeError | "That's more than your available funds." |
     | `editSpending` with an edit that has a different id | RangeError | "The edited spending must keep its id." |
+    | `recordEvent` given something that isn't income or a loss | TypeError | "Record income or a loss." |
+    | A loss, or an edit to one, more than the balance | RangeError | "That's more than your available funds." |
+    | Removing or lowering income that has already been spent | RangeError | "That would leave your available funds below $0." |
+    | `removeEvent` or `editEvent` with an unknown id | RangeError | "No income or loss with that id." |
+    | `editEvent` with an edit that has a different id | RangeError | "The edited income or loss must keep its id." |
     | `setEnteredAmount` with less than the spending recorded | RangeError | "That's less than the spending you've recorded." |
     | Amount not a number | RangeError | "Spending amount must be a number." |
     | Amount of $0 or less | RangeError | "Spending amount must be more than $0." |
