@@ -22,6 +22,7 @@ const SCHEMA = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
 const ADDED_COLUMNS = [
   { table: "profile", column: "emergency_fund", definition: "REAL NOT NULL DEFAULT 0 CHECK (emergency_fund >= 0)" },
   { table: "available_funds", column: "entered", definition: "REAL NOT NULL DEFAULT 0 CHECK (entered >= 0)" },
+  { table: "risk_preference", column: "esg", definition: "INTEGER NOT NULL DEFAULT 0 CHECK (esg IN (0, 1))" },
 ];
 
 /* file is a path such as data/dreamimin.db, or ":memory:" for a database that disappears on close (tests) */

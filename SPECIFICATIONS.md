@@ -367,7 +367,8 @@
     (see 2). Before the first `PUT`, `income` and `expenses` are `null`
     and `netWorth` and `emergencyFund` are 0.
 
-    RiskPreference: `{ "maxRiskLevel": 3 }`. The plan only uses
+    RiskPreference: `{ "maxRiskLevel": 3, "esg": false }` (see 17). `esg`
+    is optional in a `PUT` and keeps its saved value. The plan only uses
     portfolios with a risk level up to `maxRiskLevel`, a whole number
     from 1 to 5 ("Choose a risk level from 1 to 5."); it starts at 5, so
     every portfolio can be used, as in the MVP. To preview a level before
@@ -762,3 +763,16 @@
     the ones kept on the page isn't saved twice; one that couldn't be
     saved is tried again when it is shown again. A page opened straight
     from disk has no server, so it saves nothing and says nothing.
+
+17. Risk preference and ESG. RiskPreference (`src/riskPreference.js`)
+    holds the highest risk level the plan may use (`maxRiskLevel`, a
+    whole number from 1 to 5, "Choose a risk level from 1 to 5.") and
+    whether the user wants values-based (ESG) investing (`esg`, true or
+    false, "Choose whether to invest in ESG funds."). It starts at level
+    5 without ESG, as in the MVP. `portfolios()` lists the portfolios up
+    to that level, lowest risk first (see 10); with ESG on, each is the
+    ESG version of the same risk level ("ESG Balanced"): funds screened
+    for environmental, social and governance standards. We assume the
+    same expected return and volatility as the regular portfolio, since
+    studies don't show a consistent difference. `describe()` gives, for
+    example, "Up to Balanced (level 3), ESG funds only".
