@@ -17,7 +17,10 @@
   }
 
   /* Opens a <dialog> whose buttons close it with value "confirm" or "cancel". Resolves to true
-     only for "confirm"; Escape and a click on the dim area outside the box resolve to false. */
+     only for "confirm"; Escape and a click on the dim area outside the box resolve to false.
+     It answers as soon as the dialog closes (its open attribute goes), not on the "close" event:
+     browsers send that event with the next painted frame, so in a tab that isn't painting a late
+     event could answer for the wrong opening. */
   function confirm(dialog) {
     if (!dialog.dataset.ready) {
       dialog.addEventListener("click", (event) => {
@@ -28,7 +31,12 @@
     dialog.returnValue = "";
     dialog.showModal();
     return new Promise((resolve) => {
-      dialog.addEventListener("close", () => resolve(dialog.returnValue === "confirm"), { once: true });
+      const watch = new MutationObserver(() => {
+        if (dialog.open) return;
+        watch.disconnect();
+        resolve(dialog.returnValue === "confirm");
+      });
+      watch.observe(dialog, { attributes: true, attributeFilter: ["open"] });
     });
   }
 
