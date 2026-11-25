@@ -201,3 +201,41 @@ test.each([
   expect(() => funds.setEnteredAmount(entered)).toThrow(message);
   expect(funds.balance).toBe(1000);
 });
+
+// ---------- Editing spending ----------
+
+// normal case: editing spending changes the balance by the difference and keeps the edit
+test("editing spending changes the balance by the difference", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  funds.recordSpending(spending("e1", 200));
+  expect(funds.editSpending("e1", spending("e1", 350))).toBe(650);
+  expect(funds.editSpending("e1", spending("e1", 50))).toBe(950);
+  expect(funds.totalSpent).toBe(50);
+  expect(funds.expenses.map((e) => e.amount)).toEqual([50]);
+});
+
+// edge case: an edit can use up exactly all the funds
+test("an edit can leave exactly $0", () => {
+  const funds = new AvailableFunds({ balance: 500 });
+  funds.recordSpending(spending("e1", 100));
+  expect(funds.editSpending("e1", spending("e1", 500))).toBe(0);
+});
+
+// wrong case: an edit that would leave the funds below $0 is rejected and changes nothing
+test("rejects an edit that spends more than the funds", () => {
+  const funds = new AvailableFunds({ balance: 500 });
+  funds.recordSpending(spending("e1", 100));
+  expect(() => funds.editSpending("e1", spending("e1", 500.01))).toThrow("That's more than your available funds.");
+  expect(funds.balance).toBe(400);
+  expect(funds.expenses[0].amount).toBe(100);
+});
+
+// wrong case: unknown ids, a changed id and things that aren't an Expense are rejected
+test("rejects an unknown id, a changed id or something that isn't an Expense", () => {
+  const funds = new AvailableFunds({ balance: 500 });
+  funds.recordSpending(spending("e1", 100));
+  expect(() => funds.editSpending("nope", spending("nope", 50))).toThrow("No spending with that id.");
+  expect(() => funds.editSpending("e1", spending("e2", 50))).toThrow("The edited spending must keep its id.");
+  expect(() => funds.editSpending("e1", { id: "e1", amount: 0 })).toThrow(TypeError);
+  expect(funds.balance).toBe(400);
+});

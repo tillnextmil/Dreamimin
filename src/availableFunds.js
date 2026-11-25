@@ -98,6 +98,20 @@
       this.#balance = AvailableFunds.#toCents(this.#balance + removed.amount);
       return this.#balance;
     }
+    
+    /* swaps a recorded Expense for its edited version (same id): the balance changes by the
+       difference between the two amounts. Returns the new balance; changes nothing on an error. */
+    editSpending(expenseId, edited) {
+      const index = this.#expenses.findIndex((expense) => expense.id === expenseId);
+      if (index === -1) throw new RangeError("No spending with that id.");
+      if (!AvailableFunds.#isExpense(edited)) throw new TypeError("Record an Expense.");
+      if (edited.id !== expenseId) throw new RangeError("The edited spending must keep its id.");
+      const balance = AvailableFunds.#toCents(this.#balance + this.#expenses[index].amount - edited.amount);
+      if (balance < 0) throw new RangeError("That's more than your available funds.");
+      this.#expenses[index] = edited;
+      this.#balance = balance;
+      return this.#balance;
+    }
 
     /* an Expense has an id and an amount above 0; checking that shape means this file
        doesn't need src/expense.js to be loaded first */

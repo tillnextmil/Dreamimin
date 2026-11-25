@@ -23,6 +23,10 @@ const planRoutes = require("./routes/planRoutes");
 const ProfileRepository = require("./repositories/profileRepository");
 const ProfileService = require("./services/profileService");
 const profileRoutes = require("./routes/profileRoutes");
+const FundsRepository = require("./repositories/fundsRepository");
+const ExpenseRepository = require("./repositories/expenseRepository");
+const FundsService = require("./services/fundsService");
+const { fundsRoutes, expenseRoutes } = require("./routes/fundsRoutes");
 
 const ROOT = path.join(__dirname, "..");
 /* only the page's own files are served, never the database, package.json or the server code */
@@ -33,11 +37,14 @@ function createApp({ db }) {
   const goalService = new GoalService(goalRepository, { profileId: PROFILE_ID });
   const planService = new PlanService(new PlanRepository(db), goalRepository, { profileId: PROFILE_ID });
   const profileService = new ProfileService(new ProfileRepository(db), { profileId: PROFILE_ID });
+  const fundsService = new FundsService(new FundsRepository(db), new ExpenseRepository(db), { profileId: PROFILE_ID });
 
   const app = express();
   app.use(express.json());
 
   app.use("/api/goals", goalRoutes(goalService));
+  app.use("/api/funds", fundsRoutes(fundsService));
+  app.use("/api/expenses", expenseRoutes(fundsService));
   app.use("/api/plans", planRoutes(planService));
   app.use("/api/profile", profileRoutes(profileService));
   app.use("/api", (req, res) => {
