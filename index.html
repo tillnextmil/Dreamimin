@@ -452,6 +452,8 @@
               <div><dt>How the planner invests</dt><dd id="odds-glide"></dd></div>
             </dl>
 
+            <p class="footnote plan-saved" id="plan-saved" role="status" hidden></p>
+
             <details class="how">
               <summary>How we got these numbers</summary>
               <p>A reinforcement-learning planner (PPO) plays out thousands of possible markets for all your goals together, from one pot of money. At each step it chooses among five portfolios from cautious to aggressive, and when a goal comes due it pays it in full, pays the smallest amount you'd accept, or skips it to keep the money for a goal that matters more. It learns the moves that score best: a goal paid in full scores its priority, and a goal paid in part scores its priority times the share of the full amount paid.</p>
@@ -516,7 +518,9 @@
   <script src="src/expense.js"></script>
   <!-- the page: formatting, the API client, views, then controllers -->
   <script src="client/format.js"></script>
+  <script src="client/api/request.js"></script>
   <script src="client/api/goalApi.js"></script>
+  <script src="client/api/planApi.js"></script>
   <script src="client/views/fieldView.js"></script>
   <script src="client/views/pieChart.js"></script>
   <script src="client/views/moneyView.js"></script>

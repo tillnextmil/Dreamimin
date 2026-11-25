@@ -15,16 +15,7 @@
 
   const FinancialGoal = global.FinancialGoal || require("../../src/financialGoal");
   const GoalList = global.GoalList || require("../../src/goalList");
-
-  /* a request that failed: the HTTP status, and either one message or a message per field */
-  class ApiError extends Error {
-    constructor(status, { error, errors } = {}) {
-      super(error || (errors && Object.values(errors)[0]) || `The request failed (${status}).`);
-      this.name = "ApiError";
-      this.status = status;
-      this.errors = errors || null;
-    }
-  }
+  const { ApiError, sendJson } = (global.Dreamimin && global.Dreamimin.ApiRequest) || require("./request");
 
   /* the fields a goal is created or edited with; everything else in `goal` is left out */
   const editable = ({ name, targetAmount, targetDate, priority, minAcceptableAmount }) =>
@@ -50,21 +41,8 @@
     update(id, goal) { return this.#send("PUT", `/goals/${encodeURIComponent(id)}`, editable(goal)); }
     remove(id) { return this.#send("DELETE", `/goals/${encodeURIComponent(id)}`); }
 
-    async #send(method, path, body) {
-      let response;
-      try {
-        response = await this.fetch(this.base + path, {
-          method,
-          headers: body ? { "Content-Type": "application/json" } : {},
-          body: body ? JSON.stringify(body) : undefined,
-        });
-      } catch {
-        throw new ApiError(0, { error: "Couldn't reach the server. Check that it's running and try again." });
-      }
-      if (response.status === 204) return null;
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new ApiError(response.status, data);
-      return data;
+    #send(method, path, body) {
+      return sendJson(this.fetch, this.base + path, method, body);
     }
   }
 

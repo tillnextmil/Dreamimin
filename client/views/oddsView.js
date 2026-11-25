@@ -126,6 +126,7 @@
     $("odds-announce").textContent = "";
     $("odds-reason").textContent = reason(plan, null);
     showCards(goals, left);
+    $("plan-saved").hidden = true;
     if (fresh) {
       lastChances = new Map();
       $("odds-stats").hidden = true;
@@ -197,6 +198,18 @@
     $("odds-announce").textContent = plan.goals.length === 1
       ? `Your chance of reaching ${plan.goals[0].name} is ${result.goals[0].chance.toPercent()}.`
       : `${realistic} of your ${plan.goals.length} goals ${realistic === 1 ? "is" : "are"} realistic.`;
+  }
+
+  /* whether the plan on screen is saved: { state: "saving" | "saved" | "failed", message }, or
+     nothing when plans aren't saved (a page opened straight from disk) */
+  function showSaved(saved) {
+    const note = $("plan-saved");
+    note.hidden = !saved;
+    if (!saved) return;
+    note.classList.toggle("is-error", saved.state === "failed");
+    note.textContent = saved.state === "saving" ? "Saving this plan…"
+      : saved.state === "saved" ? "This plan is saved."
+      : `This plan couldn't be saved. ${saved.message}`;
   }
 
   /* ---------- money over time ---------- */
@@ -343,7 +356,7 @@
   }
 
   D.views.odds = {
-    showEmpty, showWorking, showTraining, showTrainingError, showPlan,
+    showEmpty, showWorking, showTraining, showTrainingError, showPlan, showSaved,
     showTimeline, clearTimeline,
     setWhatIfRange, showWhatIfValue, showWhatIf, showWhatIfWorking,
     showPortfolios,
