@@ -17,6 +17,9 @@ const { PROFILE_ID } = require("./db");
 const GoalRepository = require("./repositories/goalRepository");
 const GoalService = require("./services/goalService");
 const goalRoutes = require("./routes/goalRoutes");
+const ProfileRepository = require("./repositories/profileRepository");
+const ProfileService = require("./services/profileService");
+const profileRoutes = require("./routes/profileRoutes");
 
 const ROOT = path.join(__dirname, "..");
 /* only the page's own files are served, never the database, package.json or the server code */
@@ -24,11 +27,13 @@ const PAGE_FILES = ["index.html", "styles.css", "logo.png"];
 
 function createApp({ db }) {
   const goalService = new GoalService(new GoalRepository(db), { profileId: PROFILE_ID });
+    const profileService = new ProfileService(new ProfileRepository(db), { profileId: PROFILE_ID });
 
   const app = express();
   app.use(express.json());
 
   app.use("/api/goals", goalRoutes(goalService));
+  app.use("/api/profile", profileRoutes(profileService));
   app.use("/api", (req, res) => {
     res.status(404).json({ error: "There is no such API route." });
   });
