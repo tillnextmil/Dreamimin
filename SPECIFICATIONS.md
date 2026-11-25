@@ -228,6 +228,13 @@
     | `Expense.validate({ amount, date, note, category, asOf })` | Error message per invalid field; empty when valid |
     | `id`, `amount`, `date`, `note`, `category` | The stored values; the note is trimmed |
 
+    FundsEvent (`src/fundsEvent.js`): income (such as a bonus) or a loss (such as a car repair) outside everyday spending:
+
+    | Member | Does |
+    |---|---|
+    | `new FundsEvent({ id, kind, amount, date, note = "", asOf })` | `kind` is `income` or `loss` ("Choose income or loss."); `amount`, `date` and `note` follow the same rules and messages as an Expense; `id` is made up when left out |
+    | `FundsEvent.validate({ kind, amount, date, note, asOf })` | Error message per invalid field; empty when valid |
+    | `change` | `+amount` for income, `-amount` for a loss |
     Rules. Invalid values are rejected by throwing, with these messages:
 
     | Case | Error | Message |
