@@ -55,7 +55,7 @@ src/        domain classes and the goal planner, used by the page and the server
 tests/      unit and API tests; every tests/*.test.js file runs automatically
 data/       the database npm start creates (not committed)
 mvp/        standalone goal-probability page; uses the classes in src/
-docs/       ER and CRC diagrams (draw.io and PNG); usability/ has the usability test script
+docs/       the project documents (see docs/README.md): proposal and interviews, diagrams, usability test
 prototype/  early prototype with the planning engine; brought in for M2
 .github/    CI configuration
 ```
@@ -121,7 +121,9 @@ the in-memory one.
   diagram is on
   [Figma](https://www.figma.com/design/UM2BklAjsoTZjnY2tivwa5/Financial-Planning-App-%E2%80%94-Domain-Model--UML-?node-id=0-1).
 
-What the app does is in [REQUIREMENTS.md](REQUIREMENTS.md); exactly how it
+Every document the project hands in is listed in
+[docs/README.md](docs/README.md). What the app does is in
+[REQUIREMENTS.md](REQUIREMENTS.md); exactly how it
 behaves is in [SPECIFICATIONS.md](SPECIFICATIONS.md).
 
 ## Add a test
