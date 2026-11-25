@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS goal (
 CREATE TABLE IF NOT EXISTS available_funds (
   funds_id INTEGER PRIMARY KEY,
   profile_id INTEGER NOT NULL UNIQUE REFERENCES profile (profile_id) ON DELETE CASCADE,
+  entered REAL NOT NULL DEFAULT 0 CHECK (entered >= 0),   -- what the user typed, before spending, income and losses
   balance REAL NOT NULL CHECK (balance >= 0)
 );
 

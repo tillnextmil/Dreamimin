@@ -280,10 +280,11 @@
     goal check (see 5) starts from the same money, so recording spending
     updates it too.
 
-    Storage. The funds and spending can be stored in an `available_funds`
-    table (funds id, balance of 0 or more) and an `expense` table (expense
-    id, funds id referencing `available_funds`, amount above 0, date, note 
-    of 60 characters or fewer, and a category from the list, `other` by default).
+    Storage. The funds and spending are stored in an `available_funds`
+    table (funds id, the profile they belong to, the entered amount and
+    the balance, both 0 or more) and an `expense` table (expense id, funds
+    id referencing `available_funds`, amount above 0, date, note of 60
+    characters or fewer, and a category from the list, `other` by default).
 
 12. Server API. The final app saves its data on a small server: Node
     with Express, storing everything in SQLite through Node's built-in
