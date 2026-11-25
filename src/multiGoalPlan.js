@@ -16,29 +16,43 @@
     : global.GoalProbability;
 
   const MAX_RISK_LEVEL = 5, MAX_YEARS = 40;
+  const isRiskLevel = (level) => Number.isInteger(level) && level >= 1 && level <= MAX_RISK_LEVEL;
 
-  class MultiGoalPlan {
-    /* goals: [{ goalId, pFull, pPartial }], the chance of reaching the full amount and the chance
-       of only reaching the smallest acceptable amount; riskLevelByYear[y] is the risk level in year y;
-       portfolios, when given, names the portfolio at each risk level, lowest first */
-    constructor({ maxRiskLevel, utility, dpUtility, rlEfficiency, riskLevelByYear, goals, portfolios = null }) {
-      if (!Number.isInteger(maxRiskLevel) || maxRiskLevel < 1 || maxRiskLevel > MAX_RISK_LEVEL) {
-        throw new RangeError(`Choose a risk level from 1 to ${MAX_RISK_LEVEL}.`);
-      }
-      const isUtility = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0;
-      if (!isUtility(utility) || !isUtility(dpUtility)) throw new RangeError("Utility must be a number of 0 or more.");
+  function checkUtility(value) {
+    if (!(typeof value === "number" && Number.isFinite(value) && value >= 0)) throw new RangeError("Utility must be a number of 0 or more.");
+    return value;
+  }
+
+  /* The rules, one per field, in the order the constructor applies them. Each throws when its field
+     is wrong (a RangeError, or a TypeError for a chance or portfolio names of the wrong type) and
+     returns the value to keep. validate() runs them all for a message per field. */
+  const CHECKS = {
+    maxRiskLevel({ maxRiskLevel }) {
+      if (!isRiskLevel(maxRiskLevel)) throw new RangeError(`Choose a risk level from 1 to ${MAX_RISK_LEVEL}.`);
+      return maxRiskLevel;
+    },
+    utility: ({ utility }) => checkUtility(utility),
+    dpUtility: ({ dpUtility }) => checkUtility(dpUtility),
+    rlEfficiency({ rlEfficiency }) {
       if (rlEfficiency !== null && !(typeof rlEfficiency === "number" && rlEfficiency >= 0 && rlEfficiency <= 1)) {
         throw new RangeError("RL efficiency must be between 0 and 1, or null.");
       }
+      return rlEfficiency;
+    },
+    riskLevelByYear({ riskLevelByYear, maxRiskLevel }) {
       if (!Array.isArray(riskLevelByYear) || riskLevelByYear.length < 1 || riskLevelByYear.length > MAX_YEARS) {
         throw new RangeError(`A plan covers 1 to ${MAX_YEARS} years.`);
       }
-      if (!riskLevelByYear.every((level) => Number.isInteger(level) && level >= 1 && level <= maxRiskLevel)) {
+      const cap = isRiskLevel(maxRiskLevel) ? maxRiskLevel : MAX_RISK_LEVEL;   // a bad risk level has its own message
+      if (!riskLevelByYear.every((level) => Number.isInteger(level) && level >= 1 && level <= cap)) {
         throw new RangeError("Each year's risk level must be from 1 up to the plan's risk level.");
       }
+      return Object.freeze([...riskLevelByYear]);
+    },
+    goals({ goals }) {
       if (!Array.isArray(goals) || goals.length === 0) throw new RangeError("A plan needs at least one goal.");
-
-      const results = goals.map(({ goalId, pFull, pPartial }) => {
+      const results = goals.map((goal) => {
+        const { goalId, pFull, pPartial } = goal || {};
         if (typeof goalId !== "string" && typeof goalId !== "number") throw new RangeError("Every goal needs an id.");
         const full = new GoalProbability(pFull), partial = new GoalProbability(pPartial);
         if (pFull + pPartial > 1 + 1e-9) throw new RangeError("A goal's full and partial chances can't add up to more than 1.");
@@ -46,19 +60,40 @@
         return Object.freeze({ goalId, full, partial, chance, verdict: chance.verdict });
       });
       if (new Set(results.map((r) => r.goalId)).size !== results.length) throw new RangeError("Two goals can't share an id.");
+      return Object.freeze(results);
+    },
+    portfolios({ portfolios = null }) {
       if (portfolios !== null && !(Array.isArray(portfolios) && portfolios.length === MAX_RISK_LEVEL
           && portfolios.every((name) => typeof name === "string" && name.trim() !== ""))) {
         throw new TypeError(`Portfolios must be ${MAX_RISK_LEVEL} names, lowest risk first.`);
       }
+      return portfolios && Object.freeze([...portfolios]);
+    },
+  };
 
-      this.maxRiskLevel = maxRiskLevel;
-      this.utility = utility;
-      this.dpUtility = dpUtility;
-      this.rlEfficiency = rlEfficiency;   // null when the benchmark can't reach any goal
-      this.riskLevelByYear = Object.freeze([...riskLevelByYear]);
-      this.goals = Object.freeze(results);
-      this.portfolios = portfolios && Object.freeze([...portfolios]);
+  class MultiGoalPlan {
+    /* result: { maxRiskLevel, utility, dpUtility, rlEfficiency, riskLevelByYear, goals, portfolios }.
+       goals: [{ goalId, pFull, pPartial }], the chance of reaching the full amount and the chance
+       of only reaching the smallest acceptable amount; riskLevelByYear[y] is the risk level in year y;
+       rlEfficiency is null when the benchmark can't reach any goal; portfolios, when given, names
+       the portfolio at each risk level, lowest first. Throws on the first rule a field breaks. */
+    constructor(result) {
+      const input = result || {};
+      for (const [field, check] of Object.entries(CHECKS)) this[field] = check(input);
       Object.freeze(this);
+    }
+
+    /* error message per invalid field (the API's 400 body); empty when the result is valid */
+    static validate(result) {
+      const errors = {};
+      for (const [field, check] of Object.entries(CHECKS)) {
+        try {
+          check(result || {});
+        } catch (error) {
+          errors[field] = error.message;
+        }
+      }
+      return errors;
     }
 
     /* how many goals have a Realistic verdict */

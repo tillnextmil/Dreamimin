@@ -183,3 +183,45 @@ test("counts the realistic goals", () => {
   expect(planWith({ goals: [{ goalId: 1, pFull: 0.79, pPartial: 0 }] }).realisticCount()).toBe(0);
   expect(planWith({ goals: [{ goalId: 1, pFull: 0.8, pPartial: 0 }] }).realisticCount()).toBe(1);
 });
+
+// normal case: validate gives a message per invalid field, for the API's 400 body
+// Author: Aiyan Tong
+describe("validate", () => {
+  test("is empty for a valid result", () => {
+    expect(MultiGoalPlan.validate(RESULT)).toEqual({});
+  });
+
+  test("names every invalid field once", () => {
+    expect(MultiGoalPlan.validate({ maxRiskLevel: 0, utility: -1, dpUtility: 6.5, rlEfficiency: 2, riskLevelByYear: [], goals: [] })).toEqual({
+      maxRiskLevel: "Choose a risk level from 1 to 5.",
+      utility: "Utility must be a number of 0 or more.",
+      rlEfficiency: "RL efficiency must be between 0 and 1, or null.",
+      riskLevelByYear: "A plan covers 1 to 40 years.",
+      goals: "A plan needs at least one goal.",
+    });
+  });
+
+  // edge case: a bad risk level doesn't also flag every year as above it
+  test("checks the years against level 5 when the plan's risk level is invalid", () => {
+    expect(MultiGoalPlan.validate({ ...RESULT, maxRiskLevel: 9, riskLevelByYear: [5, 4] })).toEqual({
+      maxRiskLevel: "Choose a risk level from 1 to 5.",
+    });
+  });
+
+  // edge case: nothing at all, or a goal that is null
+  test("handles a missing result and a missing goal", () => {
+    expect(Object.keys(MultiGoalPlan.validate(undefined))).toEqual(["maxRiskLevel", "utility", "dpUtility", "rlEfficiency", "riskLevelByYear", "goals"]);
+    expect(MultiGoalPlan.validate({ ...RESULT, goals: [null] })).toEqual({ goals: "Every goal needs an id." });
+  });
+
+  // normal case: validate and the constructor agree on every case the constructor rejects
+  test.each([
+    { maxRiskLevel: 6 }, { utility: -1 }, { dpUtility: "6.5" }, { rlEfficiency: 1.2 }, { riskLevelByYear: [4, 3] },
+    { goals: [{ goalId: 1, pFull: 0.7, pPartial: 0.4 }] }, { goals: [{ goalId: 1, pFull: "0.5", pPartial: 0 }] },
+    { portfolios: ["one"] },
+  ])("agrees with the constructor for %p", (change) => {
+    const errors = MultiGoalPlan.validate({ ...RESULT, ...change });
+    expect(Object.keys(errors)).toHaveLength(1);
+    expect(() => planWith(change)).toThrow(Object.values(errors)[0]);
+  });
+});
