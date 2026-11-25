@@ -216,6 +216,7 @@
     | `setEnteredAmount(entered)` | Sets the funds from the amount the user entered, minus the spending already recorded; returns the new balance |
     | `recordSpending(expense)` | Takes an Expense, lowers the balance by its amount and keeps it; returns the new balance |
     | `removeSpending(expenseId)` | Removes a recorded Expense and adds its amount back; returns the new balance |
+    | `spendingByCategory(order)` | The recorded spending added up per category, largest first: `{ category, amount, share }` for each category with spending, where `amount` is rounded to the cent and `share` is that amount over `totalSpent`; equal amounts follow `order` (the page passes `Expense.CATEGORIES`); an Expense without a category counts as `other` |
 
     Expense (`src/expense.js`):
 
@@ -247,8 +248,22 @@
     changed after it is created, and today is a valid date.
 
     On the page, step 1 has an optional Available funds field and, below
-    it, a form to record spending (amount, date, note) with a list of
-    what has been recorded, each with a Remove button. Recording or
+    it, a form to record spending (amount, date, category, note; the
+    category is Other unless chosen, and stays as chosen for the next
+    one) with a list of what has been recorded, each with its category
+    and a Remove button. Once spending is in two categories or more, a
+    chart above the list shows how it splits (`client/views/pieChart.js`):
+    a ring with a slice per category, largest first, clockwise from 12
+    o'clock, the total spent in the middle, and a legend with each
+    category's colour, name, amount and share ("Food $298.40 41%"; a
+    share that rounds to 0% or 100% shows as "<1%" or ">99%"). Each
+    category keeps its own colour (Housing blue, Food orange, Transport
+    aqua, Bills yellow, Health pink, Fun green, Shopping violet, Other
+    gray), checked so neighbouring colours stay apart for colour-blind
+    readers; the legend names every slice, so no category is told apart
+    by colour alone. Pointing at a slice or a legend row brings out that
+    category in both. With spending in one category the chart is hidden,
+    since the list already says it all. Recording or
     removing spending updates the funds left and, through them, the
     chance of reaching the goal (see 7). When no available funds are
     entered, the chance is worked out from the net worth as before. The

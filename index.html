@@ -132,10 +132,19 @@
                 </div>
               </div>
 
-              <div class="field">
-                <label for="spendNote">Note <span class="optional">(optional)</span></label>
-                <div class="control">
-                  <input id="spendNote" name="spendNote" type="text" autocomplete="off" maxlength="60" placeholder="e.g. Groceries" />
+              <div class="field-row">
+                <div class="field">
+                  <label for="spendCategory">Category</label>
+                  <div class="control control--select">
+                    <select id="spendCategory" name="spendCategory"></select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="spendNote">Note <span class="optional">(optional)</span></label>
+                  <div class="control">
+                    <input id="spendNote" name="spendNote" type="text" autocomplete="off" maxlength="60" placeholder="e.g. Groceries" />
+                  </div>
                 </div>
               </div>
 
@@ -143,7 +152,19 @@
               <p class="error" id="spending-error" role="alert"></p>
               <p class="help" id="spending-left" aria-live="polite"></p>
               <p class="spending__impact" id="spending-impact" aria-live="polite"></p>
-              <ul class="spending__list" id="spending-list"></ul>
+
+              <div class="spend-chart" id="spend-chart" hidden>
+                <p class="spend-chart__title" id="spend-chart-title">Spending by category</p>
+                <div class="spend-chart__body">
+                  <div class="spend-chart__pie">
+                    <div id="spend-pie"></div>
+                    <p class="spend-chart__total" aria-hidden="true"><strong id="spend-total"></strong><span>spent</span></p>
+                  </div>
+                  <ul class="spend-chart__legend" id="spend-legend" aria-labelledby="spend-chart-title"></ul>
+                </div>
+              </div>
+
+              <ul class="spending__list" id="spending-list" aria-label="Recorded spending"></ul>
             </fieldset>
           </div>
 
@@ -466,6 +487,7 @@
   <script src="client/format.js"></script>
   <script src="client/api/goalApi.js"></script>
   <script src="client/views/fieldView.js"></script>
+  <script src="client/views/pieChart.js"></script>
   <script src="client/views/moneyView.js"></script>
   <script src="client/views/goalView.js"></script>
   <script src="client/views/oddsView.js"></script>

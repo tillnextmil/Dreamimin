@@ -2,7 +2,7 @@
    Step 1 controller (Your money): reads the income, spending,
    net worth, available funds and emergency fund fields, builds a
    FinancialProfile and keeps the AvailableFunds, and handles
-   recording and removing spending. The rules live in the domain
+   recording spending (with its category) and removing it. The rules live in the domain
    classes; this file only passes input to them and tells the
    money view what to show.
    ============================================================ */
@@ -22,6 +22,7 @@
     emergencyFund: { group: "profile", key: "emergencyFund", optional: true },
   };
   const CLASSES = { profile: FinancialProfile, funds: AvailableFunds };
+  const DEFAULT_CATEGORY = "other";   // the category an Expense gets when none is chosen
 
   /* onChange runs after anything on this step changes; onSpendingChanged runs just before, when
      spending was recorded or removed (so the chance before the change can be remembered) */
@@ -76,7 +77,7 @@
       const profileInput = readGroup("profile");
       const fundsInput = readGroup("funds");
       readFunds(fundsInput);
-      view.showSpending(funds, fundsInput.valid);
+      view.showSpending(funds, fundsInput.valid, funds ? funds.spendingByCategory(Expense.CATEGORIES) : []);
       const errors = { ...profileInput.errors, ...fundsInput.errors };
       // errors only show once a field has been left, so nothing turns red while typing
       for (const name of Object.keys(FIELDS)) {
@@ -94,6 +95,7 @@
           amount: format.parseAmount(form.elements.spendAmount.value),
           date: form.elements.spendDate.value,
           note: form.elements.spendNote.value,
+          category: form.elements.spendCategory.value,
         });
         funds.recordSpending(expense);
       } catch (error) {
@@ -128,6 +130,7 @@
       view.showSpendingError("");
       view.showSpendingImpact("");
       view.setSpendingDate(format.isoDate(new Date()));
+      view.showCategories(Expense.CATEGORIES, DEFAULT_CATEGORY);
     }
 
     const isMoneyField = (target) => Boolean(target && target.name in FIELDS);
@@ -151,6 +154,7 @@
     });
 
     view.setSpendingDate(format.isoDate(new Date()));
+    view.showCategories(Expense.CATEGORIES, DEFAULT_CATEGORY);
     return { refresh, hasAnswers, reset };
   }
 
