@@ -40,6 +40,19 @@ test("adds missing columns to an older database file", () => {
   db.close();
 });
 
+// normal case: an old risk_preference table gets the esg column, off by default
+test("adds the esg column to an older risk_preference table", () => {
+  const file = path.join(dir, "old-risk.db");
+  const old = new DatabaseSync(file);
+  old.exec("CREATE TABLE risk_preference (preference_id INTEGER PRIMARY KEY, profile_id INTEGER NOT NULL UNIQUE, max_risk_level INTEGER NOT NULL DEFAULT 5); INSERT INTO risk_preference (profile_id, max_risk_level) VALUES (1, 3);");
+  old.close();
+
+  const db = openDatabase(file);
+  expect(db.prepare("SELECT max_risk_level, esg FROM risk_preference WHERE profile_id = ?").get(PROFILE_ID))
+    .toEqual({ max_risk_level: 3, esg: 0 });
+  db.close();
+});
+
 // edge case: opening a file twice doesn't try to add the columns again
 test("opening an up-to-date file again changes nothing", () => {
   const file = path.join(dir, "new.db");

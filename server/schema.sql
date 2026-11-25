@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS profile (
 CREATE TABLE IF NOT EXISTS risk_preference (
   preference_id INTEGER PRIMARY KEY,
   profile_id INTEGER NOT NULL UNIQUE REFERENCES profile (profile_id) ON DELETE CASCADE,
-  max_risk_level INTEGER NOT NULL DEFAULT 5 CHECK (max_risk_level BETWEEN 1 AND 5)
+  max_risk_level INTEGER NOT NULL DEFAULT 5 CHECK (max_risk_level BETWEEN 1 AND 5),
+  esg INTEGER NOT NULL DEFAULT 0 CHECK (esg IN (0, 1))   -- 1: only ESG (values-based) funds
 );
 
 CREATE TABLE IF NOT EXISTS goal (
