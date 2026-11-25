@@ -55,4 +55,26 @@ function expenseRoutes(fundsService) {
   return sendServiceErrors(router);
 }
 
-module.exports = { fundsRoutes, expenseRoutes };
+module.exports = { fundsRoutes, expenseRoutes, fundsEventRoutes };
+function fundsEventRoutes(fundsService) {
+  const router = express.Router();
+
+  router.get("/", (req, res) => {
+    res.json(fundsService.listEvents({ kind: req.query.kind }));
+  });
+
+  router.post("/", (req, res) => {
+    res.status(201).json(fundsService.addEvent(req.body));
+  });
+
+  router.put("/:id", (req, res) => {
+    res.json(fundsService.updateEvent(req.params.id, req.body));
+  });
+
+  router.delete("/:id", (req, res) => {
+    fundsService.deleteEvent(req.params.id);
+    res.status(204).end();
+  });
+
+  return sendServiceErrors(router);
+}

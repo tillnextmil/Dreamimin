@@ -27,7 +27,7 @@ const FundsRepository = require("./repositories/fundsRepository");
 const ExpenseRepository = require("./repositories/expenseRepository");
 const FundsEventRepository = require("./repositories/fundsEventRepository");
 const FundsService = require("./services/fundsService");
-const { fundsRoutes, expenseRoutes } = require("./routes/fundsRoutes");
+const { fundsRoutes, expenseRoutes, fundsEventRoutes } = require("./routes/fundsRoutes");
 
 const ROOT = path.join(__dirname, "..");
 /* only the page's own files are served, never the database, package.json or the server code */
@@ -48,6 +48,7 @@ function createApp({ db }) {
   app.use("/api/goals", goalRoutes(goalService));
   app.use("/api/funds", fundsRoutes(fundsService));
   app.use("/api/expenses", expenseRoutes(fundsService));
+  app.use("/api/funds-events", fundsEventRoutes(fundsService));
   app.use("/api/plans", planRoutes(planService));
   app.use("/api/profile", profileRoutes(profileService));
   app.use("/api", (req, res) => {
