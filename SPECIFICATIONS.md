@@ -367,7 +367,8 @@
     (see 2). Before the first `PUT`, `income` and `expenses` are `null`
     and `netWorth` and `emergencyFund` are 0.
 
-    RiskPreference: `{ "maxRiskLevel": 3 }`. The plan only uses
+    RiskPreference: `{ "maxRiskLevel": 3, "esg": false }` (see 17). `esg`
+    is optional in a `PUT` and keeps its saved value. The plan only uses
     portfolios with a risk level up to `maxRiskLevel`, a whole number
     from 1 to 5 ("Choose a risk level from 1 to 5."); it starts at 5, so
     every portfolio can be used, as in the MVP. To preview a level before

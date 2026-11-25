@@ -28,6 +28,9 @@ const ExpenseRepository = require("./repositories/expenseRepository");
 const FundsEventRepository = require("./repositories/fundsEventRepository");
 const FundsService = require("./services/fundsService");
 const { fundsRoutes, expenseRoutes, fundsEventRoutes } = require("./routes/fundsRoutes");
+const RiskPreferenceRepository = require("./repositories/riskPreferenceRepository");
+const RiskPreferenceService = require("./services/riskPreferenceService");
+const riskPreferenceRoutes = require("./routes/riskPreferenceRoutes");
 
 const ROOT = path.join(__dirname, "..");
 /* only the page's own files are served, never the database, package.json or the server code */
@@ -41,11 +44,13 @@ function createApp({ db }) {
   const fundsService = new FundsService(
   new FundsRepository(db), new ExpenseRepository(db), new FundsEventRepository(db), { profileId: PROFILE_ID }
   );
+  const riskPreferenceService = new RiskPreferenceService(new RiskPreferenceRepository(db), { profileId: PROFILE_ID });
 
   const app = express();
   app.use(express.json());
 
   app.use("/api/goals", goalRoutes(goalService));
+  app.use("/api/risk-preference", riskPreferenceRoutes(riskPreferenceService));
   app.use("/api/funds", fundsRoutes(fundsService));
   app.use("/api/expenses", expenseRoutes(fundsService));
   app.use("/api/funds-events", fundsEventRoutes(fundsService));
