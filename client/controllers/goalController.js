@@ -267,7 +267,17 @@
     tomorrow.setDate(tomorrow.getDate() + 1);
     view.setMinDate(format.isoDate(tomorrow));
 
-    return { load, refresh, removeAll, hasTyped, count: () => total, all: () => everyGoal };
+    /* saves a goal with a new amount (the extra money choice in step 3), keeping everything else;
+    the goal is chosen in step 2 so its check shows the new amount. Rejects with the API's error. */
+    async function raiseTarget(id, targetAmount) {
+      const goal = everyGoal.find((g) => String(g.id) === String(id));
+      if (!goal) throw new Error("That goal is gone. Choose another one.");
+      const { name, targetDate, priority, minAcceptableAmount } = goal;
+      selected = await api.update(goal.id, { name, targetAmount, targetDate, priority, minAcceptableAmount });
+      await load();
+    }
+
+    return { load, refresh, removeAll, hasTyped, raiseTarget, count: () => total, all: () => everyGoal };
   }
 
   D.controllers = D.controllers || {};

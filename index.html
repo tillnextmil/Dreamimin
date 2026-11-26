@@ -538,6 +538,42 @@
               </section>
             </div>
 
+            <section class="odds-section upgrade" id="upgrade-section" aria-labelledby="upgrade-title">
+              <h3 id="upgrade-title">Extra money came in?</h3>
+              <p class="help" id="upgrade-help">Your chances already count it. Compare putting it toward a bigger goal with taking less risk, then choose one.</p>
+              <div class="field-row">
+                <div class="field">
+                  <label for="upgradeAmount">Extra money</label>
+                  <div class="control control--money">
+                    <span aria-hidden="true">$</span>
+                    <input id="upgradeAmount" name="upgradeAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="upgradeGoal">Goal to raise</label>
+                  <div class="control control--select">
+                    <select id="upgradeGoal" name="upgradeGoal"></select>
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn btn--ghost" id="upgrade-compare">Compare the two choices</button>
+              <p class="error" id="upgrade-error" role="alert"></p>
+              <div class="upgrade__choices" id="upgrade-choices" hidden aria-live="polite">
+                <div class="upgrade__choice">
+                  <h4 id="upgrade-raise-title"></h4>
+                  <ul class="whatif__list" id="upgrade-raise-list"></ul>
+                  <button type="button" class="btn btn--primary" id="upgrade-raise">Raise the goal</button>
+                </div>
+                <div class="upgrade__choice">
+                  <h4 id="upgrade-safer-title"></h4>
+                  <ul class="whatif__list" id="upgrade-safer-list"></ul>
+                  <p class="help" id="upgrade-safer-none" hidden>You're already at the lowest risk level, so there's no safer choice.</p>
+                  <button type="button" class="btn btn--primary" id="upgrade-safer">Take less risk</button>
+                </div>
+              </div>
+              <p class="help save-status" id="upgrade-status" aria-live="polite"></p>
+            </section>
+
             <dl class="stats" id="odds-stats" hidden>
               <div><dt>Our planner's score <span class="term">(PPO)</span></dt><dd id="odds-rl"></dd></div>
               <div><dt>Best possible score <span class="term">(DP)</span></dt><dd id="odds-dp"></dd></div>
@@ -623,6 +659,7 @@
   <script src="src/multiGoalPlan.js"></script>
   <script src="src/investmentPortfolio.js"></script>
   <script src="src/riskPreference.js"></script>
+  <script src="src/upgradeChoice.js"></script>
   <script src="src/availableFunds.js"></script>
   <script src="src/expense.js"></script>
   <script src="src/fundsEvent.js"></script>

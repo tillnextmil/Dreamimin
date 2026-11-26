@@ -850,3 +850,33 @@
     the page keeps working with what's on screen. A page opened straight from
     disk has no server, so step 1 stays in memory and is gone after a
     reload.
+    
+19. Extra money: raise a goal or take less risk. When extra money comes
+    in (REQUIREMENTS.md, 17), the user can compare two choices before
+    making one. UpgradeChoice (`src/upgradeChoice.js`) builds them from
+    the planner's job (see 14): raising one goal's amount by the extra
+    money, or moving one risk level lower (none at level 1). The extra
+    money must be a number above $0 ("Enter how much extra money came
+    in." / "The extra money must be more than $0.") and the goal one of
+    the planned goals ("Choose a goal to raise."); invalid input throws
+    a RangeError with the first message. AvailableFunds' `latestIncome`
+    is the most recently dated income (the last recorded on that date),
+    or null.
+
+    On the page, step 3 has "Extra money came in?" under the what-if
+    slider: an Extra money amount, filled in with the latest recorded
+    income until the user types their own, and the goal to raise
+    (the planned goals). "Compare the two choices" shows them side by
+    side, each with every goal's chance before and after and the change
+    in points, from MultiGoalPlanner's `whatIf` (the DP estimate, so no
+    training): "Raise House to $40,800" and "Move to level 3 · Balanced"
+    (with the ESG name when ESG is on). At level 1 the second says
+    there's no safer choice. Both start from today's plan, which already
+    counts the extra money in the funds. "Raise the goal" saves the goal
+    with its new amount (`PUT /api/goals/:id`, everything else kept) and
+    "Take less risk" saves the lower level (`PUT /api/risk-preference`,
+    see 17); either way the choices close, a line says what changed
+    ("House is now $40,800. Your chances are being worked out again."),
+    and the plan trains again. A change to the plan's inputs closes an
+    open comparison, since it's out of date. Start over empties the
+    section.

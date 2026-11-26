@@ -48,6 +48,12 @@
       const sorted = [...this.#events].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
       return Object.freeze(sorted);
     }
+    
+    /* the most recently dated income (the last one recorded on that date), or null when there is none */
+    get latestIncome() {
+      const income = this.#events.filter((e) => e.kind === "income");
+      return income.reduce((latest, e) => (latest === null || e.date >= latest.date ? e : latest), null);
+    }
 
     get totalIncome() {
       return AvailableFunds.#total(this.#events.filter((e) => e.kind === "income"));

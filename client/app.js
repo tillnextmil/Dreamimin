@@ -35,6 +35,7 @@
     notify,
     showImpact: D.views.money.showSpendingImpact,
     savePlan: planApi && ((body) => planApi.save(body)), riskApi,
+    raiseGoal: (id, amount) => goals.raiseTarget(id, amount),
   });
   const money = D.controllers.money({ form, api: moneyApi, onChange: update, onSpendingChanged: odds.spendingChanged });
   const goals = D.controllers.goals({ form, api, onChange: update });
@@ -46,7 +47,8 @@
        the chances (step 3) both start from it, so they agree. */
     const wealth = profile ? profile.moneyForGoals(funds ? funds.balance : null) : 0;
     const goal = goals.refresh(profile, wealth);
-    odds.show({ profile, goals: goals.all(), selected: goal, fundsReady, wealth });
+    const latestIncome = funds && funds.latestIncome ? funds.latestIncome.amount : null;
+    odds.show({ profile, goals: goals.all(), selected: goal, fundsReady, wealth, latestIncome });
     notify("plan:update", { profile, goal, goalCount: goals.count() });
   }
 

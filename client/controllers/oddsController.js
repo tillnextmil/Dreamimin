@@ -5,8 +5,9 @@
    saves each one on the server, answers the what-if slider from
    the planner's quick estimate, keeps the risk preference (the
    highest risk level the plan uses and the ESG choice, saved on
-   the server), and tells the odds view and the step bar what to
-   show.
+   the server), compares raising a goal with taking less risk
+   when extra money comes in, and tells the odds view and the
+   step bar what to show.
    ============================================================ */
 
 (function (D) {
@@ -27,8 +28,9 @@
   /* notify(name, detail) tells the step bar (views/steps.js) what changed;
      showImpact(text) shows on step 1 how recorded spending changed the chance;
      savePlan(body) saves a finished plan (POST /api/plans) and returns a promise, or is null when
-     there is no server to save to; riskApi is a RiskApi (HttpRiskApi), or null without a server */
-  function createOddsController({ notify, showImpact, savePlan = null, riskApi = null }) {
+     there is no server to save to; riskApi is a RiskApi (HttpRiskApi), or null without a server;
+     raiseGoal(goalId, targetAmount) saves a goal's new amount and returns a promise */
+  function createOddsController({ notify, showImpact, savePlan = null, riskApi = null, raiseGoal }) {
     /* the planner gives the same result for the same job, so finished plans are kept per job */
     const plans = new Map();
     let worker = null, runId = 0, debounce = null, currentKey = null;
@@ -49,6 +51,8 @@
 
     function clear(text) {
       stopPlanner();
+      upgrade.job = null;
+      view.showUpgradeChoices(null);
       currentKey = shownLook = plan = null;
       lastChance = chanceBefore = null;
       resetWhatIf(null);
@@ -173,7 +177,7 @@
        they're entered, otherwise the net worth, minus the emergency fund */
     function show(args) {
       lastShown = args;
-      const { profile, goals, selected, fundsReady, wealth } = args;
+      const { profile, goals, selected, fundsReady, wealth, latestIncome = null } = args;
       goalName = selected ? selected.name : "";
       if (!profile && !goals.length) return clear(NO_GOALS);
       if (!profile) return clear("Add your monthly income and spending in step 1 to see your chances.");
@@ -196,6 +200,10 @@
       plan = next;
       if (key !== whatIf.key) resetWhatIf(job, key);
       else whatIf.goals = planned;   // the same job; names may have changed
+      if (key !== upgrade.key) view.showUpgradeChoices(null);   // a compare from another job is out of date
+      upgrade.job = job;
+      upgrade.key = key;
+      view.showUpgrade(planned, latestIncome);
 
       view.showWorking({ goals: planned, left, fresh, plan });
       if (plans.has(key)) {
@@ -302,6 +310,82 @@
       slider.focus();
     });
 
+    /* ---------- extra money: raise a goal or take less risk ---------- */
+
+    /* the job the comparison is for, and the two choices once worked out */
+    const upgrade = { job: null, key: null, choices: null, run: 0 };
+
+    /* the planner's per-goal changes as the view's rows, named and in plan order */
+    function changeRows(result) {
+      const names = new Map(plan.goals.map((g) => [String(g.id), g.name]));
+      return result.goals
+        .filter((g) => g.change !== null && names.has(String(g.goalId)))
+        .map((g) => ({ name: names.get(String(g.goalId)), before: g.before, after: g.after, change: g.change }));
+    }
+
+    /* builds both choices (UpgradeChoice has the rules) and asks the planner's quick estimate how each
+       changes every goal's chance */
+    function compareChoices() {
+      view.showUpgradeStatus("");
+      if (!upgrade.job) return;
+      const { extraText, goalId } = view.readUpgrade();
+      let options;
+      try {
+        options = UpgradeChoice.options(upgrade.job, { extra: D.format.parseAmount(extraText), goalId });
+      } catch (error) {
+        view.showUpgradeChoices(null);
+        return view.showUpgradeError(error.message);
+      }
+      view.showUpgradeError("");
+      const run = ++upgrade.run;
+      const job = upgrade.job;
+      const goal = plan.goals.find((g) => String(g.id) === String(options.raise.goalId));
+      const names = preference.portfolioNames();
+      quickTask({ task: "whatIf", job, changes: options.raise.changes }, (raised) => {
+        if (run !== upgrade.run || !raised) return;
+        const finish = (safer) => {
+          if (run !== upgrade.run) return;
+          upgrade.choices = options;
+          view.showUpgradeChoices({
+            raise: { title: `Raise ${goal.name} to ${D.format.money(options.raise.targetAmount)}`, rows: changeRows(raised) },
+            safer: options.safer && safer
+              ? { title: `Move to level ${options.safer.maxRiskLevel} · ${names[options.safer.maxRiskLevel - 1]}`, rows: changeRows(safer) }
+              : null,
+          });
+        };
+        if (!options.safer) return finish(null);
+        quickTask({ task: "whatIf", job, changes: options.safer.changes }, (safer) => finish(safer));
+      });
+    }
+
+    /* applies a choice: saves the raised goal, or the safer risk level; the plan then trains again */
+    async function applyRaise() {
+      const options = upgrade.choices;
+      if (!options) return;
+      const goal = plan.goals.find((g) => String(g.id) === String(options.raise.goalId));
+      try {
+        await raiseGoal(options.raise.goalId, options.raise.targetAmount);
+      } catch (error) {
+        return view.showUpgradeError(error.message);
+      }
+      upgrade.choices = null;
+      view.showUpgradeChoices(null);
+      view.showUpgradeStatus(`${goal ? goal.name : "Your goal"} is now ${D.format.money(options.raise.targetAmount)}. Your chances are being worked out again.`);
+    }
+
+    async function applySafer() {
+      const options = upgrade.choices;
+      if (!options || !options.safer) return;
+      upgrade.choices = null;
+      view.showUpgradeChoices(null);
+      await choose({ maxRiskLevel: options.safer.maxRiskLevel, esg: preference.esg });
+      view.showUpgradeStatus(`Your highest risk level is now ${options.safer.maxRiskLevel}. Your chances are being worked out again.`);
+    }
+
+    document.getElementById("upgrade-compare").addEventListener("click", compareChoices);
+    document.getElementById("upgrade-raise").addEventListener("click", applyRaise);
+    document.getElementById("upgrade-safer").addEventListener("click", applySafer);
+
     /* ---------- risk preference ---------- */
 
     /* the picker's choices: "3 · Balanced", up to "5 · Aggressive (all five)" */
@@ -358,10 +442,13 @@
       showImpact(chanceBefore ? "Working out your new chance…" : "");
     }
 
-    /* Start over: also puts the risk choice back to level 5 without ESG */
+    /* Start over: also puts the risk choice back to level 5 without ESG and empties the extra money */
     function reset() {
       lastChance = chanceBefore = null;
       showImpact("");
+      upgrade.choices = null;
+      lastShown = null;   // the inputs from before Start over; the next update brings the new ones
+      view.resetUpgrade();
       view.showRiskStatus("");
       const fresh = new RiskPreference();
       if (fresh.maxRiskLevel !== preference.maxRiskLevel || fresh.esg !== preference.esg) choose(fresh);

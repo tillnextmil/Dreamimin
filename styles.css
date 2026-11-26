@@ -408,6 +408,17 @@ h2[tabindex]:focus { outline: none; }
 .save-status:empty { display: none; }
 .save-status.is-error { color: var(--negative); font-weight: 500; }
 
+/* step 3: extra money, raise a goal or take less risk */
+.upgrade { margin-top: 18px; }
+.upgrade .field-row { margin-bottom: 12px; }
+.upgrade__choices { display: grid; gap: 16px; margin-top: 16px; }
+.upgrade__choice { padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.upgrade__choice h4 { margin: 0 0 8px; font-size: 15px; }
+.upgrade__choice .btn { margin-top: 10px; }
+@media (min-width: 640px) {
+  .upgrade__choices { grid-template-columns: 1fr 1fr; }
+}
+
 /* step 3: the risk level and ESG choice */
 .risk { display: grid; gap: 0 20px; margin: 4px 0 18px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .risk .field { margin-bottom: 12px; }
