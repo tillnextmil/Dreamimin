@@ -104,3 +104,20 @@ test("a profile that doesn't exist is a 404", () => {
   expect(errorFrom(() => missing.getProfile()).status).toBe(404);
   expect(errorFrom(() => missing.saveProfile(VALID)).status).toBe(404);
 });
+
+// ---------- Start over ----------
+
+// normal case: resetting empties the profile again
+test("resetProfile empties the profile", () => {
+  service.saveProfile(VALID);
+  service.resetProfile();
+  expect(service.getProfile()).toEqual({
+    id: PROFILE_ID, name: "My profile", income: null, expenses: null, netWorth: 0, emergencyFund: 0,
+  });
+});
+
+// wrong case: resetting a profile that doesn't exist is a 404
+test("resetting a profile that doesn't exist is a 404", () => {
+  const missing = new ProfileService(profiles, { profileId: 99 });
+  expect(errorFrom(() => missing.resetProfile()).status).toBe(404);
+});

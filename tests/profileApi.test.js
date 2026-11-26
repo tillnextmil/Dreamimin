@@ -41,3 +41,11 @@ test("an invalid profile is a 400 and changes nothing", async () => {
   expect(res.body).toEqual({ errors: { income: "Monthly income can't be negative." } });
   expect((await request(app).get("/api/profile")).body.income).toBe(4800);
 });
+
+// normal case: DELETE /api/profile empties the profile (Start over)
+test("DELETE /api/profile empties the profile", async () => {
+  await request(app).put("/api/profile").send(VALID);
+  const res = await request(app).delete("/api/profile");
+  expect(res.status).toBe(204);
+  expect((await request(app).get("/api/profile")).body).toMatchObject({ income: null, expenses: null, netWorth: 0, emergencyFund: 0 });
+});

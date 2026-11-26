@@ -405,6 +405,8 @@ h2[tabindex]:focus { outline: none; }
 .help { color: var(--muted); font-size: 14px; margin-top: 8px; }
 .error { color: var(--negative); font-size: 14px; font-weight: 500; margin-top: 6px; animation: fade-in var(--medium) var(--ease-out); }
 .error:empty { display: none; }
+.save-status:empty { display: none; }
+.save-status.is-error { color: var(--negative); font-weight: 500; }
 
 /* record spending */
 .spending { margin: 26px 0 0; padding: 22px 0 0; border: 0; border-top: 1px solid var(--border); min-width: 0; }

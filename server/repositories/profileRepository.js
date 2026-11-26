@@ -26,6 +26,14 @@ class ProfileRepository {
     `).run(income, expenses, netWorth, emergencyFund, profileId);
     return result.changes ? this.find(profileId) : null;
   }
+  
+  /* empties the profile again: no income or spending, and $0 net worth and emergency fund */
+  reset(profileId) {
+    this.db.prepare(`
+      UPDATE profile SET monthly_income = NULL, monthly_expenses = NULL, net_worth = 0, emergency_fund = 0
+      WHERE profile_id = ?
+    `).run(profileId);
+  }
 
   static #toProfile(row) {
     return {

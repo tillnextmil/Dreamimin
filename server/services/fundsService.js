@@ -52,6 +52,12 @@ class FundsService {
     this.funds.save(this.profileId, { entered, balance: funds.balance });
     return this.getFunds();
   }
+  
+  /* Start over, or the Available funds field emptied: removes the funds and everything recorded
+     against them, so the funds are null again until the next PUT */
+  clearFunds() {
+    this.funds.remove(this.profileId);
+  }
 
   /* the recorded spending, oldest first, filtered by category, date range and note text */
   listExpenses({ category, from, to, search } = {}) {

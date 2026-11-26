@@ -3,8 +3,11 @@
    net worth, available funds and emergency fund fields, builds a
    FinancialProfile and keeps the AvailableFunds, and handles
    recording spending (with its category) and removing it, after
-   asking. The rules live in the domain classes; this file only
-   passes input to them and tells the money view what to show.
+   asking. With a server, it loads what was saved when the page
+   opens and saves each change through the money API client, so
+   step 1 is still there after a reload. The rules live in the
+   domain classes; this file only passes input to them and tells
+   the money view what to show.
    ============================================================ */
 
 (function (D) {
@@ -23,14 +26,23 @@
   };
   const CLASSES = { profile: FinancialProfile, funds: AvailableFunds };
   const DEFAULT_CATEGORY = "other";   // the category an Expense gets when none is chosen
+  const SAVE_DELAY_MS = 500;          // waits this long after the last keystroke before saving
 
-  /* onChange runs after anything on this step changes; onSpendingChanged runs just before, when
-     spending was recorded or removed (so the chance before the change can be remembered) */
-  function createMoneyController({ form, onChange, onSpendingChanged }) {
+  /* api is a MoneyApi (HttpMoneyApi), or null when the page is opened straight from disk and step 1
+     stays in memory. onChange runs after anything on this step changes; onSpendingChanged runs just
+     before, when spending was recorded or removed (so the chance before the change can be remembered) */
+  function createMoneyController({ form, api = null, onChange, onSpendingChanged }) {
     const touched = new Set();
     /* the user's AvailableFunds while the field has a valid amount, otherwise null; kept between
        updates so spending recorded against it isn't lost */
     let funds = null;
+    /* what the server has, so each change is sent once: the profile's values as JSON (null before the
+       first save) and the entered funds (null when the server has none) */
+    let savedProfile = null, savedEntered = null;
+    let pendingEntered;                      // the entered funds waiting to be saved (undefined: nothing)
+    let profileTimer = null, fundsTimer = null;
+    let fundsSaving = Promise.resolve();     // funds saves run one after another, in order
+    let loaded = !api;                       // nothing is saved until what's saved has been loaded
 
     /* values and error messages for one class's inputs; values are null where something is missing */
     function readGroup(group) {
@@ -85,11 +97,93 @@
       }
       const profile = profileInput.valid ? new FinancialProfile(profileInput.values) : null;
       view.showMoney(profile, funds);
+      if (api && loaded) scheduleSaves(profileInput, fundsInput);
       return { profile, funds, fundsReady: fundsInput.valid };
     }
 
-    /* builds an Expense from the spending inputs and records it; shows the error message if it can't */
-    function recordSpending() {
+    /* ---------- saving to the server ---------- */
+
+    /* Saves a valid profile and the entered funds a moment after they change. Funds that are emptied
+       are cleared on the server too, as the page drops them. Invalid input isn't saved: what was saved
+       last stays until the input is valid again. */
+    function scheduleSaves(profileInput, fundsInput) {
+      if (profileInput.valid) {
+        const values = { ...profileInput.values };
+        const json = JSON.stringify(values);
+        clearTimeout(profileTimer);
+        if (json !== savedProfile) profileTimer = setTimeout(() => saveProfile(values, json), SAVE_DELAY_MS);
+      }
+      const entered = !fundsInput.started ? null : fundsInput.valid ? fundsInput.values.balance : undefined;
+      if (entered === undefined) return;
+      pendingEntered = entered;
+      clearTimeout(fundsTimer);
+      if (entered !== savedEntered) fundsTimer = setTimeout(saveFunds, SAVE_DELAY_MS);
+    }
+
+    async function saveProfile(values, json) {
+      try {
+        await api.saveProfile(values);
+        savedProfile = json;
+        view.showSaveStatus("Your money is saved.");
+      } catch (error) {
+        view.showSaveStatus(`Your money couldn't be saved. ${error.message}`, true);
+      }
+    }
+
+    /* saves the entered funds now if they changed; resolves once every funds save so far is done */
+    function saveFunds() {
+      clearTimeout(fundsTimer);
+      const entered = pendingEntered;
+      pendingEntered = undefined;
+      if (entered === undefined) return fundsSaving;
+      fundsSaving = fundsSaving.then(async () => {
+        if (entered === savedEntered) return;
+        try {
+          if (entered === null) await api.clearFunds();
+          else await api.saveFunds(entered);
+          savedEntered = entered;
+          view.showSaveStatus("Your money is saved.");
+        } catch (error) {
+          view.showSaveStatus(`Your available funds couldn't be saved. ${error.message}`, true);
+        }
+      });
+      return fundsSaving;
+    }
+
+    /* puts a saved amount back in a field, e.g. 4500 -> "4,500"; empty for null (and for $0 in optional fields) */
+    function fill(name, amount, { blankZero = false } = {}) {
+      form.elements[name].value = amount === null || (blankZero && amount === 0) ? "" : format.plain(amount);
+    }
+
+    /* With a server, fills step 1 with what was saved and rebuilds the AvailableFunds from the saved
+       funds and spending, then updates the page. */
+    async function load() {
+      if (!api) return;
+      try {
+        const [profile, saved, expenses] = await Promise.all([api.getProfile(), api.getFunds(), api.listExpenses()]);
+        fill("income", profile.income);
+        fill("expenses", profile.expenses);
+        fill("netWorth", profile.netWorth, { blankZero: true });
+        fill("emergencyFund", profile.emergencyFund, { blankZero: true });
+        fill("availableFunds", saved.entered);
+        funds = null;
+        if (saved.entered !== null) {
+          funds = new AvailableFunds({ balance: saved.entered });
+          for (const expense of expenses) funds.recordSpending(expense);
+        }
+        const { income, expenses: spending, netWorth, emergencyFund } = profile;
+        savedProfile = income === null ? null : JSON.stringify({ income, expenses: spending, netWorth, emergencyFund });
+        savedEntered = saved.entered;
+      } catch (error) {
+        view.showSaveStatus(`Your saved money couldn't be loaded. ${error.message}`, true);
+      }
+      loaded = true;
+      onChange();
+    }
+
+    /* builds an Expense from the spending inputs and records it (on the server first, when there is
+       one, so it gets the server's id); shows the error message if it can't */
+    async function recordSpending() {
       try {
         const expense = new Expense({
           amount: format.parseAmount(form.elements.spendAmount.value),
@@ -97,7 +191,12 @@
           note: form.elements.spendNote.value,
           category: form.elements.spendCategory.value,
         });
-        funds.recordSpending(expense);
+        if (api) {
+          await saveFunds();   // the server needs the funds before it can record spending against them
+          funds.recordSpending(await api.addExpense(expense));
+        } else {
+          funds.recordSpending(expense);
+        }
       } catch (error) {
         view.showSpendingError(error.message);
         return;
@@ -115,6 +214,14 @@
       const expense = funds.expenses[index];
       if (!(await view.confirmRemoveSpending(expense))) return;
       if (!funds || !funds.expenses.includes(expense)) return;   // already gone while the dialog was open
+      if (api) {
+        try {
+          await api.removeExpense(expense.id);
+        } catch (error) {
+          view.showSpendingError(error.message);
+          return;
+        }
+      }
       funds.removeSpending(expense.id);
       onSpendingChanged();
       onChange();
@@ -129,15 +236,28 @@
       return typed || Boolean(funds && funds.expenses.length > 0);
     }
 
-    /* empties this step: the fields, the spending and the messages */
-    function reset() {
+    /* empties this step: the fields, the spending and the messages, and with a server, what was saved */
+    async function reset() {
       for (const name of [...Object.keys(FIELDS), "spendAmount", "spendNote"]) form.elements[name].value = "";
       touched.clear();
       funds = null;
       view.showSpendingError("");
       view.showSpendingImpact("");
+      view.showSaveStatus("");
       view.setSpendingDate(format.isoDate(new Date()));
       view.showCategories(Expense.CATEGORIES, DEFAULT_CATEGORY);
+      if (!api) return;
+      clearTimeout(profileTimer);
+      clearTimeout(fundsTimer);
+      pendingEntered = undefined;
+      try {
+        await fundsSaving;
+        await Promise.all([api.clearFunds(), api.resetProfile()]);
+        savedProfile = null;
+        savedEntered = null;
+      } catch (error) {
+        view.showSaveStatus(`Your saved money couldn't be cleared. ${error.message}`, true);
+      }
     }
 
     const isMoneyField = (target) => Boolean(target && target.name in FIELDS);
@@ -162,7 +282,7 @@
 
     view.setSpendingDate(format.isoDate(new Date()));
     view.showCategories(Expense.CATEGORIES, DEFAULT_CATEGORY);
-    return { refresh, hasAnswers, reset };
+    return { load, refresh, hasAnswers, reset };
   }
 
   D.controllers = D.controllers || {};

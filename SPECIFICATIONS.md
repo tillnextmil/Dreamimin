@@ -111,11 +111,13 @@
    anything has been entered or a goal exists, it first asks "Start
    over?" in a dialog: Clear everything goes ahead, while Keep my
    answers, Escape or a click outside the dialog leaves everything as it
-   was. Step 1's inputs are not saved between visits yet. The page shows
-   one of three steps at a time (Your money, Your goals, Your chances),
-   chosen in the step bar or with Next and Back; the step is kept in the
-   address (#money, #goal, #chances), so the browser's back button and
-   links work. A step is marked done once its inputs are valid (for Your
+   was. With the server, step 1 (the profile, the available funds and
+   the recorded spending) is saved a moment after each change and loaded
+   again when the page opens (see 18), and Start over clears it there
+   too. The page shows one of three steps at a time (Your money, Your goals, 
+   Your chances), chosen in the step bar or with Next and Back; the step is 
+   kept in the address (#money, #goal, #chances), so the browser's back button 
+   and links work. A step is marked done once its inputs are valid (for Your
    goals, once there is a chosen goal that can be checked); the step bar
    shows the monthly cash flow under Your money, the number of goals
    under Your goals and, once the chances are worked out (see 16), the
@@ -339,6 +341,7 @@
     |---|---|---|---|
     | GET | `/api/profile` | The profile | 200 Profile |
     | PUT | `/api/profile` | Saves income, spending, net worth and emergency fund | 200 Profile |
+    | DELETE | `/api/profile` | Empties the profile again (Start over) | 204 |
     | GET | `/api/risk-preference` | The risk preference | 200 RiskPreference |
     | PUT | `/api/risk-preference` | Saves it | 200 RiskPreference |
     | GET | `/api/goals` | Every goal; `sort` and `search` are optional | 200 Goal[] |
@@ -348,6 +351,7 @@
     | DELETE | `/api/goals/:id` | Deletes a goal and its saved results | 204 |
     | GET | `/api/funds` | Funds left now, with totals | 200 Funds |
     | PUT | `/api/funds` | Sets the funds from the amount the user entered | 200 Funds |
+    | DELETE | `/api/funds` | Removes the funds and the spending, income and losses recorded against them (Start over, or the field emptied) | 204 |
     | GET | `/api/expenses` | Recorded spending; `category`, `from`, `to` and `search` are optional | 200 Expense[] |
     | POST | `/api/expenses` | Records spending; lowers the funds | 201 Expense |
     | PUT | `/api/expenses/:id` | Edits spending; the funds change by the difference | 200 Expense |
@@ -776,3 +780,25 @@
     same expected return and volatility as the regular portfolio, since
     studies don't show a consistent difference. `describe()` gives, for
     example, "Up to Balanced (level 3), ESG funds only".
+
+18. Saving step 1 (page). With the server, the money controller saves
+    step 1 through the money API client (`client/api/moneyApi.js`) and
+    loads it again when the page opens, so a reload keeps it. When the
+    page opens it fills income, spending, net worth, the emergency fund
+    (left empty when $0) and the available funds (the entered amount)
+    with what was saved, and lists the saved spending. A valid profile
+    is saved (`PUT /api/profile`) 500 ms after the last change; invalid
+    input isn't saved, so what was saved last stays until it's valid
+    again. The available funds are saved the same way (`PUT
+    /api/funds`); emptying the field clears them (`DELETE /api/funds`),
+    as the page drops the spending with them. Recording spending saves
+    the funds first if they changed, then posts the spending, and the
+    list shows it once the server has saved it, with the server's id;
+    Remove deletes it on the server first. Start over clears both
+    (`DELETE /api/funds` and `DELETE /api/profile`). Under the emergency
+    fund, a quiet line says "Your money is saved." after a save, or, in
+    red, that it couldn't be saved or loaded, followed by the server's
+    message (for example when the server can't be reached); the page
+    keeps working with what's on screen. A page opened straight from
+    disk has no server, so step 1 stays in memory and is gone after a
+    reload.

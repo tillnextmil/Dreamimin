@@ -23,6 +23,11 @@ class FundsRepository {
     `).run(profileId, entered, balance);
     return this.find(profileId);
   }
+  
+  /* removes the profile's funds; the spending, income and losses recorded against them go too (ON DELETE CASCADE) */
+  remove(profileId) {
+    this.db.prepare("DELETE FROM available_funds WHERE profile_id = ?").run(profileId);
+  }
 
   /* saves a new balance after spending changes */
   updateBalance(fundsId, balance) {

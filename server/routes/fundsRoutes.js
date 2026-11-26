@@ -28,6 +28,11 @@ function fundsRoutes(fundsService) {
     res.json(fundsService.setEntered(req.body));
   });
 
+  router.delete("/", (req, res) => {
+    fundsService.clearFunds();
+    res.status(204).end();
+  });
+  
   return sendServiceErrors(router);
 }
 
