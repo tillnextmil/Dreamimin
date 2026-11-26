@@ -58,9 +58,21 @@ test("rejects an invalid level or ESG choice", () => {
   expect(service.getPreference()).toEqual({ maxRiskLevel: 3, esg: false });
 });
 
-// wrong case: the level is required, and a body that isn't an object counts as empty
-test.each([{}, undefined, "3", []])("rejects %p because the level is missing", (body) => {
-  expect(errorFrom(() => service.savePreference(body)).body.errors).toEqual({ maxRiskLevel: "Choose a risk level from 1 to 5." });
+// edge case: leaving out the level keeps the saved one, so the ESG toggle can send only esg
+test("keeps the saved level when maxRiskLevel is left out", () => {
+  service.savePreference({ maxRiskLevel: 2, esg: false });
+  expect(service.savePreference({ esg: true })).toEqual({ maxRiskLevel: 2, esg: true });
+});
+
+// edge case: an empty body, or one that isn't an object, changes nothing
+test.each([{}, undefined, "3", []])("keeps everything saved for %p", (body) => {
+  service.savePreference({ maxRiskLevel: 3, esg: true });
+  expect(service.savePreference(body)).toEqual({ maxRiskLevel: 3, esg: true });
+});
+
+// wrong case: a level sent as null is still checked, not treated as left out
+test("rejects a level sent as null", () => {
+  expect(errorFrom(() => service.savePreference({ maxRiskLevel: null })).body.errors).toEqual({ maxRiskLevel: "Choose a risk level from 1 to 5." });
 });
 
 // wrong case: the table's checks stop a bad level or ESG value even if the service is skipped
