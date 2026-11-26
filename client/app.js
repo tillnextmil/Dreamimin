@@ -15,15 +15,17 @@
 (function (D) {
   "use strict";
 
-  /* Goals are saved on the server through /api/goals, step 1 (profile, funds and spending) through
-     /api/profile, /api/funds and /api/expenses, and each finished plan through /api/plans. On a page
-     opened straight from disk, MemoryGoalApi keeps the goals instead (same contract, but they are
-     gone after a reload), step 1 stays in memory, and plans aren't saved. */
+    /* Goals are saved on the server through /api/goals, step 1 (profile, funds, spending, income and
+     losses) through /api/profile, /api/funds, /api/expenses and /api/funds-events, the risk choice
+     through /api/risk-preference, and each finished plan through /api/plans. On a page opened
+     straight from disk, MemoryGoalApi keeps the goals instead (same contract, but they are gone
+     after a reload), the rest stays in memory, and plans aren't saved. */
   const SERVER_SAVES_GOALS = true;
   const useServer = SERVER_SAVES_GOALS && location.protocol.startsWith("http");
   const api = useServer ? new D.GoalApi.HttpGoalApi() : new D.GoalApi.MemoryGoalApi();
   const planApi = useServer ? new D.PlanApi.HttpPlanApi() : null;
   const moneyApi = useServer ? new D.MoneyApi.HttpMoneyApi() : null;
+  const riskApi = useServer ? new D.RiskApi.HttpRiskApi() : null;
 
   const form = document.getElementById("plan-form");
   /* tells the step navigation (views/steps.js) what changed, so it can update the step bar */
@@ -32,7 +34,7 @@
   const odds = D.controllers.odds({
     notify,
     showImpact: D.views.money.showSpendingImpact,
-    savePlan: planApi && ((body) => planApi.save(body)),
+    savePlan: planApi && ((body) => planApi.save(body)), riskApi,
   });
   const money = D.controllers.money({ form, api: moneyApi, onChange: update, onSpendingChanged: odds.spendingChanged });
   const goals = D.controllers.goals({ form, api, onChange: update });
@@ -69,4 +71,5 @@
   update();
   money.load();
   goals.load();
+  odds.loadRisk();
 })(window.Dreamimin);

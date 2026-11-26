@@ -348,17 +348,37 @@
 
   const showWhatIfWorking = () => $("whatif-list").classList.add("is-working");
 
-  /* lists the five investment portfolios, lowest risk first, in "How we got these numbers" */
-  function showPortfolios(portfolios) {
+  /* lines: each portfolio in words, lowest risk first (RiskPreference.describePortfolios) */
+  function showPortfolios(lines) {
     const box = $("portfolio-list");
     box.replaceChildren();
-    for (const portfolio of portfolios) box.append(text("li", "", portfolio.describe()));
+    for (const line of lines) box.append(text("li", "", line));
+  }
+
+  /* the risk level picker (levels: [{ value, label }]) and the ESG box, set to the preference */
+  function showRisk(levels, { maxRiskLevel, esg }) {
+    const select = $("riskLevel");
+    if (select.options.length !== levels.length) {
+      select.replaceChildren(...levels.map(({ value, label }) => new Option(label, String(value))));
+    }
+    select.value = String(maxRiskLevel);
+    $("riskEsg").checked = esg;
+  }
+
+  /* what the user chose: { maxRiskLevel, esg } */
+  const readRisk = () => ({ maxRiskLevel: Number($("riskLevel").value), esg: $("riskEsg").checked });
+
+  /* whether the risk choice is saved: a quiet line, or a red one when saving or loading failed */
+  function showRiskStatus(message, isError = false) {
+    const status = $("risk-status");
+    status.textContent = message;
+    status.classList.toggle("is-error", isError);
   }
 
   D.views.odds = {
     showEmpty, showWorking, showTraining, showTrainingError, showPlan, showSaved,
     showTimeline, clearTimeline,
     setWhatIfRange, showWhatIfValue, showWhatIf, showWhatIfWorking,
-    showPortfolios,
+    showPortfolios, showRisk, readRisk, showRiskStatus,
   };
 })(window.Dreamimin);

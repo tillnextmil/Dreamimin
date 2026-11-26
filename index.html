@@ -467,6 +467,24 @@
               <a class="summary__edit" href="#goal">Edit</a>
             </div>
           </div>
+          
+          <div class="risk" id="risk-section">
+            <div class="field">
+              <label for="riskLevel">Highest risk you're comfortable with</label>
+              <div class="control control--select">
+                <select id="riskLevel" name="riskLevel" aria-describedby="riskLevel-help"></select>
+              </div>
+              <p class="help" id="riskLevel-help">The plan only invests in portfolios up to this level. Lower is steadier but usually grows less.</p>
+            </div>
+            <div class="field risk__esg">
+              <label class="checkbox" for="riskEsg">
+                <input type="checkbox" id="riskEsg" name="riskEsg" aria-describedby="riskEsg-help" />
+                Only ESG funds
+              </label>
+              <p class="help" id="riskEsg-help">Funds screened for environmental, social and governance standards. We assume they grow the same as the others.</p>
+            </div>
+            <p class="help save-status" id="risk-status" aria-live="polite"></p>
+          </div>
 
           <p class="sr-only" id="odds-announce" aria-live="polite"></p>
 
@@ -604,6 +622,7 @@
   <script src="src/multiGoalPlanner.js"></script>
   <script src="src/multiGoalPlan.js"></script>
   <script src="src/investmentPortfolio.js"></script>
+  <script src="src/riskPreference.js"></script>
   <script src="src/availableFunds.js"></script>
   <script src="src/expense.js"></script>
   <script src="src/fundsEvent.js"></script>
@@ -613,6 +632,7 @@
   <script src="client/api/goalApi.js"></script>
   <script src="client/api/planApi.js"></script>
   <script src="client/api/moneyApi.js"></script>
+  <script src="client/api/riskApi.js"></script>
   <script src="client/views/fieldView.js"></script>
   <script src="client/views/pieChart.js"></script>
   <script src="client/views/moneyView.js"></script>

@@ -50,6 +50,17 @@
         .map(({ riskLevel, name, expectedReturn, volatility }) =>
           ({ riskLevel, name: this.esg ? `ESG ${name}` : name, expectedReturn, volatility }));
     }
+    
+    /* The five portfolio names as the page shows them, lowest risk first: "ESG Balanced" and so on
+       when esg is on. names defaults to InvestmentPortfolio's; the planner's result passes its own. */
+    portfolioNames(names = InvestmentPortfolio.all().map((p) => p.name)) {
+      return names.map((name) => (this.esg ? `ESG ${name}` : name));
+    }
+
+    /* each of the five portfolios in words, lowest risk first, with the ESG name when esg is on */
+    describePortfolios() {
+      return InvestmentPortfolio.all().map((p) => (this.esg ? `ESG ${p.describe()}` : p.describe()));
+    }
 
     /* e.g. "Up to Balanced (level 3), ESG funds only" */
     describe() {
