@@ -13,7 +13,8 @@
 
 "use strict";
 
-importScripts("ppoPlanner.js", "multiGoalPlanner.js");
+// investmentPortfolio.js and riskPreference.js first: the planner checks the risk level with RiskPreference
+importScripts("investmentPortfolio.js", "riskPreference.js", "ppoPlanner.js", "multiGoalPlanner.js");
 
 self.onmessage = (ev) => {
   const { task = "plan", job, changes } = ev.data;

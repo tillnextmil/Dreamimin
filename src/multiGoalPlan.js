@@ -16,8 +16,12 @@
     : global.GoalProbability;
 
   const MAX_RISK_LEVEL = 5, MAX_YEARS = 40;
-  const isRiskLevel = (level) => Number.isInteger(level) && level >= 1 && level <= MAX_RISK_LEVEL;
-
+  /* The risk level rule (a whole number from 1 to 5) and its message live in RiskPreference
+     (src/riskPreference.js), so they stay the same everywhere. It's looked up when first needed,
+     since the page loads riskPreference.js after this file. */
+  const riskPreference = () => (typeof module !== "undefined" && module.exports ? require("./riskPreference") : global.RiskPreference);
+  const riskLevelProblem = (level) => riskPreference().validate({ maxRiskLevel: level, esg: false }).maxRiskLevel;
+  const isRiskLevel = (level) => !riskLevelProblem(level);
   function checkUtility(value) {
     if (!(typeof value === "number" && Number.isFinite(value) && value >= 0)) throw new RangeError("Utility must be a number of 0 or more.");
     return value;
@@ -28,7 +32,8 @@
      returns the value to keep. validate() runs them all for a message per field. */
   const CHECKS = {
     maxRiskLevel({ maxRiskLevel }) {
-      if (!isRiskLevel(maxRiskLevel)) throw new RangeError(`Choose a risk level from 1 to ${MAX_RISK_LEVEL}.`);
+      const problem = riskLevelProblem(maxRiskLevel);
+      if (problem) throw new RangeError(problem);
       return maxRiskLevel;
     },
     utility: ({ utility }) => checkUtility(utility),

@@ -33,6 +33,10 @@
     ? require("./ppoPlanner")
     : global.PpoPlanner;
 
+  /* the risk level rule and its message live in RiskPreference (src/riskPreference.js); looked up
+  when a job is checked, since the page loads riskPreference.js after this file */
+  const riskPreference = () => (typeof module !== "undefined" && module.exports ? require("./riskPreference") : global.RiskPreference);
+
   const { PORTFOLIOS, MAX_YEARS, EVAL_PATHS } = PpoPlanner;
   const {
     SEED, PATH_SEED, QUICK_PATHS, GAMMA, LAMBDA,
@@ -62,9 +66,8 @@
     const isNumber = (v) => typeof v === "number" && Number.isFinite(v);
     if (!isNumber(netWorth)) throw new RangeError("Net worth must be a number.");
     if (!isNumber(monthlySaving)) throw new RangeError("Monthly saving must be a number.");
-    if (!Number.isInteger(maxRiskLevel) || maxRiskLevel < 1 || maxRiskLevel > J) {
-      throw new RangeError(`Choose a risk level from 1 to ${J}.`);
-    }
+    const riskProblem = riskPreference().validate({ maxRiskLevel, esg: false }).maxRiskLevel;
+    if (riskProblem) throw new RangeError(riskProblem);
     if (!Array.isArray(goals) || goals.length < 1 || goals.length > MAX_GOALS) {
       throw new RangeError(`The planner takes 1 to ${MAX_GOALS} goals.`);
     }
