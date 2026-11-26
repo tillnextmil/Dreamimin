@@ -86,6 +86,15 @@ class PlanRepository {
       })),
     };
   }
+  
+  /* the plan the profile saved most recently, or null before the first; plans saved in the same
+     millisecond are told apart by id, which only goes up */
+  findLatest(profileId) {
+    const row = this.db.prepare(`
+      SELECT plan_id FROM plan_result WHERE profile_id = ? ORDER BY created_at DESC, plan_id DESC LIMIT 1
+    `).get(profileId);
+    return row ? this.findById(profileId, row.plan_id) : null;
+  }
 
   /* how many plans the profile has saved */
   count(profileId) {
