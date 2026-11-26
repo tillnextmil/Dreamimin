@@ -29,6 +29,7 @@ test("sends the contract's requests", async () => {
   await api.saveFunds(2000);
   await api.listExpenses();
   await api.addExpense({ amount: 86, date: "2026-11-24", note: "Dinner", category: "food", id: "ignored" });
+  await api.updateExpense(7, { amount: 90, date: "2026-11-24", note: "Dinner + tip", category: "food", id: "ignored" });
   await api.removeExpense(7);
   expect(calls).toEqual([
     { url: "/api/profile", method: "GET", body: undefined },
@@ -37,6 +38,7 @@ test("sends the contract's requests", async () => {
     { url: "/api/funds", method: "PUT", body: { entered: 2000 } },
     { url: "/api/expenses", method: "GET", body: undefined },
     { url: "/api/expenses", method: "POST", body: { amount: 86, date: "2026-11-24", note: "Dinner", category: "food" } },
+    { url: "/api/expenses/7", method: "PUT", body: { amount: 90, date: "2026-11-24", note: "Dinner + tip", category: "food" } },
     { url: "/api/expenses/7", method: "DELETE", body: undefined },
   ]);
 });

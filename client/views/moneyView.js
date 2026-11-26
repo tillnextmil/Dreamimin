@@ -32,11 +32,15 @@
     return dot;
   }
 
-  /* fills the category picker, with `selected` chosen */
+  /* fills the category picker, with `selected` chosen, and the filter's picker ("All categories" first) */
   function showCategories(categories, selected) {
     const select = $("spendCategory");
     select.replaceChildren(...categories.map((category) => new Option(categoryName(category), category)));
     select.value = selected;
+    const filter = $("filterCategory");
+    const chosen = filter.value;
+    filter.replaceChildren(new Option("All categories", ""), ...categories.map((category) => new Option(categoryName(category), category)));
+    filter.value = categories.includes(chosen) ? chosen : "";
   }
 
   /* profile is a FinancialProfile or null; funds is the AvailableFunds or null */
@@ -81,24 +85,36 @@
     }
   }
 
-  /* The funds left and the recorded spending, each with its category and a Remove button carrying
-     the spending's id in data-expense-id; the money controller handles the clicks. byCategory is
-     AvailableFunds.spendingByCategory(), for the chart. */
-  function showSpending(funds, ready, byCategory = []) {
+  /* The funds left and the recorded spending, each with its category, an Edit button (data-edit-id)
+     and a Remove button (data-expense-id); the money controller handles the clicks. byCategory is
+     AvailableFunds.spendingByCategory(), for the chart. shown is the spending the filters keep (all
+     of it by default); filterError is the filters' message, if any; editingId marks the spending
+     being edited. */
+  function showSpending(funds, ready, byCategory = [], { shown, filterError = "", editingId = null } = {}) {
     const list = $("spending-list");
     list.replaceChildren();
     $("spending-add").disabled = !funds || !ready;
     showByCategory(funds && ready ? byCategory : []);
+    const total = funds && ready ? funds.expenses.length : 0;
+    $("spending-filters").hidden = total === 0;
+    $("spending-filter-error").textContent = total ? filterError : "";
     if (!funds || !ready) {
       $("spending-left").textContent = "";
+      $("spending-shown").textContent = "";
       return;
     }
+    const items = shown || funds.expenses;
+    $("spending-shown").textContent = !total || filterError ? ""
+      : items.length === total ? ""
+      : items.length === 0 ? "No spending matches these filters."
+      : `Showing ${items.length} of ${total}.`;
     $("spending-left").textContent = funds.totalSpent > 0
       ? `Funds left: ${format.cents(funds.balance)} after ${format.cents(funds.totalSpent)} of spending.`
       : `Funds left: ${format.cents(funds.balance)}.`;
 
-    for (const expense of funds.expenses) {
+    for (const expense of filterError ? [] : items) {
       const item = document.createElement("li");
+      item.classList.toggle("is-editing", editingId !== null && String(expense.id) === String(editingId));
       const text = document.createElement("span");
       text.className = "spending__text";
       text.textContent = `${format.longDate(Expense.parseDate(expense.date))}: ${format.cents(expense.amount)}${expense.note ? ", " + expense.note : ""}`;
@@ -111,10 +127,19 @@
       remove.textContent = "Remove";
       remove.dataset.expenseId = expense.id;
       remove.setAttribute("aria-label", `Remove ${format.cents(expense.amount)} spending`);
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "link-btn";
+      edit.textContent = "Edit";
+      edit.dataset.editId = expense.id;
+      edit.setAttribute("aria-label", `Edit ${format.cents(expense.amount)} spending`);
+      const actions = document.createElement("div");
+      actions.className = "spending__actions";
+      actions.append(edit, remove);
       const info = document.createElement("div");
       info.className = "spending__info";
       info.append(text, category);
-      item.append(info, remove);
+      item.append(info, actions);
       list.appendChild(item);
     }
   }
@@ -181,7 +206,7 @@
 
   const showSpendingError = (message) => { $("spending-error").textContent = message; };
   const showSpendingImpact = (text) => { $("spending-impact").textContent = text; };
-  
+
   /* whether step 1 is saved: a quiet line, or a red one when saving or loading failed */
   function showSaveStatus(message, isError = false) {
     const status = $("money-save-status");
@@ -201,8 +226,34 @@
     $("spendNote").value = "";
   }
 
+  /* puts one recorded spending in the form to edit it */
+  function fillSpendingInputs({ amount, date, category, note }) {
+    $("spendAmount").value = format.plain(amount);
+    $("spendDate").value = date;
+    $("spendCategory").value = category || "other";
+    $("spendNote").value = note || "";
+  }
+
+  /* the form either records new spending or edits one ("Edit spending", Save changes and Cancel) */
+  function setSpendingMode(editing) {
+    $("spending-legend").firstChild.textContent = editing ? "Edit spending " : "Record spending ";
+    $("spending-add").textContent = editing ? "Save changes" : "Record spending";
+    $("spending-cancel").hidden = !editing;
+    if (editing) $("spendAmount").focus();
+  }
+
+  /* the filters' values, as AvailableFunds.findSpending takes them */
+  function readFilters() {
+    return { category: $("filterCategory").value, from: $("filterFrom").value, to: $("filterTo").value, search: $("filterSearch").value };
+  }
+
+  function clearFilters() {
+    for (const id of ["filterCategory", "filterFrom", "filterTo", "filterSearch"]) $(id).value = "";
+  }
+
   D.views.money = {
     showMoney, showCategories, showSpending, confirmRemoveSpending, focusAfterRemove,
     showSpendingError, showSpendingImpact, setSpendingDate, clearSpendingInputs, showSaveStatus,
+    fillSpendingInputs, setSpendingMode, readFilters, clearFilters,
   };
 })(window.Dreamimin);

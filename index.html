@@ -114,7 +114,7 @@
 
             <p class="help save-status" id="money-save-status" aria-live="polite"></p>
             <fieldset class="spending">
-              <legend>Record spending <span class="optional">(optional)</span></legend>
+              <legend id="spending-legend">Record spending <span class="optional">(optional)</span></legend>
 
               <div class="field-row">
                 <div class="field">
@@ -149,7 +149,10 @@
                 </div>
               </div>
 
-              <button type="button" class="btn btn--ghost" id="spending-add">Record spending</button>
+              <div class="spending__buttons">
+                <button type="button" class="btn btn--ghost" id="spending-add">Record spending</button>
+                <button type="button" class="btn btn--ghost" id="spending-cancel" hidden>Cancel</button>
+              </div>
               <p class="error" id="spending-error" role="alert"></p>
               <p class="help" id="spending-left" aria-live="polite"></p>
               <p class="spending__impact" id="spending-impact" aria-live="polite"></p>
@@ -164,6 +167,35 @@
                   <ul class="spend-chart__legend" id="spend-legend" aria-labelledby="spend-chart-title"></ul>
                 </div>
               </div>
+
+              <div class="spending__filters" id="spending-filters" hidden>
+                <div class="field">
+                  <label for="filterCategory">Category</label>
+                  <div class="control control--select">
+                    <select id="filterCategory" name="filterCategory"></select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="filterSearch">Note</label>
+                  <div class="control">
+                    <input id="filterSearch" name="filterSearch" type="search" autocomplete="off" placeholder="Search notes" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="filterFrom">From</label>
+                  <div class="control">
+                    <input id="filterFrom" name="filterFrom" type="date" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="filterTo">To</label>
+                  <div class="control">
+                    <input id="filterTo" name="filterTo" type="date" />
+                  </div>
+                </div>
+              </div>
+              <p class="error" id="spending-filter-error" role="alert"></p>
+              <p class="help" id="spending-shown" aria-live="polite"></p>
 
               <ul class="spending__list" id="spending-list" aria-label="Recorded spending"></ul>
             </fieldset>

@@ -61,6 +61,21 @@
       return AvailableFunds.#toCents(this.#expenses.reduce((sum, expense) => sum + expense.amount, 0));
     }
 
+    /* The recorded spending that matches every filter given, oldest first: one category, dates from
+       and to ("YYYY-MM-DD", both included) and text in the note (ignoring case and surrounding
+       spaces). Empty filters keep everything. Throws a RangeError for a date that isn't real or an
+       end date before the start date, with the same messages as GET /api/expenses. */
+    findSpending({ category = "", from = "", to = "", search = "" } = {}) {
+      if ((from && !AvailableFunds.#isDate(from)) || (to && !AvailableFunds.#isDate(to))) throw new RangeError("Choose a valid date.");
+      if (from && to && from > to) throw new RangeError("The end date can't be before the start date.");
+      const text = String(search).trim().toLowerCase();
+      return this.expenses.filter((expense) =>
+        (!category || (expense.category || "other") === category) &&
+        (!from || expense.date >= from) &&
+        (!to || expense.date <= to) &&
+        (!text || String(expense.note || "").toLowerCase().includes(text)));
+    }
+
     /* The recorded spending added up per category, largest first: [{ category, amount, share }],
        where share is the part of all the spending (0 to 1). Only categories with spending are
        listed; an Expense without a category counts as "other". Equal amounts keep `order`, the
@@ -191,6 +206,14 @@
     static #isExpense(value) {
       return typeof value === "object" && value !== null && value.id !== undefined &&
         typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount > 0;
+    }
+    
+    /* true for a "YYYY-MM-DD" string that is a real calendar date */
+    static #isDate(value) {
+      if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const [year, month, day] = value.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
     }
 
     /* rounds to whole cents, so 0.3 - 0.1 is 0.2 and not 0.19999999999999998 */
