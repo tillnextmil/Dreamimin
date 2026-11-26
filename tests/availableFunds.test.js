@@ -367,3 +367,17 @@ describe("findSpending", () => {
     expect(() => funds.findSpending({ from: "2026-11-20", to: "2026-11-10" })).toThrow("The end date can't be before the start date.");
   });
 });
+
+// ---------- Latest income (for the extra money choice) ----------
+
+// normal case: the most recently dated income, ignoring losses; null without income
+test("latestIncome is the most recently dated income", () => {
+  const funds = new AvailableFunds({ balance: 1000 });
+  expect(funds.latestIncome).toBeNull();
+  funds.recordEvent({ id: "late", kind: "income", amount: 300, date: "2026-11-20", note: "" });
+  funds.recordEvent({ id: "early", kind: "income", amount: 800, date: "2026-11-01", note: "" });
+  funds.recordEvent({ id: "loss", kind: "loss", amount: 50, date: "2026-11-25", note: "" });
+  expect(funds.latestIncome.id).toBe("late");
+  funds.recordEvent({ id: "same day", kind: "income", amount: 40, date: "2026-11-20", note: "" });
+  expect(funds.latestIncome.id).toBe("same day");   // the last one recorded on the latest date
+});
