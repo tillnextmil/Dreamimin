@@ -325,3 +325,45 @@ test.each([{ id: "x", kind: "gift", amount: 10 }, { id: "x", kind: "income", amo
     expect(funds.balance).toBe(100);
   }
 );
+
+// ---------- Finding spending (the page's filters) ----------
+
+describe("findSpending", () => {
+  let funds;
+  beforeEach(() => {
+    funds = new AvailableFunds({ balance: 5000 });
+    funds.recordSpending({ id: "rent", amount: 1200, date: "2026-11-01", note: "Rent", category: "housing" });
+    funds.recordSpending({ id: "food1", amount: 60, date: "2026-11-10", note: "Groceries", category: "food" });
+    funds.recordSpending({ id: "food2", amount: 86, date: "2026-11-24", note: "Dinner with Sam", category: "food" });
+    funds.recordSpending({ id: "misc", amount: 20, date: "2026-11-15" });   // no note or category
+  });
+  const ids = (filters) => funds.findSpending(filters).map((e) => e.id);
+
+  // normal case: no filters keeps everything, oldest first
+  test("keeps everything without filters", () => {
+    expect(ids()).toEqual(["rent", "food1", "misc", "food2"]);
+    expect(ids({ category: "", from: "", to: "", search: "" })).toEqual(["rent", "food1", "misc", "food2"]);
+  });
+
+  // normal case: each filter on its own, and together
+  test("filters by category, date range and note", () => {
+    expect(ids({ category: "food" })).toEqual(["food1", "food2"]);
+    expect(ids({ from: "2026-11-10", to: "2026-11-15" })).toEqual(["food1", "misc"]);
+    expect(ids({ search: "  DINNER " })).toEqual(["food2"]);
+    expect(ids({ category: "food", from: "2026-11-20" })).toEqual(["food2"]);
+  });
+
+  // edge case: spending without a category counts as "other"; the dates are both included
+  test("counts no category as other, and includes both end dates", () => {
+    expect(ids({ category: "other" })).toEqual(["misc"]);
+    expect(ids({ from: "2026-11-24", to: "2026-11-24" })).toEqual(["food2"]);
+    expect(ids({ search: "house" })).toEqual([]);
+  });
+
+  // wrong case: a date that isn't real, or an end before the start, is rejected
+  test("rejects a date that isn't real or an end before the start", () => {
+    expect(() => funds.findSpending({ from: "2026-02-30" })).toThrow("Choose a valid date.");
+    expect(() => funds.findSpending({ to: "11/24/2026" })).toThrow(RangeError);
+    expect(() => funds.findSpending({ from: "2026-11-20", to: "2026-11-10" })).toThrow("The end date can't be before the start date.");
+  });
+});

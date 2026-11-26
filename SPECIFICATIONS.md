@@ -225,6 +225,7 @@
     | `removeEvent(eventId)` | Removes recorded income or a loss and undoes its change; returns the new balance |
     | `editEvent(eventId, edited)` | Swaps recorded income or a loss for its edited version (same id); the balance changes by the difference |
     | `spendingByCategory(order)` | The recorded spending added up per category, largest first: `{ category, amount, share }` for each category with spending, where `amount` is rounded to the cent and `share` is that amount over `totalSpent`; equal amounts follow `order` (the page passes `Expense.CATEGORIES`); an Expense without a category counts as `other` |
+    | `findSpending({ category, from, to, search })` | The recorded spending that matches every filter given, oldest first: one category (none counts as `other`), dates from and to (both included) and text in the note, ignoring case; empty filters keep everything. A date that isn't real is "Choose a valid date." and an end before the start is "The end date can't be before the start date." (RangeError), as in `GET /api/expenses` |
 
     Expense (`src/expense.js`):
 
