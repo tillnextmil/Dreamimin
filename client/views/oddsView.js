@@ -328,9 +328,13 @@
 
   /* rows: [{ name, before, after, change }] with chances from 0 to 1 (change is after − before) */
   function showWhatIf(rows) {
-    const box = $("whatif-list");
+  $("whatif-list").classList.remove("is-working");
+  showChanges($("whatif-list"), rows);
+  }
+
+  /* one line per goal: its name, its chance before and after, and the change in points */
+  function showChanges(box, rows) {
     box.replaceChildren();
-    $("whatif-list").classList.remove("is-working");
     for (const { name, before, after, change } of rows) {
       const item = document.createElement("li");
       item.className = "whatif__item";
@@ -365,6 +369,55 @@
     $("riskEsg").checked = esg;
   }
 
+  /* ---------- extra money: raise a goal or take less risk ---------- */
+
+  /* the goals that can be raised (keeping the one chosen, if it's still there), and the extra amount:
+     the latest income fills it in unless the user has typed their own */
+  function showUpgrade(goals, latestIncome) {
+    const select = $("upgradeGoal");
+    const chosen = select.value;
+    select.replaceChildren(...goals.map((g) => new Option(g.name, String(g.id))));
+    if (goals.some((g) => String(g.id) === chosen)) select.value = chosen;
+    const amount = $("upgradeAmount");
+    if (!amount.dataset.typed && latestIncome) amount.value = D.format.plain(latestIncome);
+  }
+
+  /* what the user entered: { extraText, goalId } */
+  const readUpgrade = () => ({ extraText: $("upgradeAmount").value, goalId: $("upgradeGoal").value });
+
+  /* The two choices side by side, or hides them (choices: null). raise: { title, rows };
+     safer: { title, rows } or null at the lowest risk level. */
+  function showUpgradeChoices(choices) {
+    $("upgrade-choices").hidden = !choices;
+    if (!choices) return;
+    $("upgrade-raise-title").textContent = choices.raise.title;
+    showChanges($("upgrade-raise-list"), choices.raise.rows);
+    const safer = choices.safer;
+    $("upgrade-safer-title").textContent = safer ? safer.title : "Take less risk";
+    showChanges($("upgrade-safer-list"), safer ? safer.rows : []);
+    $("upgrade-safer-none").hidden = Boolean(safer);
+    $("upgrade-safer").hidden = !safer;
+  }
+
+  const showUpgradeError = (message) => { $("upgrade-error").textContent = message; };
+
+  function showUpgradeStatus(message) {
+    $("upgrade-status").textContent = message;
+  }
+
+  /* Start over: empties the section */
+  function resetUpgrade() {
+    const amount = $("upgradeAmount");
+    amount.value = "";
+    amount.dataset.typed = "";
+    showUpgradeChoices(null);
+    showUpgradeError("");
+    showUpgradeStatus("");
+  }
+
+  /* marks the amount as the user's own once they type in it, so the latest income no longer fills it */
+  $("upgradeAmount").addEventListener("input", (event) => { event.target.dataset.typed = event.target.value ? "1" : ""; });
+
   /* what the user chose: { maxRiskLevel, esg } */
   const readRisk = () => ({ maxRiskLevel: Number($("riskLevel").value), esg: $("riskEsg").checked });
 
@@ -377,8 +430,8 @@
 
   D.views.odds = {
     showEmpty, showWorking, showTraining, showTrainingError, showPlan, showSaved,
-    showTimeline, clearTimeline,
-    setWhatIfRange, showWhatIfValue, showWhatIf, showWhatIfWorking,
-    showPortfolios, showRisk, readRisk, showRiskStatus,
+    showTimeline, clearTimeline, setWhatIfRange, showWhatIfValue, showWhatIf, showWhatIfWorking, 
+    showPortfolios, showRisk, readRisk, showRiskStatus, showUpgrade, readUpgrade, showUpgradeChoices,
+    showUpgradeError, showUpgradeStatus, resetUpgrade,
   };
 })(window.Dreamimin);
