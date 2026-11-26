@@ -3,11 +3,12 @@
    net worth, available funds and emergency fund fields, builds a
    FinancialProfile and keeps the AvailableFunds, and handles
    recording spending (with its category), editing it, removing
-   it after asking, and filtering the list. With a server, it
-   loads what was saved when the page opens and saves each change
-   through the money API client, so step 1 is still there after
-   a reload. The rules live in the domain classes; this file only
-   passes input to them and tells the money view what to show.
+   it after asking, and filtering the list, and recording and
+   removing income and losses. With a server, it loads what was
+   saved when the page opens and saves each change through the
+   money API client, so step 1 is still there after a reload.
+   The rules live in the domain classes; this file only passes
+   input to them and tells the money view what to show.
    ============================================================ */
 
 (function (D) {
@@ -92,6 +93,7 @@
       readFunds(fundsInput);
       if (editingId !== null && !(funds && funds.expenses.some((e) => e.id === editingId))) stopEditing();
       view.showSpending(funds, fundsInput.valid, funds ? funds.spendingByCategory(Expense.CATEGORIES) : [], filtered());
+      view.showEvents(funds, fundsInput.valid);
       const errors = { ...profileInput.errors, ...fundsInput.errors };
       // errors only show once a field has been left, so nothing turns red while typing
       for (const name of Object.keys(FIELDS)) {
@@ -168,11 +170,13 @@
     }
 
     /* With a server, fills step 1 with what was saved and rebuilds the AvailableFunds from the saved
-       funds and spending, then updates the page. */
+       funds, income, losses and spending, then updates the page. */
     async function load() {
       if (!api) return;
       try {
-        const [profile, saved, expenses] = await Promise.all([api.getProfile(), api.getFunds(), api.listExpenses()]);
+        const [profile, saved, expenses, events] = await Promise.all([
+          api.getProfile(), api.getFunds(), api.listExpenses(), api.listEvents(),
+        ]);
         fill("income", profile.income);
         fill("expenses", profile.expenses);
         fill("netWorth", profile.netWorth, { blankZero: true });
@@ -180,7 +184,10 @@
         fill("availableFunds", saved.entered);
         funds = null;
         if (saved.entered !== null) {
+          // income first, so the order the rest was recorded in never matters (as on the server)
           funds = new AvailableFunds({ balance: saved.entered });
+          for (const event of events.filter((e) => e.kind === "income")) funds.recordEvent(event);
+          for (const event of events.filter((e) => e.kind === "loss")) funds.recordEvent(event);
           for (const expense of expenses) funds.recordSpending(expense);
         }
         const { income, expenses: spending, netWorth, emergencyFund } = profile;
@@ -265,17 +272,64 @@
       view.focusAfterRemove(index);
     }
 
-    /* true when something has been typed or spending recorded, so Start over would lose it;
-       the spending date is left out because it is filled in with today */
+    /* ---------- income and losses ---------- */
+
+    /* builds a FundsEvent from the inputs and records it (on the server first, when there is one, so it
+       gets the server's id); income raises the funds and a loss lowers them */
+    async function recordEvent() {
+      try {
+        const event = new FundsEvent({
+          kind: form.elements.eventKind.value,
+          amount: format.parseAmount(form.elements.eventAmount.value),
+          date: form.elements.eventDate.value,
+          note: form.elements.eventNote.value,
+        });
+        if (api) {
+          await saveFunds();   // the server needs the funds before it can record against them
+          funds.recordEvent(await api.addEvent(event));
+        } else {
+          funds.recordEvent(event);
+        }
+      } catch (error) {
+        view.showEventError(error.message);
+        return;
+      }
+      view.showEventError("");
+      view.clearEventInputs(format.isoDate(new Date()));
+      onSpendingChanged();
+      onChange();
+    }
+
+    /* asks first (it names the income or loss), then removes it and undoes its change to the funds */
+    async function removeEvent(eventId) {
+      const event = funds && funds.events.find((e) => String(e.id) === String(eventId));
+      if (!event || !(await view.confirmRemoveEvent(event))) return;
+      if (!funds || !funds.events.includes(event)) return;   // already gone while the dialog was open
+      try {
+        if (api) await api.removeEvent(event.id);
+        funds.removeEvent(event.id);   // removing income that has been spent is refused, with its message
+      } catch (error) {
+        view.showEventError(error.message);
+        return;
+      }
+      view.showEventError("");
+      onSpendingChanged();
+      onChange();
+    }
+
+    /* true when something has been typed or spending, income or losses recorded, so Start over would
+       lose it; the dates are left out because they are filled in with today */
     function hasAnswers() {
-      const typed = [...Object.keys(FIELDS), "spendAmount", "spendNote"]
+      const typed = [...Object.keys(FIELDS), "spendAmount", "spendNote", "eventAmount", "eventNote"]
         .some((name) => form.elements[name].value.trim() !== "");
-      return typed || Boolean(funds && funds.expenses.length > 0);
+      return typed || Boolean(funds && (funds.expenses.length > 0 || funds.events.length > 0));
     }
 
     /* empties this step: the fields, the spending and the messages, and with a server, what was saved */
     async function reset() {
       for (const name of [...Object.keys(FIELDS), "spendAmount", "spendNote"]) form.elements[name].value = "";
+      view.clearEventInputs(format.isoDate(new Date()));
+      view.showEventError("");
       touched.clear();
       funds = null;
       if (editingId !== null) stopEditing();
@@ -325,11 +379,17 @@
       const remove = event.target.closest("[data-expense-id]");
       if (remove) removeSpending(remove.dataset.expenseId);
     });
+    document.getElementById("event-add").addEventListener("click", recordEvent);
+    document.getElementById("event-list").addEventListener("click", (event) => {
+      const remove = event.target.closest("[data-event-id]");
+      if (remove) removeEvent(remove.dataset.eventId);
+    });
     // the filters only change which spending is listed
     document.getElementById("spending-filters").addEventListener("input", () => onChange());
     document.getElementById("spending-filters").addEventListener("change", () => onChange());
 
     view.setSpendingDate(format.isoDate(new Date()));
+    view.clearEventInputs(format.isoDate(new Date()));
     view.showCategories(Expense.CATEGORIES, DEFAULT_CATEGORY);
     return { load, refresh, hasAnswers, reset };
   }

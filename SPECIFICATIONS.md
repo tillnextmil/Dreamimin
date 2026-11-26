@@ -296,7 +296,21 @@
     and lists nothing, and when the filters hide some spending a line
     says "Showing 2 of 5." (or "No spending matches these filters."). The
     filters only change the list: the funds, the chart and the chances
-    always count all the spending. Once spending is in two categories or more, a
+    always count all the spending. 
+    Below the spending, an Income or loss form records money that comes
+    in or goes out outside the usual month (type Income or Loss, amount,
+    date, today unless chosen, and an optional note), checked as a
+    FundsEvent. Income raises the funds and a loss lowers them; a loss
+    more than the funds says "That's more than your available funds."
+    The list shows each one oldest first, with "+$800.00" in green for
+    income or "−$300.00" in red for a loss, its type and a Remove button.
+    Remove asks "Remove this income or loss?" in a dialog first, naming
+    it and what happens to the funds; removing income that has already
+    been spent says "That would leave your available funds below $0." and
+    keeps it. The funds left line counts everything: "Funds left:
+    $1,500.00 after $300.00 of spending, $800.00 of income and $300.00 of
+    losses." Recording or removing one updates the chances as spending
+    does. Once spending is in two categories or more, a
     chart above the list shows how it splits (`client/views/pieChart.js`):
     a ring with a slice per category, largest first, clockwise from 12
     o'clock, the total spent in the middle, and a legend with each
@@ -391,9 +405,9 @@
     is optional in a `PUT` and keeps its saved value. The plan only uses
     portfolios with a risk level up to `maxRiskLevel`, a whole number
     from 1 to 5 ("Choose a risk level from 1 to 5."); it starts at 5, so
-    every portfolio can be used, as in the MVP. To preview a level before
-    choosing it, the page runs the planner with that level and only
-    sends the `PUT` once the user confirms.
+    every portfolio can be used, as in the MVP. The page's picker (see 17)
+    saves a new choice straight away; comparing the five levels before
+    choosing one is the risk comparison (see 14).
 
     Goal: `{ "id": 3, "name": "Car", "targetAmount": 12000,
     "targetDate": "2028-06-01", "priority": 4, "minAcceptableAmount":
@@ -714,7 +728,8 @@
     away.") with a link to edit it in step 2, and isn't planned. With no
     goal left to plan, step 3 says so. The job is the money for goals
     (see 5), the monthly cash flow and each planned goal's id, amount,
-    months, priority and smallest acceptable amount, at risk level 5.
+    months, priority and smallest acceptable amount, at the risk level
+    the user chose (see 17; 5 until they choose).
 
     Training. The planner starts 450 ms after the last change, so typing
     doesn't restart it on every key. While it trains, a progress bar
@@ -795,7 +810,22 @@
     for environmental, social and governance standards. We assume the
     same expected return and volatility as the regular portfolio, since
     studies don't show a consistent difference. `describe()` gives, for
-    example, "Up to Balanced (level 3), ESG funds only".
+    example, "Up to Balanced (level 3), ESG funds only". `portfolioNames(names)`
+    gives the five portfolio names as the page shows them, with "ESG " in 
+    front when ESG is on, and `describePortfolios()` each portfolio in words
+    the same way.
+
+    On the page, step 3 starts with "Highest risk you're comfortable
+    with" (1 · Cautious up to 5 · Aggressive (all five)) and an "Only ESG
+    funds" box. A change is saved straight away (`PUT
+    /api/risk-preference`, through `client/api/riskApi.js`) and loaded
+    again when the page opens; a quiet line says "Your risk choice is
+    saved.", or, in red, that it couldn't be saved or loaded. A new level
+    plans every goal again with that level. The ESG box only renames the
+    portfolios, so the plan isn't trained again: the plan's stages, the
+    scores and "How we got these numbers" read "ESG Balanced" and so on.
+    Start over puts the choice back to level 5 without ESG. A page opened
+    straight from disk keeps the choice in memory.
 
 18. Saving step 1 (page). With the server, the money controller saves
     step 1 through the money API client (`client/api/moneyApi.js`) and
@@ -811,11 +841,12 @@
     the funds first if they changed, then posts the spending, and the
     list shows it once the server has saved it, with the server's id;
     an edit is saved with `PUT /api/expenses/:id` before the list
-    changes, and Remove deletes it on the server first. Start over clears both
-    (`DELETE /api/funds` and `DELETE /api/profile`). Under the emergency
-    fund, a quiet line says "Your money is saved." after a save, or, in
-    red, that it couldn't be saved or loaded, followed by the server's
-    message (for example when the server can't be reached); the page
-    keeps working with what's on screen. A page opened straight from
+    changes, and Remove deletes it on the server first. Income and losses
+    work the same way through `/api/funds-events`, and are loaded with
+    the rest. Start over clears both (`DELETE /api/funds` and `DELETE /api/profile`).
+    Under the emergency fund, a quiet line says "Your money is saved." 
+    after a save, or, in red, that it couldn't be saved or loaded, followed 
+    by the server's message (for example when the server can't be reached); 
+    the page keeps working with what's on screen. A page opened straight from
     disk has no server, so step 1 stays in memory and is gone after a
     reload.

@@ -43,6 +43,20 @@ test("sends the contract's requests", async () => {
   ]);
 });
 
+// normal case: income and loss requests
+test("sends the income and loss requests", async () => {
+  const { fetch, calls } = fakeFetch(200, []);
+  const api = new HttpMoneyApi({ fetch });
+  await api.listEvents();
+  await api.addEvent({ kind: "income", amount: 800, date: "2026-11-01", note: "Bonus", id: "ignored" });
+  await api.removeEvent(2);
+  expect(calls).toEqual([
+    { url: "/api/funds-events", method: "GET", body: undefined },
+    { url: "/api/funds-events", method: "POST", body: { kind: "income", amount: 800, date: "2026-11-01", note: "Bonus" } },
+    { url: "/api/funds-events/2", method: "DELETE", body: undefined },
+  ]);
+});
+
 // normal case: Start over's requests, and 204 answers resolve to null
 test("resets the profile and clears the funds", async () => {
   const { fetch, calls } = fakeFetch(204);

@@ -51,3 +51,13 @@ test("can't be changed after it is created", () => {
   preference.maxRiskLevel = 5;
   expect(preference.maxRiskLevel).toBe(2);
 });
+
+// normal case: with ESG on, the planner's portfolio names and the portfolio list read "ESG …"
+test("names the portfolios for the page, with ESG names when ESG is on", () => {
+  const plain = new RiskPreference({ maxRiskLevel: 3 });
+  const esg = new RiskPreference({ maxRiskLevel: 3, esg: true });
+  expect(plain.portfolioNames()).toEqual(["Cautious", "Conservative", "Balanced", "Growth", "Aggressive"]);
+  expect(esg.portfolioNames(["A", "B", "C", "D", "E"])).toEqual(["ESG A", "ESG B", "ESG C", "ESG D", "ESG E"]);
+  expect(esg.describePortfolios()[2]).toBe("ESG Balanced: expected to grow 3.7% a year, can rise or fall about 11.5% in a year");
+  expect(plain.describePortfolios()).toHaveLength(5);
+});

@@ -1,11 +1,11 @@
 /* ============================================================
    Money API client: the only part of the page that talks to the
-   server about step 1 — the profile, the available funds and
-   the recorded spending (SPECIFICATIONS.md, item 12). The money
-   controller calls it; views never do. Returns promises and
-   throws an ApiError for any failed request. When the page is
-   opened straight from disk there is no server, so the
-   controller keeps step 1 in memory instead.
+   server about step 1 — the profile, the available funds, the
+   recorded spending and the recorded income and losses
+   (SPECIFICATIONS.md, item 12). The money controller calls it;
+   views never do. Returns promises and throws an ApiError for any 
+   failed request. When the page is opened straight from disk 
+   there is no server, so the controller keeps step 1 in memory instead.
    ============================================================ */
 
 (function (global) {
@@ -42,6 +42,13 @@
       return this.#send("PUT", `/expenses/${encodeURIComponent(id)}`, { amount, date, note, category });
     }
     removeExpense(id) { return this.#send("DELETE", `/expenses/${encodeURIComponent(id)}`); }
+    
+    /* the recorded income and losses, oldest first: [{ id, kind, amount, date, note }] */
+    listEvents() { return this.#send("GET", "/funds-events"); }
+    addEvent({ kind, amount, date, note }) {
+      return this.#send("POST", "/funds-events", { kind, amount, date, note });
+    }
+    removeEvent(id) { return this.#send("DELETE", `/funds-events/${encodeURIComponent(id)}`); }
 
     #send(method, path, body) {
       return sendJson(this.fetch, this.base + path, method, body);

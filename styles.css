@@ -408,6 +408,17 @@ h2[tabindex]:focus { outline: none; }
 .save-status:empty { display: none; }
 .save-status.is-error { color: var(--negative); font-weight: 500; }
 
+/* step 3: the risk level and ESG choice */
+.risk { display: grid; gap: 0 20px; margin: 4px 0 18px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.risk .field { margin-bottom: 12px; }
+.risk .save-status { grid-column: 1 / -1; margin-top: 0; }
+.checkbox { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.checkbox input { width: 18px; height: 18px; accent-color: var(--primary); }
+@media (min-width: 640px) {
+  .risk { grid-template-columns: 1fr 1fr; }
+  .risk__esg { padding-top: 30px; }
+}
+
 /* record spending */
 .spending { margin: 26px 0 0; padding: 22px 0 0; border: 0; border-top: 1px solid var(--border); min-width: 0; }
 .spending legend { float: left; width: 100%; padding: 0; font-weight: 600; font-size: 16px; }
@@ -429,6 +440,8 @@ h2[tabindex]:focus { outline: none; }
 @media (min-width: 480px) {
   .spending__filters { grid-template-columns: 1fr 1fr; }
 }
+.spending__amount--income { color: var(--positive); font-weight: 600; }
+.spending__amount--loss { color: var(--negative); font-weight: 600; }
 .spending__list li.is-editing { background: var(--surface-2); font-weight: 550; }
 
 /* spending by category: a ring and its legend */
