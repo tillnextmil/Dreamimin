@@ -19,6 +19,11 @@ function profileRoutes(profileService) {
     res.json(profileService.saveProfile(req.body));
   });
 
+  router.delete("/", (req, res) => {
+    profileService.resetProfile();
+    res.status(204).end();
+  });
+  
   /* errors the service expects (400, 404); anything else goes on to the app's 500 handler */
   router.use((error, req, res, next) => {
     if (!(error instanceof ServiceError)) return next(error);

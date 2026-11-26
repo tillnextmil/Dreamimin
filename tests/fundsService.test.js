@@ -198,3 +198,21 @@ describe("filters", () => {
       .toEqual({ errors: { to: "The end date can't be before the start date." } });
   });
 });
+
+// ---------- Start over ----------
+
+// normal case: clearing the funds removes them and the spending recorded against them
+test("clearFunds removes the funds and their spending", () => {
+  service.setEntered({ entered: 1000 });
+  service.addExpense(DINNER);
+  service.clearFunds();
+  expect(service.getFunds()).toEqual({ entered: null, balance: null, totalSpent: 0, totalIncome: 0, totalLoss: 0 });
+  expect(service.listExpenses()).toEqual([]);
+  expect(db.prepare("SELECT COUNT(*) AS n FROM expense").get().n).toBe(0);
+});
+
+// edge case: clearing funds that were never entered changes nothing
+test("clearing funds that were never entered is fine", () => {
+  expect(() => service.clearFunds()).not.toThrow();
+  expect(service.getFunds().balance).toBeNull();
+});

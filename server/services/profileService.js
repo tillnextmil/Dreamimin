@@ -38,6 +38,12 @@ class ProfileService {
     if (!saved) throw ServiceError.notFound(NOT_FOUND);
     return saved;
   }
+  
+  /* Start over: income and spending go back to empty, net worth and the emergency fund to $0 */
+  resetProfile() {
+    this.getProfile();   // 404 when there's no profile
+    this.profiles.reset(this.profileId);
+  }
 }
 
 module.exports = ProfileService;

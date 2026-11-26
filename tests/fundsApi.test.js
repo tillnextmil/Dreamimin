@@ -73,3 +73,13 @@ test("400, 404 and 409 responses", async () => {
 
   expect((await request(app).get("/api/expenses?category=pizza")).status).toBe(400);
 });
+
+// normal case: DELETE /api/funds removes the funds and their spending (Start over)
+test("DELETE /api/funds removes the funds and their spending", async () => {
+  await request(app).put("/api/funds").send({ entered: 1000 });
+  await request(app).post("/api/expenses").send(DINNER);
+  const res = await request(app).delete("/api/funds");
+  expect(res.status).toBe(204);
+  expect((await request(app).get("/api/funds")).body.balance).toBeNull();
+  expect((await request(app).get("/api/expenses")).body).toEqual([]);
+});

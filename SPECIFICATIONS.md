@@ -339,6 +339,7 @@
     |---|---|---|---|
     | GET | `/api/profile` | The profile | 200 Profile |
     | PUT | `/api/profile` | Saves income, spending, net worth and emergency fund | 200 Profile |
+    | DELETE | `/api/profile` | Empties the profile again (Start over) | 204 |
     | GET | `/api/risk-preference` | The risk preference | 200 RiskPreference |
     | PUT | `/api/risk-preference` | Saves it | 200 RiskPreference |
     | GET | `/api/goals` | Every goal; `sort` and `search` are optional | 200 Goal[] |
@@ -348,6 +349,7 @@
     | DELETE | `/api/goals/:id` | Deletes a goal and its saved results | 204 |
     | GET | `/api/funds` | Funds left now, with totals | 200 Funds |
     | PUT | `/api/funds` | Sets the funds from the amount the user entered | 200 Funds |
+    | DELETE | `/api/funds` | Removes the funds and the spending, income and losses recorded against them (Start over, or the field emptied) | 204 |
     | GET | `/api/expenses` | Recorded spending; `category`, `from`, `to` and `search` are optional | 200 Expense[] |
     | POST | `/api/expenses` | Records spending; lowers the funds | 201 Expense |
     | PUT | `/api/expenses/:id` | Edits spending; the funds change by the difference | 200 Expense |
