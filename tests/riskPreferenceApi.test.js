@@ -25,6 +25,14 @@ test("GET and PUT /api/risk-preference", async () => {
   expect((await request(app).get("/api/risk-preference")).body).toEqual({ maxRiskLevel: 2, esg: true });
 });
 
+// edge case: PUT with only esg keeps the saved level
+test("PUT with only esg keeps the level", async () => {
+  await request(app).put("/api/risk-preference").send({ maxRiskLevel: 3 });
+  const res = await request(app).put("/api/risk-preference").send({ esg: true });
+  expect(res.status).toBe(200);
+  expect(res.body).toEqual({ maxRiskLevel: 3, esg: true });
+});
+
 // wrong case: an invalid level is a 400 with the contract's message
 test("an invalid level is a 400", async () => {
   const res = await request(app).put("/api/risk-preference").send({ maxRiskLevel: 9 });
