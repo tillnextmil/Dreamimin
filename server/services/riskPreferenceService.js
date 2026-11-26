@@ -19,10 +19,15 @@ class RiskPreferenceService {
     return this.preferences.find(this.profileId) || { maxRiskLevel: RiskPreference.MAX_RISK_LEVEL, esg: false };
   }
 
-  /* maxRiskLevel is required; esg is optional and keeps its saved value when left out */
+  /* both fields are optional: one that's left out keeps its saved value, so the page can send
+  only the level or only the ESG choice */
   savePreference(input) {
     const body = input && typeof input === "object" && !Array.isArray(input) ? input : {};
-    const fields = { maxRiskLevel: body.maxRiskLevel, esg: body.esg === undefined ? this.getPreference().esg : body.esg };
+    const saved = this.getPreference();
+    const fields = {
+      maxRiskLevel: body.maxRiskLevel === undefined ? saved.maxRiskLevel : body.maxRiskLevel,
+      esg: body.esg === undefined ? saved.esg : body.esg,
+    };
     const errors = RiskPreference.validate(fields);
     if (Object.keys(errors).length) throw ServiceError.invalid(errors);
     return this.preferences.save(this.profileId, fields);
