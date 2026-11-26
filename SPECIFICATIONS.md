@@ -281,7 +281,22 @@
     the amount back in the funds, while Keep it, Escape or a click
     outside the dialog leaves it. After a removal, keyboard focus moves
     to the Remove button now in its place (the last one when it was at
-    the end), or to the Amount field when none are left. Once spending is in two categories or more, a
+    the end), or to the Amount field when none are left. Edit, next to
+    Remove, puts the spending in the form: the title reads "Edit
+    spending", the button "Save changes", and Cancel goes back to
+    recording new spending (an empty form dated today). Saving checks the
+    edit as an Expense and changes the funds by the difference
+    (`editSpending`), so an edit that spends more than the funds says
+    "That's more than your available funds." and changes nothing; the
+    spending keeps its place in the list by date. Once there is any
+    spending, filters above the list keep only one category ("All
+    categories" by default), a date range (From and To, both included)
+    and notes containing some text, with the rules of `findSpending`; a
+    date that isn't real or an end before the start shows its message
+    and lists nothing, and when the filters hide some spending a line
+    says "Showing 2 of 5." (or "No spending matches these filters."). The
+    filters only change the list: the funds, the chart and the chances
+    always count all the spending. Once spending is in two categories or more, a
     chart above the list shows how it splits (`client/views/pieChart.js`):
     a ring with a slice per category, largest first, clockwise from 12
     o'clock, the total spent in the middle, and a legend with each
@@ -795,7 +810,8 @@
     as the page drops the spending with them. Recording spending saves
     the funds first if they changed, then posts the spending, and the
     list shows it once the server has saved it, with the server's id;
-    Remove deletes it on the server first. Start over clears both
+    an edit is saved with `PUT /api/expenses/:id` before the list
+    changes, and Remove deletes it on the server first. Start over clears both
     (`DELETE /api/funds` and `DELETE /api/profile`). Under the emergency
     fund, a quiet line says "Your money is saved." after a save, or, in
     red, that it couldn't be saved or loaded, followed by the server's

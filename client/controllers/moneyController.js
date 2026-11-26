@@ -2,12 +2,12 @@
    Step 1 controller (Your money): reads the income, spending,
    net worth, available funds and emergency fund fields, builds a
    FinancialProfile and keeps the AvailableFunds, and handles
-   recording spending (with its category) and removing it, after
-   asking. With a server, it loads what was saved when the page
-   opens and saves each change through the money API client, so
-   step 1 is still there after a reload. The rules live in the
-   domain classes; this file only passes input to them and tells
-   the money view what to show.
+   recording spending (with its category), editing it, removing
+   it after asking, and filtering the list. With a server, it
+   loads what was saved when the page opens and saves each change
+   through the money API client, so step 1 is still there after
+   a reload. The rules live in the domain classes; this file only
+   passes input to them and tells the money view what to show.
    ============================================================ */
 
 (function (D) {
@@ -43,6 +43,7 @@
     let profileTimer = null, fundsTimer = null;
     let fundsSaving = Promise.resolve();     // funds saves run one after another, in order
     let loaded = !api;                       // nothing is saved until what's saved has been loaded
+    let editingId = null;                    // the spending in the form, or null when it records new spending
 
     /* values and error messages for one class's inputs; values are null where something is missing */
     function readGroup(group) {
@@ -89,7 +90,8 @@
       const profileInput = readGroup("profile");
       const fundsInput = readGroup("funds");
       readFunds(fundsInput);
-      view.showSpending(funds, fundsInput.valid, funds ? funds.spendingByCategory(Expense.CATEGORIES) : []);
+      if (editingId !== null && !(funds && funds.expenses.some((e) => e.id === editingId))) stopEditing();
+      view.showSpending(funds, fundsInput.valid, funds ? funds.spendingByCategory(Expense.CATEGORIES) : [], filtered());
       const errors = { ...profileInput.errors, ...fundsInput.errors };
       // errors only show once a field has been left, so nothing turns red while typing
       for (const name of Object.keys(FIELDS)) {
@@ -99,6 +101,16 @@
       view.showMoney(profile, funds);
       if (api && loaded) scheduleSaves(profileInput, fundsInput);
       return { profile, funds, fundsReady: fundsInput.valid };
+    }
+
+    /* the spending the filters keep, or the filters' message (AvailableFunds.findSpending has the rules) */
+    function filtered() {
+      if (!funds) return { editingId };
+      try {
+        return { shown: funds.findSpending(view.readFilters()), editingId };
+      } catch (error) {
+        return { shown: [], filterError: error.message, editingId };
+      }
     }
 
     /* ---------- saving to the server ---------- */
@@ -181,17 +193,21 @@
       onChange();
     }
 
-    /* builds an Expense from the spending inputs and records it (on the server first, when there is
-       one, so it gets the server's id); shows the error message if it can't */
-    async function recordSpending() {
+    /* Builds an Expense from the spending inputs and records it, or saves the edit when the form holds
+       recorded spending (on the server first, when there is one, so the list has the server's id and
+       values); shows the error message if it can't. */
+    async function saveSpending() {
       try {
         const expense = new Expense({
+          id: editingId ?? undefined,
           amount: format.parseAmount(form.elements.spendAmount.value),
           date: form.elements.spendDate.value,
           note: form.elements.spendNote.value,
           category: form.elements.spendCategory.value,
         });
-        if (api) {
+        if (editingId !== null) {
+          funds.editSpending(editingId, api ? await api.updateExpense(editingId, expense) : expense);
+        } else if (api) {
           await saveFunds();   // the server needs the funds before it can record spending against them
           funds.recordSpending(await api.addExpense(expense));
         } else {
@@ -202,9 +218,29 @@
         return;
       }
       view.showSpendingError("");
-      view.clearSpendingInputs();
+      if (editingId !== null) stopEditing();
+      else view.clearSpendingInputs();
       onSpendingChanged();
       onChange();
+    }
+
+    /* puts recorded spending in the form to edit it */
+    function startEditing(expenseId) {
+      const expense = funds && funds.expenses.find((e) => String(e.id) === String(expenseId));
+      if (!expense) return;
+      editingId = expense.id;
+      view.showSpendingError("");
+      view.fillSpendingInputs(expense);
+      view.setSpendingMode(true);
+      onChange();
+    }
+
+    /* back to recording new spending: empties the form (keeping the category) and the date is today */
+    function stopEditing() {
+      editingId = null;
+      view.clearSpendingInputs();
+      view.setSpendingDate(format.isoDate(new Date()));
+      view.setSpendingMode(false);
     }
 
     /* asks first (it names the spending), then removes it and puts its amount back in the funds */
@@ -223,6 +259,7 @@
         }
       }
       funds.removeSpending(expense.id);
+      if (editingId === expense.id) stopEditing();
       onSpendingChanged();
       onChange();
       view.focusAfterRemove(index);
@@ -241,6 +278,8 @@
       for (const name of [...Object.keys(FIELDS), "spendAmount", "spendNote"]) form.elements[name].value = "";
       touched.clear();
       funds = null;
+      if (editingId !== null) stopEditing();
+      view.clearFilters();
       view.showSpendingError("");
       view.showSpendingImpact("");
       view.showSaveStatus("");
@@ -274,11 +313,21 @@
       onChange();
     });
 
-    document.getElementById("spending-add").addEventListener("click", recordSpending);
+    document.getElementById("spending-add").addEventListener("click", saveSpending);
+    document.getElementById("spending-cancel").addEventListener("click", () => {
+      stopEditing();
+      view.showSpendingError("");
+      onChange();
+    });
     document.getElementById("spending-list").addEventListener("click", (event) => {
+      const edit = event.target.closest("[data-edit-id]");
+      if (edit) return startEditing(edit.dataset.editId);
       const remove = event.target.closest("[data-expense-id]");
       if (remove) removeSpending(remove.dataset.expenseId);
     });
+    // the filters only change which spending is listed
+    document.getElementById("spending-filters").addEventListener("input", () => onChange());
+    document.getElementById("spending-filters").addEventListener("change", () => onChange());
 
     view.setSpendingDate(format.isoDate(new Date()));
     view.showCategories(Expense.CATEGORIES, DEFAULT_CATEGORY);

@@ -422,6 +422,14 @@ h2[tabindex]:focus { outline: none; }
 .spending__list li span { overflow-wrap: anywhere; }
 .spending__info { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .spending__category { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.spending__actions { display: flex; gap: 14px; margin-left: auto; flex-shrink: 0; }
+.spending__buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.spending__filters { display: grid; gap: 0 16px; margin-top: 18px; }
+.spending__filters .field { margin-bottom: 12px; }
+@media (min-width: 480px) {
+  .spending__filters { grid-template-columns: 1fr 1fr; }
+}
+.spending__list li.is-editing { background: var(--surface-2); font-weight: 550; }
 
 /* spending by category: a ring and its legend */
 [data-key="housing"] { --cat: var(--cat-housing); }
