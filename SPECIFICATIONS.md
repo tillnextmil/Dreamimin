@@ -810,9 +810,10 @@
     for environmental, social and governance standards. We assume the
     same expected return and volatility as the regular portfolio, since
     studies don't show a consistent difference. `describe()` gives, for
-    `portfolioNames(names)` gives the five portfolio names as the page
-    shows them, with "ESG " in front when ESG is on, and
-    `describePortfolios()` each portfolio in words the same way.
+    example, "Up to Balanced (level 3), ESG funds only". `portfolioNames(names)`
+    gives the five portfolio names as the page shows them, with "ESG " in 
+    front when ESG is on, and `describePortfolios()` each portfolio in words
+    the same way.
 
     On the page, step 3 starts with "Highest risk you're comfortable
     with" (1 · Cautious up to 5 · Aggressive (all five)) and an "Only ESG

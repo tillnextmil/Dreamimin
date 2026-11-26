@@ -2,11 +2,10 @@
    Money API client: the only part of the page that talks to the
    server about step 1 — the profile, the available funds, the
    recorded spending and the recorded income and losses
-   (SPECIFICATIONS.md, item 12). The money API is a private API; only the
-   controller calls it; views never do. Returns promises and
-   throws an ApiError for any failed request. When the page is
-   opened straight from disk there is no server, so the
-   controller keeps step 1 in memory instead.
+   (SPECIFICATIONS.md, item 12). The money controller calls it;
+   views never do. Returns promises and throws an ApiError for any 
+   failed request. When the page is opened straight from disk 
+   there is no server, so the controller keeps step 1 in memory instead.
    ============================================================ */
 
 (function (global) {
