@@ -15,13 +15,15 @@
 (function (D) {
   "use strict";
 
-  /* Goals are saved on the server through /api/goals, and each finished plan through /api/plans.
-     On a page opened straight from disk, MemoryGoalApi keeps the goals instead (same contract,
-     but they are gone after a reload) and plans aren't saved. */
+  /* Goals are saved on the server through /api/goals, step 1 (profile, funds and spending) through
+     /api/profile, /api/funds and /api/expenses, and each finished plan through /api/plans. On a page
+     opened straight from disk, MemoryGoalApi keeps the goals instead (same contract, but they are
+     gone after a reload), step 1 stays in memory, and plans aren't saved. */
   const SERVER_SAVES_GOALS = true;
   const useServer = SERVER_SAVES_GOALS && location.protocol.startsWith("http");
   const api = useServer ? new D.GoalApi.HttpGoalApi() : new D.GoalApi.MemoryGoalApi();
   const planApi = useServer ? new D.PlanApi.HttpPlanApi() : null;
+  const moneyApi = useServer ? new D.MoneyApi.HttpMoneyApi() : null;
 
   const form = document.getElementById("plan-form");
   /* tells the step navigation (views/steps.js) what changed, so it can update the step bar */
@@ -32,7 +34,7 @@
     showImpact: D.views.money.showSpendingImpact,
     savePlan: planApi && ((body) => planApi.save(body)),
   });
-  const money = D.controllers.money({ form, onChange: update, onSpendingChanged: odds.spendingChanged });
+  const money = D.controllers.money({ form, api: moneyApi, onChange: update, onSpendingChanged: odds.spendingChanged });
   const goals = D.controllers.goals({ form, api, onChange: update });
 
   function update() {
@@ -49,7 +51,7 @@
   /* ---------- Start over ---------- */
 
   async function startOver() {
-    money.reset();
+    await money.reset();
     odds.reset();
     await goals.removeAll();   // updates the page when done
   }
@@ -65,5 +67,6 @@
   form.addEventListener("submit", (event) => event.preventDefault());
 
   update();
+  money.load();
   goals.load();
 })(window.Dreamimin);

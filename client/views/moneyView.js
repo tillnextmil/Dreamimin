@@ -181,6 +181,13 @@
 
   const showSpendingError = (message) => { $("spending-error").textContent = message; };
   const showSpendingImpact = (text) => { $("spending-impact").textContent = text; };
+  
+  /* whether step 1 is saved: a quiet line, or a red one when saving or loading failed */
+  function showSaveStatus(message, isError = false) {
+    const status = $("money-save-status");
+    status.textContent = message;
+    status.classList.toggle("is-error", isError);
+  }
 
   /* the spending date picker: today, and no later than today */
   function setSpendingDate(today) {
@@ -196,6 +203,6 @@
 
   D.views.money = {
     showMoney, showCategories, showSpending, confirmRemoveSpending, focusAfterRemove,
-    showSpendingError, showSpendingImpact, setSpendingDate, clearSpendingInputs,
+    showSpendingError, showSpendingImpact, setSpendingDate, clearSpendingInputs, showSaveStatus,
   };
 })(window.Dreamimin);
