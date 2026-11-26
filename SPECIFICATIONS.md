@@ -296,7 +296,21 @@
     and lists nothing, and when the filters hide some spending a line
     says "Showing 2 of 5." (or "No spending matches these filters."). The
     filters only change the list: the funds, the chart and the chances
-    always count all the spending. Once spending is in two categories or more, a
+    always count all the spending. 
+    Below the spending, an Income or loss form records money that comes
+    in or goes out outside the usual month (type Income or Loss, amount,
+    date, today unless chosen, and an optional note), checked as a
+    FundsEvent. Income raises the funds and a loss lowers them; a loss
+    more than the funds says "That's more than your available funds."
+    The list shows each one oldest first, with "+$800.00" in green for
+    income or "−$300.00" in red for a loss, its type and a Remove button.
+    Remove asks "Remove this income or loss?" in a dialog first, naming
+    it and what happens to the funds; removing income that has already
+    been spent says "That would leave your available funds below $0." and
+    keeps it. The funds left line counts everything: "Funds left:
+    $1,500.00 after $300.00 of spending, $800.00 of income and $300.00 of
+    losses." Recording or removing one updates the chances as spending
+    does. Once spending is in two categories or more, a
     chart above the list shows how it splits (`client/views/pieChart.js`):
     a ring with a slice per category, largest first, clockwise from 12
     o'clock, the total spent in the middle, and a legend with each
@@ -811,11 +825,12 @@
     the funds first if they changed, then posts the spending, and the
     list shows it once the server has saved it, with the server's id;
     an edit is saved with `PUT /api/expenses/:id` before the list
-    changes, and Remove deletes it on the server first. Start over clears both
-    (`DELETE /api/funds` and `DELETE /api/profile`). Under the emergency
-    fund, a quiet line says "Your money is saved." after a save, or, in
-    red, that it couldn't be saved or loaded, followed by the server's
-    message (for example when the server can't be reached); the page
-    keeps working with what's on screen. A page opened straight from
+    changes, and Remove deletes it on the server first. Income and losses
+    work the same way through `/api/funds-events`, and are loaded with
+    the rest. Start over clears both (`DELETE /api/funds` and `DELETE /api/profile`).
+    Under the emergency fund, a quiet line says "Your money is saved." 
+    after a save, or, in red, that it couldn't be saved or loaded, followed 
+    by the server's message (for example when the server can't be reached); 
+    the page keeps working with what's on screen. A page opened straight from
     disk has no server, so step 1 stays in memory and is gone after a
     reload.

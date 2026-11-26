@@ -108,9 +108,7 @@
       : items.length === total ? ""
       : items.length === 0 ? "No spending matches these filters."
       : `Showing ${items.length} of ${total}.`;
-    $("spending-left").textContent = funds.totalSpent > 0
-      ? `Funds left: ${format.cents(funds.balance)} after ${format.cents(funds.totalSpent)} of spending.`
-      : `Funds left: ${format.cents(funds.balance)}.`;
+    $("spending-left").textContent = fundsLeft(funds);
 
     for (const expense of filterError ? [] : items) {
       const item = document.createElement("li");
@@ -142,6 +140,71 @@
       item.append(info, actions);
       list.appendChild(item);
     }
+  }
+
+  /* "Funds left: $1,500.00 after $300.00 of spending, $800.00 of income and $300.00 of losses." */
+  function fundsLeft(funds) {
+    const parts = [];
+    if (funds.totalSpent > 0) parts.push(`${format.cents(funds.totalSpent)} of spending`);
+    if (funds.totalIncome > 0) parts.push(`${format.cents(funds.totalIncome)} of income`);
+    if (funds.totalLoss > 0) parts.push(`${format.cents(funds.totalLoss)} of losses`);
+    const after = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0];
+    return `Funds left: ${format.cents(funds.balance)}${after ? ` after ${after}` : ""}.`;
+  }
+
+  /* The recorded income and losses, oldest first, each with a Remove button carrying its id in
+     data-event-id; the money controller handles the clicks. Recording needs valid funds. */
+  function showEvents(funds, ready) {
+    const list = $("event-list");
+    list.replaceChildren();
+    $("event-add").disabled = !funds || !ready;
+    if (!funds || !ready) return;
+    for (const event of funds.events) {
+      const item = document.createElement("li");
+      const text = document.createElement("span");
+      text.className = "spending__text";
+      const amount = document.createElement("span");
+      amount.className = `spending__amount--${event.kind}`;
+      amount.textContent = `${event.kind === "income" ? "+" : "−"}${format.cents(event.amount)}`;
+      text.append(`${format.longDate(Expense.parseDate(event.date))}: `, amount, event.note ? `, ${event.note}` : "");
+      const kind = document.createElement("span");
+      kind.className = "spending__category";
+      kind.textContent = event.kind === "income" ? "Income" : "Loss";
+      const info = document.createElement("div");
+      info.className = "spending__info";
+      info.append(text, kind);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "link-btn";
+      remove.textContent = "Remove";
+      remove.dataset.eventId = event.id;
+      remove.setAttribute("aria-label", `Remove ${event.kind === "income" ? "income" : "loss"} of ${format.cents(event.amount)}`);
+      const actions = document.createElement("div");
+      actions.className = "spending__actions";
+      actions.append(remove);
+      item.append(info, actions);
+      list.appendChild(item);
+    }
+  }
+
+  /* fills in and opens the remove dialog for recorded income or a loss; resolves to true when confirmed */
+  function confirmRemoveEvent(event) {
+    const amount = format.cents(event.amount);
+    const what = event.kind === "income" ? "Income" : "Loss";
+    const details = [format.longDate(Expense.parseDate(event.date)), what, event.note].filter(Boolean).join(" · ");
+    const effect = event.kind === "income" ? `${amount} comes off your available funds` : `${amount} goes back into your available funds`;
+    $("remove-event-text").textContent = `${amount}, ${details}. It comes off your list, and ${effect}.`;
+    return D.views.fields.confirm($("remove-event-dialog"));
+  }
+
+  const showEventError = (message) => { $("event-error").textContent = message; };
+
+  /* empties the income or loss inputs (keeping the type) and dates them today, no later than today */
+  function clearEventInputs(today) {
+    $("eventAmount").value = "";
+    $("eventNote").value = "";
+    $("eventDate").max = today;
+    $("eventDate").value = today;
   }
 
   /* The ring and its legend, largest category first, once spending is in two categories or more:
@@ -255,5 +318,6 @@
     showMoney, showCategories, showSpending, confirmRemoveSpending, focusAfterRemove,
     showSpendingError, showSpendingImpact, setSpendingDate, clearSpendingInputs, showSaveStatus,
     fillSpendingInputs, setSpendingMode, readFilters, clearFilters,
+    showEvents, confirmRemoveEvent, showEventError, clearEventInputs,
   };
 })(window.Dreamimin);

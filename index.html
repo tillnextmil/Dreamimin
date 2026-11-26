@@ -199,6 +199,51 @@
 
               <ul class="spending__list" id="spending-list" aria-label="Recorded spending"></ul>
             </fieldset>
+            
+            <fieldset class="spending events">
+              <legend>Income or loss <span class="optional">(optional)</span></legend>
+              <p class="help">Money that comes in or goes out outside your usual month, like a bonus or a car repair. It changes your available funds.</p>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="eventKind">Type</label>
+                  <div class="control control--select">
+                    <select id="eventKind" name="eventKind">
+                      <option value="income">Income</option>
+                      <option value="loss">Loss</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="eventAmount">Amount</label>
+                  <div class="control control--money">
+                    <span aria-hidden="true">$</span>
+                    <input id="eventAmount" name="eventAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="eventDate">Date</label>
+                  <div class="control">
+                    <input id="eventDate" name="eventDate" type="date" />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="eventNote">Note <span class="optional">(optional)</span></label>
+                  <div class="control">
+                    <input id="eventNote" name="eventNote" type="text" autocomplete="off" maxlength="60" placeholder="e.g. Bonus" />
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" class="btn btn--ghost" id="event-add">Record income or loss</button>
+              <p class="error" id="event-error" role="alert"></p>
+              <ul class="spending__list" id="event-list" aria-label="Recorded income and losses"></ul>
+            </fieldset>
           </div>
 
           <!-- result card and Next button scroll together on wide screens -->
@@ -538,6 +583,18 @@
     </form>
   </dialog>
 
+  <!-- asks before recorded income or a loss is removed; the money view fills in which one -->
+  <dialog class="confirm" id="remove-event-dialog" aria-labelledby="remove-event-title" aria-describedby="remove-event-text">
+    <form method="dialog" class="confirm__body">
+      <h2 id="remove-event-title">Remove this income or loss?</h2>
+      <p id="remove-event-text"></p>
+      <div class="confirm__actions">
+        <button class="btn btn--ghost" value="cancel" autofocus>Keep it</button>
+        <button class="btn btn--danger" value="confirm">Remove it</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- domain classes (shared with the server) -->
   <script src="src/financialProfile.js"></script>
   <script src="src/financialGoal.js"></script>
@@ -549,6 +606,7 @@
   <script src="src/investmentPortfolio.js"></script>
   <script src="src/availableFunds.js"></script>
   <script src="src/expense.js"></script>
+  <script src="src/fundsEvent.js"></script>
   <!-- the page: formatting, the API client, views, then controllers -->
   <script src="client/format.js"></script>
   <script src="client/api/request.js"></script>
