@@ -483,8 +483,8 @@
 
     Layers: `server/routes/planRoutes.js`, `server/services/planService.js`
     and `server/repositories/planRepository.js`, which reads a saved plan
-    back in this shape (`findById`). `POST` is built; `GET
-    /api/plans/latest` is next.
+    back in this shape (`findById`, and `findLatest` for the most recent
+    one). Both `POST /api/plans` and `GET /api/plans/latest` are built.
 
     Storage. Each item is a row in the SQLite database, in the tables of
     our ER diagram (`docs/er-diagram.drawio`): `profile`,

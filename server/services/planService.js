@@ -11,6 +11,7 @@ const MultiGoalPlan = require("../../src/multiGoalPlan");
 const ServiceError = require("./serviceError");
 
 const NO_GOAL = "No goal with that id.";
+const NO_PLAN = "No plan has been saved yet.";
 
 class PlanService {
   /* profileId: the user whose plans these are (one profile until sign-in exists) */
@@ -34,6 +35,13 @@ class PlanService {
       riskLevelByYear: [...plan.riskLevelByYear],
       goals: plan.goals.map((r) => ({ goalId: r.goalId, pFull: r.full.value, pPartial: r.partial.value, verdict: r.verdict })),
     });
+  }
+  
+  /* the plan saved most recently, so the page can show it again without retraining; 404 before the first */
+  getLatestPlan() {
+    const plan = this.plans.findLatest(this.profileId);
+    if (!plan) throw ServiceError.notFound(NO_PLAN);
+    return plan;
   }
 
   /* the contract's fields only (anything else, such as portfolio names, is ignored), as a MultiGoalPlan;
