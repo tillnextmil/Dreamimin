@@ -15,6 +15,11 @@ function planRoutes(planService) {
   router.post("/", (req, res) => {
     res.status(201).json(planService.savePlan(req.body));
   });
+  
+  /* the plan saved most recently: 200 with the plan, or 404 before the first */
+  router.get("/latest", (req, res) => {
+    res.json(planService.getLatestPlan());
+  });
 
   /* errors the service expects (400, 404); anything else goes on to the app's 500 handler */
   router.use((error, req, res, next) => {
