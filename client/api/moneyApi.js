@@ -37,6 +37,10 @@
     addExpense({ amount, date, note, category }) {
       return this.#send("POST", "/expenses", { amount, date, note, category });
     }
+    
+    updateExpense(id, { amount, date, note, category }) {
+      return this.#send("PUT", `/expenses/${encodeURIComponent(id)}`, { amount, date, note, category });
+    }
     removeExpense(id) { return this.#send("DELETE", `/expenses/${encodeURIComponent(id)}`); }
 
     #send(method, path, body) {
